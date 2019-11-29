@@ -1,6 +1,9 @@
 use std::fmt::{Display, Debug, Formatter, Result};
 use std::ops::Mul;
 
+use json::JsonValue;
+use json::JsonValue::Array;
+
 use crate::vector::Vec3;
 
 #[derive(Copy, Clone)]
@@ -118,5 +121,33 @@ impl Display for Quaternion {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(
             f, "{} + {}i + {}j + {}k", self.w(), self.x(), self.y(), self.z())
+    }
+}
+
+pub fn from_json(json: &JsonValue) -> Quaternion {
+    match json {
+        Array(vals) => parse_quaternion_array(vals),
+        Null => Quaternion::identity(),
+        _ => panic!("quaternions must be array")
+    }
+}
+
+pub fn parse_quaternion_array(values: &Vec<JsonValue>) -> Quaternion {
+    let type_tag = values[0].as_str().expect("invalid quaternion type");
+    let component_json = &values[1..];
+    let components: Vec<f32> = component_json.into_iter().map(|x| {
+        x.as_f32().expect("invalid quaternion component")
+    }).collect();
+
+    
+    let [w, x, y, z] = match components.as_slice() {
+        [w, x, y, z] => [w, x, y, z],
+        _ => panic!("quaternions must have 4 components")
+    };
+
+    match type_tag {
+        "axis_angle" => Quaternion::from_axis_angle(*w, Vec3::new(*x, *y, *z)),
+        "components" => Quaternion::new(*w, *x, *y, *z),
+        _ => panic!("invalid quaternion type")
     }
 }

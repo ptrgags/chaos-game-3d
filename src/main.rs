@@ -1,12 +1,12 @@
-/*#[macro_use]
 extern crate json;
-*/
+extern crate rand;
 
 mod xforms;
 mod vector;
 mod quaternion;
 mod ifs;
 mod choosers;
+mod parameters;
 
 use vector::Vec3;
 use quaternion::Quaternion;
@@ -22,33 +22,6 @@ type Vector = (f32, f32, f32);
 type Color = (u8, u8, u8);
 type VectorList = Vec<Vector>;
 type ColorList = Vec<Color>;
-
-trait Transform {
-    fn transform(&self, vector: &Vector) -> Vector;
-}
-
-struct SierpinskiTransform {
-    translation: Vector
-}
-
-impl SierpinskiTransform {
-    pub fn new(translation: Vector) -> SierpinskiTransform {
-        SierpinskiTransform { translation }
-    }
-}
-
-impl Transform for SierpinskiTransform {
-    fn transform(&self, vector: &Vector) -> Vector {
-        let (x, y, z) = vector;
-        let (tx, ty, tz) = self.translation;
-        let x2 = 0.5 * x + tx;
-        let y2 = 0.5 * y + ty;
-        let z2 = 0.5 * z + tz;
-
-        (x2, y2, z2)
-    }
-}
-
 
 /*
 fn print_point(vector: &Vector, index: u32) {
@@ -153,6 +126,8 @@ fn main() {
 */
 
 fn main() {
+    let sierpinski = parameters::load_ifs("params/sierpinski.json");
+    /*
     let scale = Vec3::new(0.5, 0.5, 0.5);
     let rotation = Quaternion::identity();
     let translations = vec![
@@ -167,6 +142,7 @@ fn main() {
 
     let chooser = Box::new(UniformChooser::new(xforms.len())) as Box<dyn Chooser>;
     let sierpinski = IFS::new(xforms, chooser);
+    */
 
     println!("{:#?}", sierpinski);
 }

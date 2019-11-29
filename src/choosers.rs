@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Formatter, Result};
 
-extern crate rand;
 use rand::Rng;
 use rand::prelude::ThreadRng;
+use json::JsonValue;
 
 pub trait Chooser: Debug {
     fn choose(&mut self) -> usize;
@@ -31,5 +31,15 @@ impl Chooser for UniformChooser {
 impl Debug for UniformChooser {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "UniformChooser({})", self.num_xforms)
+    }
+}
+
+
+pub fn from_json(json: &JsonValue, n: usize) -> Box<dyn Chooser> {
+    let chooser_type = json.as_str().expect("invalid chooser type");
+
+    match &chooser_type[..] {
+        "uniform" => Box::new(UniformChooser::new(n)),
+        _ => panic!("Invalid chooser type")
     }
 }

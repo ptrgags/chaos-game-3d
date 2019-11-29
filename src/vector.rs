@@ -1,6 +1,9 @@
 use std::fmt::{Display, Debug, Formatter, Result};
 use std::ops::{Add, Mul};
 
+use json::JsonValue;
+use json::JsonValue::Array;
+
 #[derive(Copy, Clone)]
 pub struct Vector3<T> {
     components: [T; 3]
@@ -94,3 +97,21 @@ impl Mul for Vec3 {
     }
 }
 
+pub fn from_json(json: &JsonValue, default_val: f32) -> Vec3 {
+    match json {
+        Array(components) => parse_components(components),
+        _ => Vec3::new(default_val, default_val, default_val)
+    }
+}
+
+fn parse_components(components: &Vec<JsonValue>) -> Vec3 {
+    let components_float: Vec<f32> = components.into_iter().map(|x| {
+        x.as_f32().expect("invalid vector component")
+    }).collect();
+
+    match components_float.as_slice() {
+        [x] => Vec3::new(*x, *x, *x),
+        [x, y, z] => Vec3::new(*x, *y, *z),
+        _ => panic!("vectors must have 1 or 3 components")
+    }
+}
