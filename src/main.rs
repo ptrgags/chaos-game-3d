@@ -2,6 +2,10 @@ extern crate rand;
 #[macro_use]
 extern crate json;
 
+mod xforms;
+mod vector;
+mod quaternion;
+
 use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
