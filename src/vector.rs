@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vector3<T> {
     components: [T; 3]
 }

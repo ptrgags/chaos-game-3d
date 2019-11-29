@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use crate::vector::Vec3;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Quaternion {
     components: [f32; 4],
 }
@@ -10,22 +10,6 @@ pub struct Quaternion {
 impl Quaternion {
     pub fn new(w: f32, x: f32, y: f32, z:f32) -> Self {
         Quaternion { components: [w, x, y, z] }
-    }
-
-    pub fn w(&self) -> f32 {
-        self.components[0]
-    }
-
-    pub fn x(&self) -> f32 {
-        self.components[1]
-    }
-
-    pub fn y(&self) -> f32 {
-        self.components[2]
-    }
-
-    pub fn z(&self) -> f32 {
-        self.components[3]
     }
 
     pub fn from_axis_angle(angle: f32, axis: Vec3) -> Self {
@@ -52,6 +36,28 @@ impl Quaternion {
                 *vector.z(),
             ]
         }
+    }
+
+    pub fn identity() -> Self {
+        Self {
+            components: [1.0, 0.0, 0.0, 0.0]
+        }
+    }
+
+    pub fn w(&self) -> f32 {
+        self.components[0]
+    }
+
+    pub fn x(&self) -> f32 {
+        self.components[1]
+    }
+
+    pub fn y(&self) -> f32 {
+        self.components[2]
+    }
+
+    pub fn z(&self) -> f32 {
+        self.components[3]
     }
 
     pub fn conj(&self) -> Self {

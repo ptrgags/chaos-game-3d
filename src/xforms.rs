@@ -1,19 +1,22 @@
+use std::fmt::Debug;
+
 use crate::vector::Vec3;
 use crate::quaternion::Quaternion;
 
-trait Transform<T> {
+pub trait Transform<T>: Debug {
     fn transform(&self, vector: &Vec3) -> Vec3;
 }
 
 // Translate, Rotate, Scale
-struct TRS {
+#[derive(Debug)]
+pub struct TRS {
     translate: Vec3,
     rotate: Quaternion,
     scale: Vec3,
 }
 
 impl TRS {
-    pub fn new(&self, translate: Vec3, rotate: Quaternion, scale: Vec3) -> TRS {
+    pub fn new(translate: Vec3, rotate: Quaternion, scale: Vec3) -> TRS {
         TRS {
             translate,
             rotate,

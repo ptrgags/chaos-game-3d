@@ -1,12 +1,20 @@
-extern crate rand;
-#[macro_use]
+/*#[macro_use]
 extern crate json;
+*/
 
 mod xforms;
 mod vector;
 mod quaternion;
+mod ifs;
+mod choosers;
 
-use rand::Rng;
+use vector::Vec3;
+use quaternion::Quaternion;
+use xforms::TRS;
+use ifs::{Xform, IFS};
+use choosers::{Chooser, UniformChooser};
+
+/*
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -141,4 +149,24 @@ fn main() {
     }
 
     write_pnts("test.pnts", &points, &colors).expect("whoops, something went wrong");
+}
+*/
+
+fn main() {
+    let scale = Vec3::new(0.5, 0.5, 0.5);
+    let rotation = Quaternion::identity();
+    let translations = vec![
+        Vec3::new(-0.5, -0.5, 0.0),
+        Vec3::new(0.5, -0.5, 0.0),
+        Vec3::new(0.0, 0.5, -0.5),
+        Vec3::new(0.0, 0.5, 0.5),
+    ];
+    let xforms: Vec<Xform<f32>> = translations.into_iter().map(|t| {
+        Box::new(TRS::new(t, rotation, scale)) as Xform<f32>
+    }).collect();
+
+    let chooser = Box::new(UniformChooser::new(xforms.len())) as Box<dyn Chooser>;
+    let sierpinski = IFS::new(xforms, chooser);
+
+    println!("{:#?}", sierpinski);
 }
