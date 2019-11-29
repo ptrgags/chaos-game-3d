@@ -1,6 +1,7 @@
+use std::fmt::{Display, Debug, Formatter, Result};
 use std::ops::{Add, Mul};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Vector3<T> {
     components: [T; 3]
 }
@@ -23,6 +24,18 @@ impl<T> Vector3<T> {
 
     pub fn z(&self) -> &T {
         &self.components[2]
+    }
+}
+
+impl<T: Display> Debug for Vector3<T> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "({}, {}, {})", self.x(), self.y(), self.z())
+    }
+}
+
+impl<T: Display> Display for Vector3<T> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}i + {}j + {}k", self.x(), self.y(), self.z())
     }
 }
 
@@ -80,3 +93,4 @@ impl Mul for Vec3 {
         }
     }
 }
+

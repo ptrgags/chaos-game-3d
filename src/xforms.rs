@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter, Result};
 
 use crate::vector::Vec3;
 use crate::quaternion::Quaternion;
@@ -8,7 +8,6 @@ pub trait Transform<T>: Debug {
 }
 
 // Translate, Rotate, Scale
-#[derive(Debug)]
 pub struct TRS {
     translate: Vec3,
     rotate: Quaternion,
@@ -32,5 +31,16 @@ impl Transform<f32> for TRS {
         let translated = self.translate + rotated;
 
         translated
+    }
+}
+
+impl Debug for TRS {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(
+            f, 
+            "TRS(T={:?}, R={:?}, S={:?})", 
+            self.translate, 
+            self.rotate, 
+            self.scale)
     }
 }

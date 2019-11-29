@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter, Result};
 
 extern crate rand;
 use rand::Rng;
@@ -8,7 +8,6 @@ pub trait Chooser: Debug {
     fn choose(&mut self) -> usize;
 }
 
-#[derive(Debug)]
 pub struct UniformChooser {
     rng: ThreadRng,
     num_xforms: usize,
@@ -26,5 +25,11 @@ impl UniformChooser {
 impl Chooser for UniformChooser {
     fn choose(&mut self) -> usize {
         self.rng.gen_range(0usize, self.num_xforms)
+    }
+}
+
+impl Debug for UniformChooser {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "UniformChooser({})", self.num_xforms)
     }
 }

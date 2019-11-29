@@ -1,8 +1,9 @@
+use std::fmt::{Display, Debug, Formatter, Result};
 use std::ops::Mul;
 
 use crate::vector::Vec3;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Quaternion {
     components: [f32; 4],
 }
@@ -104,5 +105,18 @@ impl Mul<Vec3> for Quaternion {
         let product = self * other_quat * conj; 
 
         Vec3::new(product.x(), product.y(), product.z())
+    }
+}
+
+impl Debug for Quaternion {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "({}, {}, {}, {})", self.w(), self.x(), self.y(), self.z())
+    }
+}
+
+impl Display for Quaternion {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(
+            f, "{} + {}i + {}j + {}k", self.w(), self.x(), self.y(), self.z())
     }
 }
