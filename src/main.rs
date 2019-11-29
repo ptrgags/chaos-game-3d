@@ -7,12 +7,10 @@ mod quaternion;
 mod ifs;
 mod choosers;
 mod parameters;
+mod algorithms;
+mod buffers;
 
-use vector::Vec3;
-use quaternion::Quaternion;
-use xforms::TRS;
-use ifs::{Xform, IFS};
-use choosers::{Chooser, UniformChooser};
+use std::env;
 
 /*
 use std::fs::File;
@@ -125,24 +123,17 @@ fn main() {
 }
 */
 
+fn let_the_chaos_begin(in_fname: &str, out_fname: &str, n_str: &str) {
+    let chaos = parameters::load_algorithm(in_fname);
+    let n: u32 = n_str.parse().expect("n must be a u32");
+    chaos.iterate(n);
+    chaos.save(out_fname);
+}
+
 fn main() {
-    let sierpinski = parameters::load_ifs("params/sierpinski.json");
-    /*
-    let scale = Vec3::new(0.5, 0.5, 0.5);
-    let rotation = Quaternion::identity();
-    let translations = vec![
-        Vec3::new(-0.5, -0.5, 0.0),
-        Vec3::new(0.5, -0.5, 0.0),
-        Vec3::new(0.0, 0.5, -0.5),
-        Vec3::new(0.0, 0.5, 0.5),
-    ];
-    let xforms: Vec<Xform<f32>> = translations.into_iter().map(|t| {
-        Box::new(TRS::new(t, rotation, scale)) as Xform<f32>
-    }).collect();
-
-    let chooser = Box::new(UniformChooser::new(xforms.len())) as Box<dyn Chooser>;
-    let sierpinski = IFS::new(xforms, chooser);
-    */
-
-    println!("{:#?}", sierpinski);
+    let args: Vec<String> = env::args().collect();
+    match args.as_slice() {
+        [in_file, out_file, n] => let_the_chaos_begin(in_file, out_file, n),
+        _ => panic!("Usage: chaos-game-3d in_file out_file num_iters")
+    }
 }

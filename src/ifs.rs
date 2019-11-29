@@ -4,6 +4,7 @@ use crate::xforms;
 use crate::xforms::Transform;
 use crate::choosers;
 use crate::choosers::Chooser;
+use crate::vector::Vector3;
 
 pub type Xform<T> = Box<dyn Transform<T>>;
 pub type XformSelector = Box<dyn Chooser>;
@@ -17,6 +18,12 @@ pub struct IFS<T> {
 impl<T> IFS<T> {
     pub fn new(xforms: Vec<Xform<T>>, chooser: XformSelector) -> Self {
         Self { xforms, chooser }
+    }
+
+    pub fn transform(&self, vector: &Vector3<T>) -> Vector3<T> {
+        let index = self.chooser.choose();
+        let xform = self.xforms[index];
+        xform.transform(vector)
     }
 }
 
