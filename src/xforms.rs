@@ -3,12 +3,12 @@ use std::fmt::{Debug, Formatter, Result};
 use json::JsonValue;
 
 use crate::vector;
-use crate::vector::Vec3;
+use crate::vector::{Vector3, Vec3};
 use crate::quaternion;
 use crate::quaternion::Quaternion;
 
 pub trait Transform<T>: Debug {
-    fn transform(&self, vector: &Vec3) -> Vec3;
+    fn transform(&self, vector: &Vector3<T>) -> Vector3<T>;
 }
 
 // Translate, Rotate, Scale

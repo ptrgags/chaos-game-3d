@@ -1,12 +1,13 @@
 use json::JsonValue;
 
+use crate::ifs;
 use crate::ifs::IFS;
 use crate::buffers::Buffer;
 use crate::vector::Vec3;
 
 pub trait Algorithm {
     fn iterate(&mut self, n_iters: u32);
-    fn save(&self, fname: &str);
+    fn save(&mut self, fname: &str);
 }
 
 const STARTUP_ITERS: u32 = 10;
@@ -25,24 +26,31 @@ impl ChaosGame {
             output_buffer: Buffer::new()
         }
     }
+
+    pub fn from_json(json: &JsonValue) -> Self {
+        let position_ifs = ifs::from_json(&json["ifs"]);
+        let color_ifs = ifs::from_json(&json["color_ifs"]);
+
+        Self::new(position_ifs, color_ifs)
+    }
 }
 
 impl Algorithm for ChaosGame {
     fn iterate(&mut self, n_iters: u32) {
-        let mut pos = Vec3::rand_pos();
-        let mut color_vec = Vec3::rand_pos();
+        let mut pos = Vec3::new(0.0, 0.0, 0.0);
+        let mut color_vec = Vec3::new(1.0, 1.0, 0.0);
         for i in 0..(STARTUP_ITERS + n_iters) {
             if i > STARTUP_ITERS {
                 self.output_buffer.add(pos, color_vec.to_color())
             }
 
-            pos = self.position_ifs.transform(pos);
-            color_vec = self.color_ifs.transform(color_vec);
+            pos = self.position_ifs.transform(&pos);
+            color_vec = self.color_ifs.transform(&color_vec);
         }
     }
 
-    fn save(&self, _fname: &str) {
-        for (pos, color) in self.output_buffer {
+    fn save(&mut self, _fname: &str) {
+        for (pos, color) in self.output_buffer.clone().into_iter() {
             println!(
                 "{} {} {} {} {} {}", 
                 pos.x(), 
@@ -55,6 +63,13 @@ impl Algorithm for ChaosGame {
     }
 }
 
-pub fn from_json(json: &JsonValue) {
+pub fn from_json(json: &JsonValue) -> Box<dyn Algorithm> {
+    let algorithm_id = &json["algorithm"]
+        .as_str()
+        .expect("algorithm must be a string");
 
+    match &algorithm_id[..] {
+        "chaos" => Box::new(ChaosGame::from_json(&json)) as Box<dyn Algorithm>,
+        _ => panic!("invalid algorithm!")
+    }
 }

@@ -22,5 +22,5 @@ pub fn load_ifs(fname: &str) -> IFS<f32> {
 
 pub fn load_algorithm(fname: &str) -> Box<dyn Algorithm> {
     let json = load_json_file(fname);
-    algorithms::from_json(&json);
+    algorithms::from_json(&json)
 }

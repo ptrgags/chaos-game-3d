@@ -3,6 +3,7 @@ use std::ops::Mul;
 
 use json::JsonValue;
 use json::JsonValue::Array;
+use json::JsonValue::Null;
 
 use crate::vector::Vec3;
 

@@ -69,6 +69,16 @@ impl Vec3 {
             ] 
         }
     }
+
+    pub fn to_color(&self) -> Color {
+        Color {
+            components: [
+                (self.x() * 255.0) as u8,
+                (self.y() * 255.0) as u8,
+                (self.z() * 255.0) as u8
+            ]
+        }
+    }
 }
 
 impl Add for Vec3 {

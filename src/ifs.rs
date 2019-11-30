@@ -20,9 +20,9 @@ impl<T> IFS<T> {
         Self { xforms, chooser }
     }
 
-    pub fn transform(&self, vector: &Vector3<T>) -> Vector3<T> {
+    pub fn transform(&mut self, vector: &Vector3<T>) -> Vector3<T> {
         let index = self.chooser.choose();
-        let xform = self.xforms[index];
+        let xform = &self.xforms[index];
         xform.transform(vector)
     }
 }
