@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate json;
 extern crate rand;
 
@@ -9,6 +10,7 @@ mod choosers;
 mod parameters;
 mod algorithms;
 mod buffers;
+mod pointclouds;
 
 use std::env;
 

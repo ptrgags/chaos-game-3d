@@ -1,0 +1,189 @@
+use std::fs::{File, create_dir_all};
+use std::io::prelude::*;
+
+use json;
+
+use crate::buffers::Buffer;
+
+pub trait PointCloudWriter {
+    fn add_points(&mut self, other: &mut Buffer);
+    fn save(&self, fname: &str);
+}
+
+pub struct CSVWriter {
+    buffer: Buffer
+}
+
+impl CSVWriter {
+    pub fn new() -> Self {
+        CSVWriter { buffer: Buffer::new() }
+    }
+}
+
+impl PointCloudWriter for CSVWriter {
+    fn add_points(&mut self, other: &mut Buffer) { 
+        self.buffer.move_from(other);
+    }
+
+    fn save(&self, fname: &str) {
+        let mut file = File::create(fname).expect("Failed to create CSV file");
+        for (point, color) in self.buffer.clone().points_iter() {
+            writeln!(
+                file, 
+                "{},{},{},{},{},{}", 
+                point.x(), 
+                point.y(), 
+                point.z(),
+                color.x(),
+                color.y(),
+                color.z()).expect("could not write CSV line");
+        }
+    }
+}
+
+pub struct Cesium3DTilesWriter {
+    buffer: Buffer,
+    scale: f32
+}
+
+impl Cesium3DTilesWriter {
+    pub fn new(scale:f32) -> Self {
+        Self {
+            buffer: Buffer::new(),
+            scale,
+        }
+    }
+
+    pub fn make_tileset_json(&self, dir_name: &str) {
+        let json = object!{
+            "asset" => object!{
+                "version" => "1.0",
+            },
+            "geometricError" => 1.0,
+            "root" => object!{
+                "boundingVolume" => object!{
+                   "box" => array![
+                       0.0, 0.0, 0.0,
+                       self.scale, 0.0, 0.0,
+                       0.0, self.scale, 0.0,
+                       0.0, 0.0, self.scale
+                   ]
+                },
+                "geometricError" => 100.0,
+                "refine" => "ADD",
+                "content" => object!{
+                    "uri" => "points.pnts"
+                }
+            },
+        };
+
+        let fname = format!("{}/tileset.json", dir_name);
+        let mut file = File::create(fname)
+            .expect("failed to open tileset.json");
+        file.write_all(json::stringify(json).as_bytes())
+            .expect("failed to write tileset.json");
+    }
+
+    pub fn make_pnts_file(&self, dir_name: &str) { 
+        let fname = format!("{}/points.pnts", dir_name);
+        let mut file = File::create(fname)
+            .expect("failed to open points.pnts");
+        self.write_pnts_header(&mut file);
+        self.write_pnts_body(&mut file);
+    }
+
+    fn write_pnts_header(&self, file: &mut File) {
+        let num_positions = self.buffer.len() as u32;
+
+        const FLOAT_SIZE: u32 = 4;
+        const POSITION_SIZE: u32 = 3 * FLOAT_SIZE;
+        const COLOR_SIZE: u32 = 3;
+        let positions_length = num_positions * POSITION_SIZE;
+        let colors_length = num_positions * COLOR_SIZE;
+        let feature_table_binary_length = positions_length + colors_length;
+        let rgb_offset = positions_length;
+
+        let feature_table = object!{
+            "POINTS_LENGTH" => num_positions,
+            "POSITION" => object!{
+                "byteOffset" => 0
+            },
+            "RGB" => object!{
+                "byteOffset" => rgb_offset
+            }
+        };
+        let feature_table_json = json::stringify(feature_table);
+        let feature_table_json_bytes: &[u8] = feature_table_json.as_bytes();
+        let feature_table_json_length = feature_table_json_bytes.len() as u32;
+
+        // byte length
+        const HEADER_LENGTH: u32 = 28;
+        const BATCH_TABLE_JSON_LENGTH: u32 = 0;
+        const BATCH_TABLE_BINARY_LENGTH: u32 = 0;
+        const BATCH_TABLE_LENGTH: u32 = 
+            BATCH_TABLE_JSON_LENGTH + BATCH_TABLE_BINARY_LENGTH;
+
+        let message = "error writing pnts header";
+
+        // magic
+        file.write_all(b"pnts").expect(message);
+
+        // version
+        file.write_all(&1u32.to_le_bytes()).expect(message);
+
+        // Total length
+        let total_length = 
+            HEADER_LENGTH 
+            + feature_table_json_length 
+            + feature_table_binary_length 
+            + BATCH_TABLE_LENGTH;
+        file.write_all(&total_length.to_le_bytes()).expect(message);
+
+        // feature table JSON length
+        file.write_all(&feature_table_json_length.to_le_bytes())
+            .expect(message);
+
+        // Feature table binary length
+        file.write_all(&feature_table_binary_length.to_le_bytes())
+            .expect(message);
+
+        // This doesn't use the batch table feature so set both
+        // json/binary length to 0
+        file.write_all(&BATCH_TABLE_JSON_LENGTH.to_le_bytes()).expect(message);
+        file.write_all(&BATCH_TABLE_BINARY_LENGTH.to_le_bytes())
+            .expect(message);
+
+        // Feature table JSON. technically it's part of the body but it
+        // feels like header info.
+        file.write_all(feature_table_json_bytes).expect(message);
+    }
+
+    fn write_pnts_body(&self, file: &mut File) {
+        let mut positions: Vec<u8> = Vec::new();
+        let mut colors: Vec<u8> = Vec::new();
+
+        for (point, color) in self.buffer.clone().points_iter() {
+            let point_bytes: [u8; 12] = point.pack();
+            positions.extend_from_slice(&point_bytes);
+
+            let color_bytes: [u8; 3] = color.pack();
+            colors.extend_from_slice(&color_bytes);
+        }
+
+        let message = "Could not write pnts file body";
+        file.write_all(&positions).expect(message);
+        file.write_all(&colors).expect(message);
+    }
+}
+
+impl PointCloudWriter for Cesium3DTilesWriter {
+    fn add_points(&mut self, other: &mut Buffer) { 
+        self.buffer.move_from(other);
+    }
+
+    fn save(&self, dir_name: &str) {
+        create_dir_all(dir_name).expect("could not create tileset dir");
+        self.make_tileset_json(dir_name);
+        self.make_pnts_file(dir_name);
+    }
+}

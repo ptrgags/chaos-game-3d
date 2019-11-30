@@ -79,7 +79,17 @@ impl Vec3 {
             ]
         }
     }
+
+    pub fn pack(&self) -> [u8; 12] {
+        let mut results = [0; 12];
+        results[..4].copy_from_slice(&self.x().to_bits().to_le_bytes());
+        results[4..8].copy_from_slice(&self.y().to_bits().to_le_bytes());
+        results[8..].copy_from_slice(&self.z().to_bits().to_le_bytes());
+
+        results
+    }
 }
+
 
 impl Add for Vec3 {
     type Output = Self;
@@ -104,6 +114,12 @@ impl Mul for Vec3 {
                 self.z() * other.z()
             ]
         }
+    }
+}
+
+impl Color {
+    pub fn pack(&self) -> [u8; 3] {
+        self.components.clone()
     }
 }
 

@@ -4,6 +4,7 @@ use crate::ifs;
 use crate::ifs::IFS;
 use crate::buffers::Buffer;
 use crate::vector::Vec3;
+use crate::pointclouds::{/*CSVWriter, */Cesium3DTilesWriter, PointCloudWriter};
 
 pub trait Algorithm {
     fn iterate(&mut self, n_iters: u32);
@@ -49,17 +50,10 @@ impl Algorithm for ChaosGame {
         }
     }
 
-    fn save(&mut self, _fname: &str) {
-        for (pos, color) in self.output_buffer.clone().into_iter() {
-            println!(
-                "{} {} {} {} {} {}", 
-                pos.x(), 
-                pos.y(), 
-                pos.z(), 
-                color.x(), 
-                color.y(), 
-                color.z())
-        }
+    fn save(&mut self, fname: &str) {
+        let mut writer = Cesium3DTilesWriter::new(6371000.0);//CSVWriter::new();
+        writer.add_points(&mut self.output_buffer);
+        writer.save(fname);
     }
 }
 

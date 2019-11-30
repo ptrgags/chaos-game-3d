@@ -13,6 +13,10 @@ impl Buffer {
             colors: Vec::new(),
         }
     }
+    pub fn move_from(&mut self, other: &mut Self) {
+        self.points.append(&mut other.points);
+        self.colors.append(&mut other.colors);
+    }
 
     pub fn add(&mut self, point: Vec3, color: Color) {
         self.points.push(point);
@@ -22,13 +26,8 @@ impl Buffer {
     pub fn len(&self) -> usize {
         return self.points.len();
     }
-}
 
-impl IntoIterator for Buffer {
-    type Item = (Vec3, Color);
-    type IntoIter = BufferIterator;
-
-    fn into_iter(self) -> Self::IntoIter {
+    pub fn points_iter(self) -> BufferIterator {
         BufferIterator {
             buffer: self,
             index: 0
