@@ -43,7 +43,7 @@ impl PointCloudWriter for CSVWriter {
 
 pub struct Cesium3DTilesWriter {
     buffer: Buffer,
-    scale: f32
+    scale: f32,
 }
 
 impl Cesium3DTilesWriter {
@@ -59,7 +59,7 @@ impl Cesium3DTilesWriter {
             "asset" => object!{
                 "version" => "1.0",
             },
-            "geometricError" => 1.0,
+            "geometricError" => self.scale,
             "root" => object!{
                 "boundingVolume" => object!{
                    "box" => array![
@@ -69,7 +69,7 @@ impl Cesium3DTilesWriter {
                        0.0, 0.0, self.scale
                    ]
                 },
-                "geometricError" => 100.0,
+                "geometricError" => 0.0,
                 "refine" => "ADD",
                 "content" => object!{
                     "uri" => "points.pnts"
@@ -88,11 +88,11 @@ impl Cesium3DTilesWriter {
         let fname = format!("{}/points.pnts", dir_name);
         let mut file = File::create(fname)
             .expect("failed to open points.pnts");
-        self.write_pnts_header(&mut file);
-        self.write_pnts_body(&mut file);
+        let bin_padding_len = self.write_pnts_header(&mut file);
+        self.write_pnts_body(&mut file, bin_padding_len);
     }
 
-    fn write_pnts_header(&self, file: &mut File) {
+    fn write_pnts_header(&self, file: &mut File) -> u32 {
         let num_positions = self.buffer.len() as u32;
 
         const FLOAT_SIZE: u32 = 4;
@@ -102,6 +102,8 @@ impl Cesium3DTilesWriter {
         let colors_length = num_positions * COLOR_SIZE;
         let feature_table_binary_length = positions_length + colors_length;
         let rgb_offset = positions_length;
+        let bin_remainder = feature_table_binary_length % 8;
+        let bin_padding_len = (8 - bin_remainder) % 8;
 
         let feature_table = object!{
             "POINTS_LENGTH" => num_positions,
@@ -115,6 +117,10 @@ impl Cesium3DTilesWriter {
         let feature_table_json = json::stringify(feature_table);
         let feature_table_json_bytes: &[u8] = feature_table_json.as_bytes();
         let feature_table_json_length = feature_table_json_bytes.len() as u32;
+
+        let header_and_json_len = HEADER_LENGTH + feature_table_json_length;
+        let remainder = header_and_json_len % 8;
+        let json_padding_len = (8 - remainder) % 8;
 
         // byte length
         const HEADER_LENGTH: u32 = 28;
@@ -132,19 +138,21 @@ impl Cesium3DTilesWriter {
         file.write_all(&1u32.to_le_bytes()).expect(message);
 
         // Total length
+        let total_json_len = feature_table_json_length + json_padding_len;
+        let total_bin_len = feature_table_binary_length + bin_padding_len;
         let total_length = 
             HEADER_LENGTH 
-            + feature_table_json_length 
-            + feature_table_binary_length 
+            + total_json_len
+            + total_bin_len
             + BATCH_TABLE_LENGTH;
         file.write_all(&total_length.to_le_bytes()).expect(message);
 
         // feature table JSON length
-        file.write_all(&feature_table_json_length.to_le_bytes())
+        file.write_all(&total_json_len.to_le_bytes())
             .expect(message);
 
         // Feature table binary length
-        file.write_all(&feature_table_binary_length.to_le_bytes())
+        file.write_all(&total_bin_len.to_le_bytes())
             .expect(message);
 
         // This doesn't use the batch table feature so set both
@@ -156,14 +164,19 @@ impl Cesium3DTilesWriter {
         // Feature table JSON. technically it's part of the body but it
         // feels like header info.
         file.write_all(feature_table_json_bytes).expect(message);
+
+        let padding: Vec<u8> = (0..json_padding_len).map(|_| 0x20u8).collect();
+        file.write_all(&padding).expect(message);
+
+        bin_padding_len
     }
 
-    fn write_pnts_body(&self, file: &mut File) {
+    fn write_pnts_body(&self, file: &mut File, bin_padding_len: u32) {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
 
         for (point, color) in self.buffer.clone().points_iter() {
-            let point_bytes: [u8; 12] = point.pack();
+            let point_bytes: [u8; 12] = point.scale(self.scale).pack();
             positions.extend_from_slice(&point_bytes);
 
             let color_bytes: [u8; 3] = color.pack();
@@ -173,6 +186,9 @@ impl Cesium3DTilesWriter {
         let message = "Could not write pnts file body";
         file.write_all(&positions).expect(message);
         file.write_all(&colors).expect(message);
+
+        let padding: Vec<u8> = (0..bin_padding_len).map(|_| 0x20u8).collect();
+        file.write_all(&padding).expect(message);
     }
 }
 

@@ -41,7 +41,7 @@ impl Algorithm for ChaosGame {
         let mut pos = Vec3::new(0.0, 0.0, 0.0);
         let mut color_vec = Vec3::new(1.0, 1.0, 0.0);
         for i in 0..(STARTUP_ITERS + n_iters) {
-            if i > STARTUP_ITERS {
+            if i >= STARTUP_ITERS {
                 self.output_buffer.add(pos, color_vec.to_color())
             }
 
@@ -51,7 +51,7 @@ impl Algorithm for ChaosGame {
     }
 
     fn save(&mut self, fname: &str) {
-        let mut writer = Cesium3DTilesWriter::new(6371000.0);//CSVWriter::new();
+        let mut writer = Cesium3DTilesWriter::new(10000000.0);//CSVWriter::new();
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
     }
