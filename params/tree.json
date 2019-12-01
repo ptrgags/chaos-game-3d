@@ -1,0 +1,54 @@
+{
+    "algorithm": "chaos",
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "translate": [0, 0, -0.5],
+            "scale": [0, 0, 0.5]
+        },{
+            "type": "trs",
+            "translate": [0, -0.4, 0.69282],
+            "rotate": ["axis_angle", 0.523598, 1, 0, 0],
+            "scale": [0.8, 0.8, 0.8]
+        }, {
+            "type": "trs",
+            "translate": [0, 0.4, 0.69282],
+            "rotate": ["axis_angle", 0.523598, -1, 0, 0],
+            "scale": [0.8, 0.8, 0.8]
+        },{
+            "type": "trs",
+            "translate": [0.4, 0, 0.69282],
+            "rotate": ["axis_angle", 0.523598, 0, 1, 0],
+            "scale": [0.8, 0.8, 0.8]
+        }, {
+            "type": "trs",
+            "translate": [-0.4, 0, 0.69282],
+            "rotate": ["axis_angle", 0.523598, 0, -1, 0],
+            "scale": [0.8, 0.8, 0.8]
+        }]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "translate": [0, 0.75, 0],
+            "scale": [0.5, 0.25, 0]
+        }, {
+            "type": "trs",
+            "translate": [0.5, 0.75, 0],
+            "scale": [0.5, 0.25, 0]
+        }, {
+            "type": "trs",
+            "translate": [0, 0.5, 0],
+            "scale": [0.5, 0.25, 0]
+        }, {
+            "type": "trs",
+            "translate": [0.5, 0.5, 0],
+            "scale": [0.5, 0.25, 0]
+        }, {
+            "type": "trs",
+            "scale": [0.25, 0.25, 0]
+        }]
+    }
+}
