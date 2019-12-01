@@ -9,5 +9,4 @@ const tileset = viewer.scene.primitives.add(
         url: 'tileset_test/tileset.json'
     })
 );
-
-viewer.zoomTo(tileset);
+tileset.pointCloudShading.attenuation = true;
