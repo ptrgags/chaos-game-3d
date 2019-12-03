@@ -4,9 +4,19 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     globe: false
 });
 
-const tileset = viewer.scene.primitives.add(
-    new Cesium.Cesium3DTileset({
-        url: 'tileset_test/tileset.json'
-    })
-);
-tileset.pointCloudShading.attenuation = true;
+function set_model(model_id) {
+    const url = `${model_id}/tileset.json`;
+    const tileset = new Cesium.Cesium3DTileset({url});
+    tileset.pointCloudShading.attenuation = true;
+
+    viewer.scene.primitives.removeAll();
+    viewer.scene.primitives.add(tileset);
+}
+
+let model_select = document.getElementById('model');
+model_select.addEventListener('change', (e) => {
+    let model_id = e.target.value;
+    set_model(model_id);
+});
+
+set_model('sierpinski');
