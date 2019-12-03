@@ -6,3 +6,4 @@ function chaos {
 chaos sierpinski sierpinski 1000000
 chaos tree tree_10k 10000
 chaos tree tree_1m 1000000
+chaos dragon dragon 1000000
