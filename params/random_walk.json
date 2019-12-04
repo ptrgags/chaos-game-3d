@@ -1,0 +1,31 @@
+{
+    "algorithm": "chaos",
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "translate": [0.5, 0, 0]
+        }, {
+            "type": "trs",
+            "translate": [-0.5, 0, 0]
+        }, {
+            "type": "trs",
+            "translate": [0, 0.5, 0]
+        }, {
+            "type": "trs",
+            "translate": [0, -0.5, 0]
+        }, {
+            "type": "trs",
+            "translate": [0, 0, 0.5]
+        }, {
+            "type": "trs",
+            "translate": [0, 0, -0.5]
+        }]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs"
+        }]
+    }
+}
