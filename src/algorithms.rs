@@ -38,8 +38,8 @@ impl ChaosGame {
 
 impl Algorithm for ChaosGame {
     fn iterate(&mut self, n_iters: u32) {
-        let mut pos = Vec3::new(0.0, 0.0, 0.0);
-        let mut color_vec = Vec3::new(1.0, 1.0, 0.0);
+        let mut pos = Vec3::random();
+        let mut color_vec = Vec3::random_color();
         for i in 0..(STARTUP_ITERS + n_iters) {
             if i >= STARTUP_ITERS {
                 self.output_buffer.add(pos, color_vec.to_color())

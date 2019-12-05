@@ -1,0 +1,21 @@
+{
+    "algorithm": "chaos",
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "translate": [0, 0, 0.1],
+            "rotate": ["axis_angle", 0.1963495, 0, 0, 1]
+        }, {
+            "type": "trs",
+            "translate": [0, 0, -0.1],
+            "rotate": ["axis_angle", 0.1963495, 0, 0, -1]
+        }]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs"
+        }]
+    }
+}

@@ -3,6 +3,7 @@ use std::ops::{Add, Mul};
 
 use json::JsonValue;
 use json::JsonValue::Array;
+use rand::Rng;
 
 #[derive(Copy, Clone)]
 pub struct Vector3<T> {
@@ -87,6 +88,24 @@ impl Vec3 {
         results[8..].copy_from_slice(&self.z().to_bits().to_le_bytes());
 
         results
+    }
+
+    pub fn random() -> Vec3 { 
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-1.0, 1.0);
+        let y = rng.gen_range(-1.0, 1.0);
+        let z = rng.gen_range(-1.0, 1.0);
+
+        Vec3::new(x, y, z)
+    }
+
+    pub fn random_color() -> Vec3 { 
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(0.5, 1.0);
+        let y = rng.gen_range(0.5, 1.0);
+        let z = rng.gen_range(0.5, 1.0);
+
+        Vec3::new(x, y, z)
     }
 }
 
