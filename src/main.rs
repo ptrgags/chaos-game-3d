@@ -11,6 +11,9 @@ mod parameters;
 mod algorithms;
 mod buffers;
 mod pointclouds;
+mod bbox;
+mod octtrees;
+mod plotters;
 
 use std::env;
 

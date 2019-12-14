@@ -27,6 +27,10 @@ impl Buffer {
         return self.points.len();
     }
 
+    pub fn count(&self) -> usize {
+        self.points.len()
+    }
+
     pub fn points_iter(self) -> BufferIterator {
         BufferIterator {
             buffer: self,
