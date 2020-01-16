@@ -1,7 +1,7 @@
 use json::JsonValue;
 
-use crate::ifs;
-use crate::ifs::IFS;
+use crate::ifs::{self, IFS};
+use crate::initial_set::{self, InitialSet};
 use crate::buffers::Buffer;
 use crate::vector::Vec3;
 use crate::pointclouds::{/*CSVWriter, */Cesium3DTilesWriter, PointCloudWriter};
@@ -57,6 +57,47 @@ impl Algorithm for ChaosGame {
     }
 }
 
+/// Similar to ChaosGame, but instead of operating on a single input point,
+/// this allows "condensation sets" (using Michael F. Barnsley's terminology),
+/// which is a set of input points that gets transformed as a single unit
+/// at each iteration.
+pub struct ChaosSets { 
+    position_ifs: IFS<f32>,
+    color_ifs: IFS<f32>,
+    initial_set: Box<dyn InitialSet>,
+    copies: usize,
+    output_buffer: Buffer,
+}
+
+impl ChaosSets {
+    pub fn new(
+            position_ifs: IFS<f32>, 
+            color_ifs: IFS<f32>, 
+            initial_set: Box<dyn InitialSet>, 
+            copies: usize) -> Self {
+        Self {
+            position_ifs,
+            color_ifs,
+            initial_set,
+            copies,
+            output_buffer: Buffer::new(),
+        }
+    }
+
+    pub fn from_json(json: &JsonValue) -> Self {
+        let position_ifs = ifs::from_json(&json["ifs"]);
+        let color_ifs = ifs::from_json(&json["color_ifs"]);
+        let arranger = initial_set::from_json(&json["initial_set"]);
+        let copies: usize = &json["initial_set_copies"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+
+        Self::new(position_ifs, color_ifs, arranger, copies)
+    }
+}
+
 pub fn from_json(json: &JsonValue) -> Box<dyn Algorithm> {
     let algorithm_id = &json["algorithm"]
         .as_str()
@@ -64,6 +105,7 @@ pub fn from_json(json: &JsonValue) -> Box<dyn Algorithm> {
 
     match &algorithm_id[..] {
         "chaos" => Box::new(ChaosGame::from_json(&json)) as Box<dyn Algorithm>,
-        _ => panic!("invalid algorithm!")
+        "chaos_sets" => Box::new(ChaosSets::from_json(&json)) as Box<dyn Algorithm>,
+        _ => panic!("invalid algorithm!, {}", &algorithm_id[..])
     }
 }

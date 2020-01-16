@@ -6,6 +6,7 @@ mod xforms;
 mod vector;
 mod quaternion;
 mod ifs;
+mod initial_set;
 mod choosers;
 mod parameters;
 mod algorithms;
