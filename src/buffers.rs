@@ -18,6 +18,13 @@ impl Buffer {
         self.colors.append(&mut other.colors);
     }
 
+    pub fn copy_from(&mut self, other: &Self) {
+        for (point, color) in other.points_iter() {
+            self.points.push(point);
+            self.colors.push(color);
+        }
+    }
+
     pub fn add(&mut self, point: Vec3, color: Color) {
         self.points.push(point);
         self.colors.push(color);

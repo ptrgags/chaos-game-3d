@@ -65,7 +65,7 @@ pub struct ChaosSets {
     position_ifs: IFS<f32>,
     color_ifs: IFS<f32>,
     initial_set: Box<dyn InitialSet>,
-    copies: usize,
+    initial_copies: usize,
     output_buffer: Buffer,
 }
 
@@ -74,27 +74,65 @@ impl ChaosSets {
             position_ifs: IFS<f32>, 
             color_ifs: IFS<f32>, 
             initial_set: Box<dyn InitialSet>, 
-            copies: usize) -> Self {
+            inttial_copies: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
             initial_set,
-            copies,
+            initial_copies,
             output_buffer: Buffer::new(),
         }
+    }
+
+    pub fn transform_buffer(&self, buffer: Buffer) -> Buffer {
+        let mut new_buf = Buffer::new(),
+
+        for (pos, color) in buffer.points_iter() {
+            let new_pos = self.position_ifs.transform(&pos);
+            let new_color = self.color_ifs.transform(&color_vec);
+            new_buf.add(new_pos, new_color);
+        }
+
+        return new_buf;
     }
 
     pub fn from_json(json: &JsonValue) -> Self {
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let arranger = initial_set::from_json(&json["initial_set"]);
-        let copies: usize = &json["initial_set_copies"]
+        let initial_copies: usize = json["initial_set_copies"]
             .as_str()
             .unwrap()
             .parse()
             .unwrap();
 
-        Self::new(position_ifs, color_ifs, arranger, copies)
+        Self::new(position_ifs, color_ifs, arranger, initial_copies)
+    }
+}
+
+impl Algorithm for ChaosSets {
+    fn iterate(&mut self, n_iters: u32) {
+        let mut buffers: Vec<Buffer> = (0..self.initial_copies).map(|_| {
+            self.initial_set.generate()
+        }).collect();
+        self.output_buffer.copy_from(&buffers[0]);
+
+
+        for i in 0..n_iters {
+            let new_buffers: Vec<Buffer> = Vec::new();
+            for buf in buffers.into_iter() {
+                let new_buf = self.transform_buffer(buf);
+                self.output_buffer.copy_from(&new_buf);
+                new_buffers.push(new_buf);
+            }
+            buffers = new_buffers;
+        }
+    }
+
+    fn save(&mut self, fname: &str) {
+        let mut writer = Cesium3DTilesWriter::new(10000000.0);
+        writer.add_points(&mut self.output_buffer);
+        writer.save(fname);
     }
 }
 
