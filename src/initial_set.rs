@@ -49,6 +49,7 @@ impl RandomBox {
     to_box!(InitialSet);
 
     /// Parse a RandomBox generator from JSON of the form:
+    /// ```text
     /// {
     ///     "type": "box",
     ///     "center": [x, y, z],
@@ -56,10 +57,11 @@ impl RandomBox {
     ///     "color": [r, g, b] // 0.0 to 1.0
     ///     "num_points": N
     /// }
+    /// ```
     pub fn from_json(json: &JsonValue) -> Self {
-        let center = Vec3::from_json(&json["center"]);
-        let dimensions = Vec3::from_json(&json["dims"]);
-        let color = Vec3::from_json(&json["color"]);
+        let center = Vec3::from_json(&json["center"], Vec3::zero());
+        let dimensions = Vec3::from_json(&json["dims"], Vec3::ones());
+        let color = Vec3::from_json(&json["color"], Vec3::ones());
         let num_points = &json["num_points"]
             .as_usize()
             .expect("num_points must be a positive integer");
@@ -121,6 +123,7 @@ impl RandomLine {
     }
 
     /// Parse a RandomLine generator from JSON of the form:
+    /// ```text
     /// {
     ///     "type": "line",
     ///     "start": [x, y, z],
@@ -128,10 +131,11 @@ impl RandomLine {
     ///     "color": [r, g, b] // 0.0 to 1.0
     ///     "num_points": N
     /// }
+    /// ```
     pub fn from_json(json: &JsonValue) -> Self {
-        let start = Vec3::from_json(&json["start"]);
-        let end = Vec3::from_json(&json["end"]);
-        let color = Vec3::from_json(&json["color"]);
+        let start = Vec3::from_json(&json["start"], Vec3::zero());
+        let end = Vec3::from_json(&json["end"], Vec3::new(1.0, 0.0, 0.0));
+        let color = Vec3::from_json(&json["color"], Vec3::ones());
         let num_points = &json["num_points"]
             .as_usize()
             .expect("num_points must be an integer");
@@ -162,7 +166,7 @@ impl InitialSet for RandomLine {
 }
 
 /// Parse one of the initial set types from a JSON value of the form:
-/// ```
+/// ```text
 /// {
 ///     "type": "box" | "line",
 ///     ...params

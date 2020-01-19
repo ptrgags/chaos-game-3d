@@ -2,7 +2,6 @@ use std::fmt::{Debug, Formatter, Result};
 
 use json::JsonValue;
 
-use crate::vector;
 use crate::vector::{Vector3, Vec3};
 use crate::quaternion;
 use crate::quaternion::Quaternion;
@@ -28,9 +27,9 @@ impl TRS {
     }
 
     pub fn from_json(xform_desc: &JsonValue) -> Self {
-        let translate = vector::from_json(&xform_desc["translate"], 0.0);
+        let translate = Vec3::from_json(&xform_desc["translate"], Vec3::zero());
         let rotate = quaternion::from_json(&xform_desc["rotate"]);
-        let scale = vector::from_json(&xform_desc["scale"], 1.0);
+        let scale = Vec3::from_json(&xform_desc["scale"], Vec3::ones());
 
         Self::new(translate, rotate, scale)
     }
