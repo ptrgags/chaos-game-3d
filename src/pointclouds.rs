@@ -179,7 +179,7 @@ impl Cesium3DTilesWriter {
             let point_bytes: [u8; 12] = point.scale(self.scale).pack();
             positions.extend_from_slice(&point_bytes);
 
-            let color_bytes: [u8; 3] = color.pack();
+            let color_bytes: [u8; 3] = color.to_color().pack();
             colors.extend_from_slice(&color_bytes);
         }
 

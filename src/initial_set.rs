@@ -173,7 +173,7 @@ impl InitialSet for RandomLine {
 /// }
 /// ```
 pub fn from_json(json: &JsonValue) -> Box<dyn InitialSet> {
-    const VALID_TYPES: Vec<&str> = vec!["box", "line"];
+    let valid_types: Vec<&str> = vec!["box", "line"];
     let type_id = &json["type"]
         .as_str()
         .expect("type must be a string");
@@ -182,6 +182,6 @@ pub fn from_json(json: &JsonValue) -> Box<dyn InitialSet> {
         "box" => RandomBox::from_json(&json).to_box(),
         "line" => RandomLine::from_json(&json).to_box(),
         _ => panic!(
-            "Initial set type {} must be one of {:?}", type_id, VALID_TYPES)
+            "Initial set type {} must be one of {:?}", type_id, valid_types)
     }
 }
