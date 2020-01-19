@@ -2,6 +2,8 @@
 extern crate json;
 extern crate rand;
 
+#[macro_use]
+mod macros;
 mod xforms;
 mod vector;
 mod quaternion;

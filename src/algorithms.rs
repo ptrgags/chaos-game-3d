@@ -74,7 +74,7 @@ impl ChaosSets {
             position_ifs: IFS<f32>, 
             color_ifs: IFS<f32>, 
             initial_set: Box<dyn InitialSet>, 
-            inttial_copies: usize) -> Self {
+            initial_copies: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
@@ -85,11 +85,11 @@ impl ChaosSets {
     }
 
     pub fn transform_buffer(&self, buffer: Buffer) -> Buffer {
-        let mut new_buf = Buffer::new(),
+        let mut new_buf = Buffer::new();
 
         for (pos, color) in buffer.points_iter() {
             let new_pos = self.position_ifs.transform(&pos);
-            let new_color = self.color_ifs.transform(&color_vec);
+            let new_color = self.color_ifs.transform(&color);
             new_buf.add(new_pos, new_color);
         }
 
@@ -101,10 +101,8 @@ impl ChaosSets {
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let arranger = initial_set::from_json(&json["initial_set"]);
         let initial_copies: usize = json["initial_set_copies"]
-            .as_str()
-            .unwrap()
-            .parse()
-            .unwrap();
+            .as_usize()
+            .expect("initial_copies must be a positive integer");
 
         Self::new(position_ifs, color_ifs, arranger, initial_copies)
     }
