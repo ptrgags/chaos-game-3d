@@ -1,5 +1,5 @@
 use crate::vector::Vec3;
-use crate::octtrees::OctNode;
+use crate::octrees::OctNode;
 
 pub trait Plotter {
     fn plot(&mut self, point: Vec3, color: Vec3);
