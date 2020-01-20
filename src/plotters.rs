@@ -1,8 +1,8 @@
-use crate::vector::{Vec3, Color};
+use crate::vector::Vec3;
 use crate::octtrees::OctNode;
 
 pub trait Plotter {
-    fn plot(&mut self, point: Vec3, color: Color);
+    fn plot(&mut self, point: Vec3, color: Vec3);
 }
 
 pub struct ScatterPlot {
@@ -16,19 +16,13 @@ impl ScatterPlot {
         }
     }
 
-    pub fn add_point(&mut self, point: Vec3, color: Color) {
+    pub fn add_point(&mut self, point: Vec3, color: Vec3) {
         self.root.add(point, color);
     }
 }
 
 impl Plotter for ScatterPlot {
-    fn plot(&mut self, point: Vec3, color: Color) {
+    fn plot(&mut self, point: Vec3, color: Vec3) {
         self.add_point(point, color);
     }
-}
-
-pub struct DensityPlot {
-    max_depth: u32,
-    num_points: u64,
-    root: OctNode
 }

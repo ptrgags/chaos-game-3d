@@ -1,5 +1,6 @@
 {
     "algorithm": "chaos",
+    "iters": 1000000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [{

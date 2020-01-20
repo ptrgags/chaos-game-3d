@@ -1,6 +1,6 @@
 use crate::bbox::BBox;
 use crate::buffers::Buffer;
-use crate::vector::{Vec3, Color};
+use crate::vector::Vec3;
 
 type Child<T> = Option<Box<T>>;
 
@@ -43,7 +43,7 @@ impl OctNode {
         true
     }
 
-    pub fn add(&mut self, point: Vec3, color: Color) {
+    pub fn add(&mut self, point: Vec3, color: Vec3) {
         // Discard points outside the grid
         if !self.bounds.contains(&point) {
             return;
@@ -52,7 +52,7 @@ impl OctNode {
         if self.is_leaf() {
             self.points.add(point, color);
 
-            if self.points.count() > self.capacity {
+            if self.points.len() > self.capacity {
                 self.subdivide();
             }
         } else {
@@ -80,7 +80,7 @@ impl OctNode {
         */
     }
 
-    fn add_child(&mut self, quadrant: usize, point: Vec3, color: Color) {
+    fn add_child(&mut self, quadrant: usize, point: Vec3, color: Vec3) {
         let bounds = self.bounds.make_quadrant(quadrant);
         let mut child = Self::child_node(bounds, self.capacity);
         child.add(point, color);
