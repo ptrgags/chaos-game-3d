@@ -6,6 +6,10 @@ use crate::buffers::Buffer;
 use crate::vector::Vec3;
 use crate::pointclouds::{Cesium3DTilesWriter, PointCloudWriter};
 
+/// The earth has a radius of about 6.371 million meters. Scale up our
+/// model so it's a bit bigger than this.
+const BIGGER_THAN_EARTH: f32 = 10000000.0;
+
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
 pub trait Algorithm {
@@ -88,7 +92,10 @@ impl Algorithm for ChaosGame {
     }
 
     fn save(&mut self, fname: &str) {
-        let mut writer = Cesium3DTilesWriter::new(10000000.0);
+        // Scale the model up so we don't deal with the camera's clipping
+        // problems.
+        // TODO: Pick better camera settings so we can zoom in closer
+        let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
     }
@@ -203,7 +210,10 @@ impl Algorithm for ChaosSets {
     }
 
     fn save(&mut self, fname: &str) {
-        let mut writer = Cesium3DTilesWriter::new(10000000.0);
+        // Scale the model up so we don't deal with the camera's clipping
+        // problems.
+        // TODO: Pick better camera settings so we can zoom in closer
+        let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
     }
@@ -230,6 +240,7 @@ impl Algorithm for ChaosSets {
 /// }
 /// ```
 pub fn from_json(json: &JsonValue) -> Box<dyn Algorithm> {
+    let valid_algorithms: Vec<&str> = vec!["chaos", "chaos_sets"];
     let algorithm_id = &json["algorithm"]
         .as_str()
         .expect("algorithm must be a string");
@@ -237,6 +248,6 @@ pub fn from_json(json: &JsonValue) -> Box<dyn Algorithm> {
     match &algorithm_id[..] {
         "chaos" => ChaosGame::from_json(&json).to_box(),
         "chaos_sets" => ChaosSets::from_json(&json).to_box(),
-        _ => panic!("invalid algorithm!, {}", &algorithm_id[..])
+        _ => panic!("Algorithm must be one of, {:?}", valid_algorithms)
     }
 }
