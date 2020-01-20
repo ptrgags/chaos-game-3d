@@ -2,9 +2,9 @@ use json::JsonValue;
 
 use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
+use crate::plotters::{self, Plotter};
 use crate::buffers::Buffer;
 use crate::vector::Vec3;
-use crate::pointclouds::{Cesium3DTilesWriter, PointCloudWriter};
 
 /// The earth has a radius of about 6.371 million meters. Scale up our
 /// model so it's a bit bigger than this.
@@ -31,8 +31,8 @@ pub struct ChaosGame {
     position_ifs: IFS<f32>,
     /// IFS for transforming the colors
     color_ifs: IFS<f32>,
-    /// Buffer to hold the results before saving to disk
-    output_buffer: Buffer,
+    /// Octree-based plotter to store the resulting fractal/tiling
+    output: Box<dyn Plotter>,
     /// Number of iterations to perform
     num_iters: usize,
 }
@@ -41,11 +41,12 @@ impl ChaosGame {
     pub fn new(
             position_ifs: IFS<f32>, 
             color_ifs: IFS<f32>, 
+            output: Box<dyn Plotter>,
             num_iters: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
-            output_buffer: Buffer::new(),
+            output,
             num_iters
         }
     }
@@ -57,17 +58,19 @@ impl ChaosGame {
     ///     "algorithm": "chaos",
     ///     "ifs": <IFS JSON>
     ///     "color_ifs": <IFS JSON>,
-    ///     "iters": N
+    ///     "iters": N,
+    ///     "plotter": <Plotter JSON>
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
+        let plotter = plotters::from_json(&json["plotter"]);
         let iters = json["iters"]
             .as_usize()
             .expect("iters must be a positive integer");
 
-        Self::new(position_ifs, color_ifs, iters)
+        Self::new(position_ifs, color_ifs, plotter, iters)
     }
 
     to_box!(Algorithm);
@@ -83,7 +86,7 @@ impl Algorithm for ChaosGame {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.output_buffer.add(pos, color_vec)
+                self.output.plot_point(pos, color_vec)
             }
 
             pos = self.position_ifs.transform(&pos);
@@ -92,12 +95,15 @@ impl Algorithm for ChaosGame {
     }
 
     fn save(&mut self, fname: &str) {
+        self.output.save(fname);
         // Scale the model up so we don't deal with the camera's clipping
         // problems.
         // TODO: Pick better camera settings so we can zoom in closer
+        /*
         let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
+        */
     }
 
     // The complexity of the basic chaos game is O(n) where n is the number
@@ -121,9 +127,8 @@ pub struct ChaosSets {
     /// How many initial sets to create. Each one is transformed independently
     /// from the others.
     initial_copies: usize,
-    /// Buffer to hold the results before saving to disk
-    /// TODO: Definitely change this to an Octree once available
-    output_buffer: Buffer,
+    /// Octree-based plotter for storing the output
+    output: Box<dyn Plotter>,
     /// Number of iterations to perform.
     num_iters: usize,
 }
@@ -134,13 +139,14 @@ impl ChaosSets {
             color_ifs: IFS<f32>, 
             initial_set: Box<dyn InitialSet>, 
             initial_copies: usize, 
+            output: Box<dyn Plotter>,
             num_iters: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
             initial_set,
             initial_copies,
-            output_buffer: Buffer::new(),
+            output,
             num_iters,
         }
     }
@@ -163,6 +169,7 @@ impl ChaosSets {
     ///     "initial_set_copies": N,
     ///     "ifs": <IFS JSON>,
     ///     "color_ifs": <IFS JSON>,
+    ///     "plotter": <Plotter JSON>,
     ///     "iters": M
     /// }
     /// ```
@@ -170,6 +177,7 @@ impl ChaosSets {
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let arranger = initial_set::from_json(&json["initial_set"]);
+        let plotter = plotters::from_json(&json["plotter"]);
         let initial_copies: usize = json["initial_set_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
@@ -177,7 +185,8 @@ impl ChaosSets {
             .as_usize()
             .expect("iters must be a positive integer");
 
-        Self::new(position_ifs, color_ifs, arranger, initial_copies, iters)
+        Self::new(
+            position_ifs, color_ifs, arranger, initial_copies, plotter, iters)
     }
 
     to_box!(Algorithm);
@@ -193,7 +202,7 @@ impl Algorithm for ChaosSets {
 
         // Only write the first copy to the output, since they are all in
         // the same location
-        self.output_buffer.copy_from(&buffers[0]);
+        self.output.plot_buffer(&buffers[0]);
 
         // Every iteration, transform each buffer using the IFS, 
         // and plot the results in the output buffer.
@@ -202,7 +211,7 @@ impl Algorithm for ChaosSets {
             let mut new_buffers: Vec<Buffer> = Vec::new();
             for buf in buffers.into_iter() {
                 let new_buf = self.transform_buffer(buf);
-                self.output_buffer.copy_from(&new_buf);
+                self.output.plot_buffer(&new_buf);
                 new_buffers.push(new_buf);
             }
             buffers = new_buffers;
@@ -210,12 +219,15 @@ impl Algorithm for ChaosSets {
     }
 
     fn save(&mut self, fname: &str) {
+        self.output.save(fname);
         // Scale the model up so we don't deal with the camera's clipping
         // problems.
         // TODO: Pick better camera settings so we can zoom in closer
+        /*
         let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
+        */
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 
