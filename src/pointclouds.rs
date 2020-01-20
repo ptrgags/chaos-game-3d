@@ -5,11 +5,16 @@ use json;
 
 use crate::buffers::Buffer;
 
+/// A writer takes a point cloud (collection of (position, color))
+/// and writes it to a file.
 pub trait PointCloudWriter {
+    /// Add points from a buffer
     fn add_points(&mut self, other: &mut Buffer);
+    /// Write the results to a file
     fn save(&self, fname: &str);
 }
 
+/// Output one big CSV file with a list of the points.
 pub struct CSVWriter {
     buffer: Buffer
 }
@@ -41,6 +46,8 @@ impl PointCloudWriter for CSVWriter {
     }
 }
 
+/// Generate a Cesium 3D tiles point cloud tileset from the points
+/// This follows the [official specifications](https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification)
 pub struct Cesium3DTilesWriter {
     buffer: Buffer,
     scale: f32,
@@ -54,6 +61,9 @@ impl Cesium3DTilesWriter {
         }
     }
 
+    /// Create the tileset JSON file. This serves as an index of the tiles
+    /// in the tileset. the points themselves are stored in separate .pnts
+    /// files
     pub fn make_tileset_json(&self, dir_name: &str) {
         let json = object!{
             "asset" => object!{
@@ -84,6 +94,7 @@ impl Cesium3DTilesWriter {
             .expect("failed to write tileset.json");
     }
 
+    /// Generate a .pnts file to store all the points and color in the tile
     pub fn make_pnts_file(&self, dir_name: &str) { 
         let fname = format!("{}/points.pnts", dir_name);
         let mut file = File::create(fname)
@@ -92,6 +103,7 @@ impl Cesium3DTilesWriter {
         self.write_pnts_body(&mut file, bin_padding_len);
     }
 
+    /// Write the header portion of the .pnts file
     fn write_pnts_header(&self, file: &mut File) -> u32 {
         let num_positions = self.buffer.len() as u32;
 
@@ -171,6 +183,7 @@ impl Cesium3DTilesWriter {
         bin_padding_len
     }
 
+    /// Write the body portion of the .pnts file, a packed list of points.
     fn write_pnts_body(&self, file: &mut File, bin_padding_len: u32) {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
@@ -179,7 +192,7 @@ impl Cesium3DTilesWriter {
             let point_bytes: [u8; 12] = point.scale(self.scale).pack();
             positions.extend_from_slice(&point_bytes);
 
-            let color_bytes: [u8; 3] = color.pack();
+            let color_bytes: [u8; 3] = color.to_color().pack();
             colors.extend_from_slice(&color_bytes);
         }
 
