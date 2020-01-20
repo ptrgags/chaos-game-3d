@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 function chaos {
     time cargo run params/$1.json viewer/$1/
 }
