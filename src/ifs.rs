@@ -25,6 +25,14 @@ impl<T> IFS<T> {
         let xform = &self.xforms[index];
         xform.transform(vector)
     }
+
+    pub fn transform_points(
+            &mut self, points: &Vec<Vector3<T>>) -> Vec<Vector3<T>> {
+        let index = self.chooser.choose();
+        let xform = &self.xforms[index];
+
+        points.iter().map(|point| xform.transform(point)).collect()
+    }
 }
 
 pub fn from_json(json: &JsonValue) -> IFS<f32> {

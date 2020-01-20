@@ -16,6 +16,21 @@ impl Buffer {
         }
     }
 
+    pub fn from_vectors(points: Vec<Vec3>, colors: Vec<Vec3>) -> Self {
+        Self {
+            points,
+            colors
+        }
+    }
+
+    pub fn get_points(&self) -> &Vec<Vec3> {
+        return &self.points;
+    }
+
+    pub fn get_colors(&self) -> &Vec<Vec3> {
+        return &self.colors;
+    }
+
     /// Move points from other to the end of self, leaving other empty.
     pub fn move_from(&mut self, other: &mut Self) {
         self.points.append(&mut other.points);

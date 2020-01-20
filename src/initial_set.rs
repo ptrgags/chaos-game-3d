@@ -155,7 +155,7 @@ impl InitialSet for RandomLine {
         for _ in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
             let weighted_start = self.start.scale(1.0 - t);
-            let weighted_end = self.start.scale(t);
+            let weighted_end = self.end.scale(t);
             let point = weighted_start + weighted_end;
 
             buf.add(point, self.color);
