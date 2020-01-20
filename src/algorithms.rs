@@ -9,15 +9,16 @@ use crate::pointclouds::{Cesium3DTilesWriter, PointCloudWriter};
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
 pub trait Algorithm {
-    /// Perform the main iterations
-    /// TODO: Grab the iterations from JSON rather than the command line
-    fn iterate(&mut self, n_iters: u32);
-
+    /// Perform the main iterations of the algorithm
+    fn iterate(&mut self);
     /// Save the file to disk
     fn save(&mut self, fname: &str);
+    /// Get the complexity of the algorithm measured by number of points in
+    /// the output tileset.
+    fn complexity(&self) -> usize;
 }
 
-const STARTUP_ITERS: u32 = 10;
+const STARTUP_ITERS: usize = 10;
 
 /// The basic Chaos Game algorithm (see Fractals Everywhere by Michael F. 
 /// Barnsley)
@@ -27,15 +28,21 @@ pub struct ChaosGame {
     /// IFS for transforming the colors
     color_ifs: IFS<f32>,
     /// Buffer to hold the results before saving to disk
-    output_buffer: Buffer
+    output_buffer: Buffer,
+    /// Number of iterations to perform
+    num_iters: usize,
 }
 
 impl ChaosGame {
-    pub fn new(position_ifs: IFS<f32>, color_ifs: IFS<f32>) -> Self {
+    pub fn new(
+            position_ifs: IFS<f32>, 
+            color_ifs: IFS<f32>, 
+            num_iters: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
-            output_buffer: Buffer::new()
+            output_buffer: Buffer::new(),
+            num_iters
         }
     }
 
@@ -45,26 +52,30 @@ impl ChaosGame {
     /// {
     ///     "algorithm": "chaos",
     ///     "ifs": <IFS JSON>
-    ///     "color_ifs": <IFS JSON>
+    ///     "color_ifs": <IFS JSON>,
+    ///     "iters": N
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
+        let iters = json["iters"]
+            .as_usize()
+            .expect("iters must be a positive integer");
 
-        Self::new(position_ifs, color_ifs)
+        Self::new(position_ifs, color_ifs, iters)
     }
 
     to_box!(Algorithm);
 }
 
 impl Algorithm for ChaosGame {
-    fn iterate(&mut self, n_iters: u32) {
+    fn iterate(&mut self) {
         // Start with a random position and color
         let mut pos = Vec3::random();
         let mut color_vec = Vec3::random_color();
 
-        for i in 0..(STARTUP_ITERS + n_iters) {
+        for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
@@ -80,6 +91,12 @@ impl Algorithm for ChaosGame {
         let mut writer = Cesium3DTilesWriter::new(10000000.0);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
+    }
+
+    // The complexity of the basic chaos game is O(n) where n is the number
+    // of iterations
+    fn complexity(&self) -> usize {
+        self.num_iters
     }
 }
 
@@ -100,6 +117,8 @@ pub struct ChaosSets {
     /// Buffer to hold the results before saving to disk
     /// TODO: Definitely change this to an Octree once available
     output_buffer: Buffer,
+    /// Number of iterations to perform.
+    num_iters: usize,
 }
 
 impl ChaosSets {
@@ -107,13 +126,15 @@ impl ChaosSets {
             position_ifs: IFS<f32>, 
             color_ifs: IFS<f32>, 
             initial_set: Box<dyn InitialSet>, 
-            initial_copies: usize) -> Self {
+            initial_copies: usize, 
+            num_iters: usize) -> Self {
         Self {
             position_ifs,
             color_ifs,
             initial_set,
             initial_copies,
             output_buffer: Buffer::new(),
+            num_iters,
         }
     }
 
@@ -134,7 +155,8 @@ impl ChaosSets {
     ///     "initial_set": <InitialSet JSON>,
     ///     "initial_set_copies": N,
     ///     "ifs": <IFS JSON>,
-    ///     "color_ifs": <IFS JSON>
+    ///     "color_ifs": <IFS JSON>,
+    ///     "iters": M
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
@@ -144,15 +166,18 @@ impl ChaosSets {
         let initial_copies: usize = json["initial_set_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
+        let iters = json["iters"]
+            .as_usize()
+            .expect("iters must be a positive integer");
 
-        Self::new(position_ifs, color_ifs, arranger, initial_copies)
+        Self::new(position_ifs, color_ifs, arranger, initial_copies, iters)
     }
 
     to_box!(Algorithm);
 }
 
 impl Algorithm for ChaosSets {
-    fn iterate(&mut self, n_iters: u32) {
+    fn iterate(&mut self) {
         // Generate a number of initial sets. They will be transformed
         // independently. This helps to view more of the search space
         let mut buffers: Vec<Buffer> = (0..self.initial_copies).map(|_| {
@@ -166,7 +191,7 @@ impl Algorithm for ChaosSets {
         // Every iteration, transform each buffer using the IFS, 
         // and plot the results in the output buffer.
         // TODO: This could totally be done in parallel. Try Rust threads!
-        for _ in 0..n_iters {
+        for _ in 0..self.num_iters {
             let mut new_buffers: Vec<Buffer> = Vec::new();
             for buf in buffers.into_iter() {
                 let new_buf = self.transform_buffer(buf);
@@ -181,6 +206,18 @@ impl Algorithm for ChaosSets {
         let mut writer = Cesium3DTilesWriter::new(10000000.0);
         writer.add_points(&mut self.output_buffer);
         writer.save(fname);
+    }
+
+    /// Complexity in this case is O(m * n * p) where m is the points each 
+    /// initial set, n is the number of copies of the initial set, and p is
+    /// the number of iterations.
+    fn complexity(&self) -> usize {
+        let points_per_buf = self.initial_set.len();
+        let points_per_iter = points_per_buf * self.initial_copies;
+       
+        // Add in the size of a single buffer to account for the 0-th
+        // iteration.
+        points_per_iter * self.num_iters + points_per_buf
     }
 }
 

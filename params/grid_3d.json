@@ -5,10 +5,10 @@
         "center": [0, 0, 0],
         "dims": [1, 1, 1],
         "color": [0, 1, 1],
-        "num_points": 50
+        "num_points": 500
     },
-    "initial_set_copies": 10,
-    "iters": 1,
+    "initial_set_copies": 20,
+    "iters": 100,
     "ifs": {
         "chooser": "uniform",
         "xforms": [{

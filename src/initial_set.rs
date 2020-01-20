@@ -14,6 +14,8 @@ pub trait InitialSet {
     /// time it must produce a new buffer. This uses a mutable reference since
     /// it must be 
     fn generate(&mut self) -> Buffer; 
+    /// Get the number of points in the initial set for measuring complexity.
+    fn len(&self) -> usize;
 }
 
 /// Randomly generate N points constrained to a cuboid. The box is a solid
@@ -91,6 +93,10 @@ impl InitialSet for RandomBox {
 
         buf
     }
+
+    fn len(&self) -> usize {
+        self.num_points
+    }
 }
 
 /// Random points arranged in a line segment from start to end
@@ -162,6 +168,10 @@ impl InitialSet for RandomLine {
         }
 
         buf
+    }
+
+    fn len(&self) -> usize {
+        self.num_points
     }
 }
 
