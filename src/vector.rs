@@ -144,6 +144,17 @@ impl Vec3 {
         Vec3::new(1.0, 1.0, 1.0)
     }
 
+    /// Parse a Vec3 from JSON of the form:
+    ///
+    /// ```text
+    /// [x],
+    ///
+    /// OR
+    ///
+    /// [x, y, z]
+    /// ```
+    ///
+    /// A default value can be specified if this key is not provided.
     pub fn from_json(json: &JsonValue, default_val: Vec3) -> Vec3 {
         match json {
             Array(components) => Vec3::parse_components(components),
@@ -151,9 +162,10 @@ impl Vec3 {
         }
     }
 
+    /// Parse an array of 
     fn parse_components(components: &Vec<JsonValue>) -> Vec3 {
         let components_float: Vec<f32> = components.into_iter().map(|x| {
-            x.as_f32().expect("invalid vector component")
+            x.as_f32().expect("vector components must be floats")
         }).collect();
 
         match components_float.as_slice() {
