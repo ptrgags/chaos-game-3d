@@ -65,8 +65,8 @@ impl ScatterPlot {
 }
 
 impl Plotter for ScatterPlot {
-    fn plot_point(&mut self, _point: Vec3, _color: Vec3) {
-        panic!("Not implemented yet!");
+    fn plot_point(&mut self, point: Vec3, color: Vec3) {
+        self.root.add_point(point, color, self.max_depth);
     }
 
     fn save(&mut self, _dirname: &str) {
