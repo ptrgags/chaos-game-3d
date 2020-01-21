@@ -1,0 +1,36 @@
+{
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "color": [0.2, 1, 0.5],
+        "type": "line",
+        "start": [1.5, -1.4, 0],
+        "end": [1.5, 1.4, 0],
+        "num_points": 50
+    },
+    "initial_set_copies": 20,
+    "iters": 1000,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "rotate": ["axis_angle", 1.57079, 0, 0, 1]
+        }, {
+            "type": "trs",
+            "rotate": ["axis_angle", 1.57079, 0, 0, -1]
+        }, {
+            "type": "trs",
+            "rotate": ["axis_angle", 1.57079, 0, 1, 0]
+        }, {
+            "type": "trs",
+            "rotate": ["axis_angle", 1.57079, 0, -1, 0]
+        }, {
+            "type": "inverse"
+        }]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs"
+        }]
+    }
+}

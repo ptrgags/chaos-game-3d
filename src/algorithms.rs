@@ -28,9 +28,9 @@ const STARTUP_ITERS: usize = 10;
 /// Barnsley)
 pub struct ChaosGame {
     /// IFS for transforming the points
-    position_ifs: IFS<f32>,
+    position_ifs: IFS,
     /// IFS for transforming the colors
-    color_ifs: IFS<f32>,
+    color_ifs: IFS,
     /// Buffer to hold the results before saving to disk
     output_buffer: Buffer,
     /// Number of iterations to perform
@@ -39,8 +39,8 @@ pub struct ChaosGame {
 
 impl ChaosGame {
     pub fn new(
-            position_ifs: IFS<f32>, 
-            color_ifs: IFS<f32>, 
+            position_ifs: IFS, 
+            color_ifs: IFS, 
             num_iters: usize) -> Self {
         Self {
             position_ifs,
@@ -113,9 +113,9 @@ impl Algorithm for ChaosGame {
 /// at each iteration.
 pub struct ChaosSets { 
     /// IFS for transforming the points
-    position_ifs: IFS<f32>,
+    position_ifs: IFS,
     /// IFS for transforming colors
-    color_ifs: IFS<f32>,
+    color_ifs: IFS,
     /// Pattern for the initial sets
     initial_set: Box<dyn InitialSet>,
     /// How many initial sets to create. Each one is transformed independently
@@ -130,8 +130,8 @@ pub struct ChaosSets {
 
 impl ChaosSets {
     pub fn new(
-            position_ifs: IFS<f32>, 
-            color_ifs: IFS<f32>, 
+            position_ifs: IFS, 
+            color_ifs: IFS, 
             initial_set: Box<dyn InitialSet>, 
             initial_copies: usize, 
             num_iters: usize) -> Self {

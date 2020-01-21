@@ -55,13 +55,35 @@ impl<T: Display> Display for Vector3<T> {
 }
 
 impl Vec3 {
-    /// Length of vector, `|v| = sqrt(x^2 + y^2 + z^2)`
+    /// Dot product: `a dot b = a_x * b_x + a_y * b_y + a_z * b_z`
+    pub fn dot(&self, other: &Vec3) -> f32 {
+        let x = self.x() * other.x();
+        let y = self.y() * other.y();
+        let z = self.z() * other.z();
+
+        x + y + z
+    }
+
+    /// Length of vector, `|v| = sqrt(x^2 + y^2 + z^2) = sqrt(v dot v)`
     pub fn length(&self) -> f32 {
-        let x_sqr = self.x() * self.x();
-        let y_sqr = self.y() * self.y();
-        let z_sqr = self.z() * self.z();
+        let length_squared = self.dot(&self);
         
-        (x_sqr + y_sqr + z_sqr).sqrt()
+        (length_squared).sqrt()
+    }
+
+    /// In Clifford Algebra, we can compute the inverse of a vector
+    /// which has the same direction but reciprocal length. This is
+    /// equivalent to doing a sphere inversion.
+    ///
+    /// ```text
+    /// v^-1 = v.reverse() / (v * v.reverse()) 
+    ///      = v / (v dot v) 
+    ///      = v / |v|^2
+    /// ```
+    pub fn inverse(&self) -> Vec3 {
+        let length_squared = self.dot(&self);
+
+        self.scale(1.0 / length_squared)
     }
 
     /// Make the vector unit length.

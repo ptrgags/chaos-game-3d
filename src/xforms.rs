@@ -2,16 +2,14 @@ use std::fmt::{Debug, Formatter, Result};
 
 use json::JsonValue;
 
-use crate::vector::{Vector3, Vec3};
+use crate::vector::Vec3;
 use crate::quaternion;
 use crate::quaternion::Quaternion;
 
 /// A generic transformation from a 3D space to another 3D space.
-/// Right now the only possible option is linear translate/rotate/scale.
-/// TODO: add multivectors!
-pub trait Transform<T>: Debug {
+pub trait Transform: Debug {
     /// Transform a point into another point in the same space.
-    fn transform(&self, vector: &Vector3<T>) -> Vector3<T>;
+    fn transform(&self, vector: &Vec3) -> Vec3;
 }
 
 /// Translate, rotate and scale transformation.
@@ -52,9 +50,11 @@ impl TRS {
 
         Self::new(translate, rotate, scale)
     }
+
+    to_box!(Transform);
 }
 
-impl Transform<f32> for TRS {
+impl Transform for TRS {
     fn transform(&self, vector: &Vec3) -> Vec3 {
         let scaled = self.scale * *vector;
         let rotated = self.rotate * scaled;
@@ -75,6 +75,28 @@ impl Debug for TRS {
     }
 }
 
+pub struct Inverse {}
+
+impl Inverse {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    to_box!(Transform);
+}
+
+impl Transform for Inverse {
+    fn transform(&self, vector: &Vec3) -> Vec3 {
+        vector.inverse()
+    }
+}
+
+impl Debug for Inverse {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "v^-1")
+    }
+}
+
 /// Parse a transformation from JSON of the form
 ///
 /// ```text
@@ -83,12 +105,13 @@ impl Debug for TRS {
 ///     ...params
 /// }
 /// ```
-pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform<f32>> {
+pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     let xform_type = xform_desc["type"]
         .as_str()
         .expect("type must be a string!");
     match &xform_type[..] {
-        "trs" => Box::new(TRS::from_json(&xform_desc)),
+        "trs" => TRS::from_json(&xform_desc).to_box(),
+        "inverse" => Inverse::new().to_box(),
         _ => panic!("xform type must be 'trs' for now")
     }
 }
