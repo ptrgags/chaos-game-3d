@@ -1,0 +1,30 @@
+{
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "color": [0.8, 0.4, 0.2],
+        "type": "line",
+        "start": [1.1, -50, 50],
+        "end": [1.1, 50, -50],
+        "num_points": 500
+    },
+    "initial_set_copies": 20,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs",
+            "rotate": ["axis_angle", 0.19635, 0, 0, 1]
+        }, {
+            "type": "trs",
+            "rotate": ["axis_angle", 0.19635, 0, 0, -1]
+        }, {
+            "type": "inverse"
+        }]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [{
+            "type": "trs"
+        }]
+    }
+}
