@@ -14,6 +14,7 @@ mod parameters;
 mod algorithms;
 mod buffers;
 mod pointclouds;
+mod multivector;
 
 use std::env;
 
