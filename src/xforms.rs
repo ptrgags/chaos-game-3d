@@ -18,6 +18,53 @@ impl TransformChain {
             transforms
         }
     }
+
+    pub fn from_json(chain_desc: &JsonValue) -> Self {
+        let xforms_json = chain_desc[1];
+        
+        let mut transforms: Vec<Box<dyn Transform>> = Vec::new();
+        let mut current_sandwich = TranslatedSandwich::identity();
+        let mut sandwich_active = false;
+        for xform_json in xforms_json.members() {
+            let xform_type = xform_json[0]
+                .as_str()
+                .expect("transformation type must be a string");
+
+            match xform_type {
+                "translate" |
+                "rotate" |
+                "scale" |
+                "reflect_vec" |
+                "reflect_thru_vec" =>  {
+                    // Try to compose sandwich products to reduce computation
+                    // steps when iterating
+                    let sandwich = TranslatedSandwich::from_json(&xform_json);
+                    current_sandwich = sandwich.compose(&current_sandwich);
+                    sandwich_active = true;
+                },
+                _ => {
+                    // We've encountered a non-sandwich transform, so
+                    // add the old sandwich to the list of transformations
+                    // and start a new transform with identity
+                    let old_sandwich = current_sandwich;
+                    transforms.push(Box::new(current_sandwich));
+                    current_sandwich = TranslatedSandwich::identity();
+                    sandwich_active = false;
+
+                    // Now construct the current transform and add it
+                    // to the list
+                    let boxed_xform = from_json(&xform_json);
+                    transforms.push(boxed_xform);
+                },
+            }
+        }
+
+        if sandwich_active {
+            transforms.push(Box::new(current_sandwich));
+        }
+
+        Self::new(transforms)
+    }
 }
 
 impl Transform for TransformChain {
@@ -122,6 +169,62 @@ impl TranslatedSandwich {
             translation
         }
     }
+
+    pub fn from_json(xform_desc: &JsonValue) -> Self {
+        let xform_type = xform_desc[0]
+            .as_str()
+            .expect("transformation type must be a string.");
+        
+        let parameters: Vec<f64> = match xform_desc {
+            JsonValue::Array(components) => 
+                components[1..].iter().map(|x| {
+                    x.as_f64()
+                    .expect("transformation parameters must be floats")
+                }).collect(),
+            _ => Vec::new()
+        };
+
+        let valid_names: Vec<&str> = vec![
+            "translate",
+            "rotate",
+            "scale",
+            "invert",
+            "reflect_vec",
+            "reflect_thru_vec",
+        ];
+
+        match xform_type {
+            "translate" => {
+                let [x, y, z] = &parameters[..];
+                let displacement = Multivector::vector(*x, *y, *z);
+                Self::translation(displacement)
+            }
+            "rotate" => {
+                let [nx, ny, nz, theta] = &parameters[..];
+                let axis = Multivector::vector(*nx, *ny, *nz);
+                Self::rotation(axis, *theta)
+            }
+            "scale" => {
+                let [k] = &parameters[..];
+                Self::scale(*k)
+            }
+            "reflect_vec" => {
+                let [nx, ny, nz] = &parameters[..];
+                let direction = Multivector::vector(*nx, *ny, *nz).normalize();
+                let negate = Multivector::scalar(-1.0);
+                let no_translation = Multivector::zero();
+                Self::new(negate, direction, no_translation)
+            }
+            "reflect_thru_vec" => {
+                let [nx, ny, nz] = &parameters[..];
+                let direction = Multivector::vector(*nx, *ny, *nz).normalize();
+                let stay_positive = Multivector::one();
+                let no_translation = Multivector::zero();
+                Self::new(stay_positive, direction, no_translation)
+            }
+            _ => panic!("transformation type must be one of {:?}", valid_names)
+        }
+    }
 }
 
 impl Transform for TranslatedSandwich {
@@ -149,85 +252,35 @@ impl Transform for Inverse {
     }
 }
 
-/*
-/// Translate, rotate and scale transformation.
-///
-/// More specifically, the operation TRS(v), so scaling is applied first.
-/// This handles most of the linear transformations you could ever want.
-/// No shear mappings, but I don't use them much.
-pub struct TRS {
-    translate: Vec3,
-    rotate: Quaternion,
-    scale: Vec3,
-}
-
-impl TRS {
-    pub fn new(translate: Vec3, rotate: Quaternion, scale: Vec3) -> Self {
-        Self {
-            translate,
-            rotate,
-            scale
-        }
-    }
-
-    /// Parse a linear transformation from JSON of the form
-    ///
-    /// ```text
-    /// {
-    ///     "type": "trs",
-    ///     "translate": [dx, dy, dz],
-    ///     "rotate": <Quaternion JSON>,
-    ///     "scale": [sx, sy, sz]
-    /// }
-    /// ```
-    /// When not specified, these transformations default to the identity.
-    pub fn from_json(xform_desc: &JsonValue) -> Self {
-        let translate = Vec3::from_json(&xform_desc["translate"], Vec3::zero());
-        let rotate = quaternion::from_json(&xform_desc["rotate"]);
-        let scale = Vec3::from_json(&xform_desc["scale"], Vec3::ones());
-
-        Self::new(translate, rotate, scale)
-    }
-}
-
-impl Transform<f32> for TRS {
-    fn transform(&self, vector: &Vec3) -> Vec3 {
-        let scaled = self.scale * *vector;
-        let rotated = self.rotate * scaled;
-        let translated = self.translate + rotated;
-
-        translated
-    }
-}
-
-impl Debug for TRS {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(
-            f, 
-            "TRS(T={:?}, R={:?}, S={:?})", 
-            self.translate, 
-            self.rotate, 
-            self.scale)
-    }
-}
-*/
-
 /// Parse a transformation from JSON of the form
 ///
 /// ```text
-/// {
-///     "type": "chain" | "sandwich" | "inverse",
-///     ...params
-/// }
+/// [type, params...]
 /// ```
 pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
-    let xform_type = xform_desc["type"]
+    let xform_type = xform_desc[0]
         .as_str()
-        .expect("type must be a string!");
+        .expect("transformation type must be a string");
+
+    let valid_names: Vec<&str> = vec![
+        "chain",
+        "invert",
+        "translate",
+        "rotate",
+        "scale",
+        "reflect_vec",
+        "reflect_thru_vec",
+    ];
 
     match &xform_type[..] {
         "chain" => Box::new(TransformChain::from_json(&xform_desc)),
-        "trs" => Box::new(TRS::from_json(&xform_desc)),
-        _ => panic!("xform type must be 'trs' for now")
+        "invert" => Box::new(Inverse::new()),
+        "translate" | 
+        "rotate" | 
+        "scale" | 
+        "reflect_vec" | 
+        "reflect_thru_vec" => 
+            Box::new(TranslatedSandwich::from_json(&xform_desc)),
+        _ => panic!("xform type must be one of {:?} for now", valid_names)
     }
 }
