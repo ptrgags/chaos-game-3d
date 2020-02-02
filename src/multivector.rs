@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter, Result};
 use crate::vector::Vec3;
 
 /// A multivector in Clifford Algebra Cl(3)
@@ -164,7 +165,7 @@ impl Multivector {
         let mut end = SCALAR_OFFSET;
         for i in self.start_index..self.end_index {
             let a = self.components[i];
-            for j in other.start_index..self.end_index {
+            for j in other.start_index..other.end_index {
                 let b = other.components[j];
                 let index = MULT_COMPONENTS[i][j];
                 let sign = MULT_SIGNS[i][j];
@@ -175,7 +176,7 @@ impl Multivector {
             }
         }
 
-        Self::new(result, start, end)
+        Self::new(result, start, end + 1)
     }
 
     /// The product
@@ -271,5 +272,12 @@ impl Multivector {
         let mag_squared = self.norm();
 
         mag_squared.sqrt()
+    }
+}
+
+/// Debug format: Multivector[s, x, y, z, xy, xz, yz, t]
+impl Debug for Multivector {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "Multivector{:?}", self.components)
     }
 }
