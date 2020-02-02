@@ -4,7 +4,7 @@ use crate::xforms;
 use crate::xforms::Transform;
 use crate::choosers;
 use crate::choosers::Chooser;
-use crate::vector::Vector3;
+use crate::multivector::Multivector;
 
 // Type aliases for brevity
 pub type Xform = Box<dyn Transform>;
@@ -20,7 +20,6 @@ pub type XformSelector = Box<dyn Chooser>;
 ///
 /// Note that this can be used for both position vectors *and* color vectors!
 ///
-#[derive(Debug)]
 pub struct IFS {
     /// A list of transformations to include
     xforms: Vec<Xform>,
@@ -37,7 +36,7 @@ impl IFS {
 
     /// Transform an individual point using a randomly-selected transformation
     /// from this IFS. The Chooser determines the random distribution
-    pub fn transform(&mut self, vector: &Vector3) -> Vector3 {
+    pub fn transform(&mut self, vector: &Multivector) -> Multivector {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
         xform.transform(vector)
@@ -46,7 +45,7 @@ impl IFS {
     /// Transform a vector containing points. This is used for transforming
     /// the points/colors of a Buffer.
     pub fn transform_points(
-            &mut self, points: &Vec<Vector3>) -> Vec<Vector3> {
+            &mut self, points: &Vec<Multivector>) -> Vec<Multivector> {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
 

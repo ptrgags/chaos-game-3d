@@ -129,6 +129,7 @@ impl Multivector {
         }
     }
 
+    /// Add two multivectors together, which is a componentwise sum
     pub fn add(&self, other: &Self) -> Self {
         let start = self.start_index.min(other.start_index);
         let end = self.end_index.max(other.end_index);
@@ -140,6 +141,9 @@ impl Multivector {
         Self::new(components, start, end)
     }
 
+    /// Multiply two multivectors together, following the multiplication
+    /// rules for Cl(3). See https://bivector.net/tools.html for the Cayley 
+    /// table.
     pub fn mul(&self, other: &Self) -> Self {
         let mut result = [0.0; 8];
         let mut start = END_OFFSET;
@@ -159,13 +163,99 @@ impl Multivector {
 
         Self::new(result, start, end)
     }
+
+    /// The product
+    ///
+    /// ```text
+    /// m n m^(-1)
+    /// ```
+    ///
+    /// can be used for rotations and reflections in Cl(3). Technically this
+    /// should be called conjugate(other), but that might get confused for
+    /// other uses of the word "conjugate" like complex conjugate. Also
+    /// sandwich product sounds cooler :)
+    pub fn sandwich_product(&self, other: &Self) -> Self {
+        let inv = self.inverse();
+        self.mul(&other).mul(&inv)
+    }
+
+    /// Scale a multivector by multiplying componentwise
+    ///
+    /// k(s + v + B + T) = ks + kv + kB + kT
+    pub fn scale(&self, scale_factor: f64) -> Self {
+        let mut result = [0.0; 8];
+        for i in self.start_index..self.end_index {
+            result[i] = self.components[i] * scale_factor;
+        }
+
+        Self::new(result, self.start_index, self.end_index)
+    }
+
+    /// Compute the dual of this multivector.
+    /// This is done by mulliplying by -e123
+    pub fn dual(&self) -> Self {
+        let pseudoscalar = Self::trivector(-1.0);
+
+        self.mul(&pseudoscalar)
+    }
     
-    pub fn reverse(&self, other: &Self) -> Self {
+    /// Reverse of the multivector. This is somewhat like conjugation of
+    /// complex numbers. The bivector and trivector components are negated
+    /// while the scalar and vector parts remain unchanged.
+    ///
+    /// (s + v + B + T).reverse = s + v - B - T
+    pub fn reverse(&self) -> Self {
         let mut result = [0.0; 8];
         for i in self.start_index..self.end_index {
             result[i] = REVERSE_SIGNS[i] * self.components[i];
         }
 
-        Self::new(result, self.start_index, self.end_index);
+        Self::new(result, self.start_index, self.end_index)
+    }
+
+    /// Inverse of a vector
+    ///
+    /// v^-1 = v.reverse / (v * v.reverse) = v.reverse / |v|^2
+    ///
+    /// I only claim that this is well-defined for blades
+    pub fn inverse(&self) -> Self {
+        let scale_factor = 1.0 / self.norm();
+        let rev = self.reverse(); 
+
+        rev.scale(scale_factor)
+    }
+
+    /// Normalize a blade so it has unit magnitude
+    ///
+    /// normalize(v) = v / |v|
+    ///
+    /// I only claim that this is well-defined for blades
+    pub fn normalize(&self) -> Self {
+        let length = self.magnitude();
+
+        self.scale(1.0 / length)
+    }
+
+    /// norm = length squared
+    ///
+    /// |v|^2 = (v * v.reverse)[0]   (scalar part of result)
+    ///
+    /// I only claim that this is well-defined for blades
+    pub fn norm(&self) -> f64 {
+        let rev = self.reverse();
+        let product = self.mul(&rev);
+        
+        product.components[SCALAR_OFFSET]
+    }
+
+    /// magnitude of a blade
+    ///
+    /// |v| = sqrt((v * v.reverse)[0])
+    ///
+    /// I only claim that this is well-defined for blades
+    pub fn magnitude(&self) -> f64 {
+        let mag_squared = self.norm();
+
+        mag_squared.sqrt()
     }
 }

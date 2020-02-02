@@ -3,30 +3,30 @@ use std::io::prelude::*;
 
 use json;
 
-use crate::buffers::Buffer;
+use crate::buffers::{InternalBuffer, OutputBuffer};
 
 /// A writer takes a point cloud (collection of (position, color))
 /// and writes it to a file.
 pub trait PointCloudWriter {
     /// Add points from a buffer
-    fn add_points(&mut self, other: &mut Buffer);
+    fn add_points(&mut self, other: &mut InternalBuffer);
     /// Write the results to a file
     fn save(&self, fname: &str);
 }
 
 /// Output one big CSV file with a list of the points.
 pub struct CSVWriter {
-    buffer: Buffer
+    buffer: OutputBuffer
 }
 
 impl CSVWriter {
     pub fn new() -> Self {
-        CSVWriter { buffer: Buffer::new() }
+        CSVWriter { buffer: OutputBuffer::new() }
     }
 }
 
 impl PointCloudWriter for CSVWriter {
-    fn add_points(&mut self, other: &mut Buffer) { 
+    fn add_points(&mut self, other: &mut InternalBuffer) { 
         self.buffer.move_from(other);
     }
 
@@ -49,14 +49,14 @@ impl PointCloudWriter for CSVWriter {
 /// Generate a Cesium 3D tiles point cloud tileset from the points
 /// This follows the [official specifications](https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification)
 pub struct Cesium3DTilesWriter {
-    buffer: Buffer,
+    buffer: OutputBuffer,
     scale: f32,
 }
 
 impl Cesium3DTilesWriter {
     pub fn new(scale:f32) -> Self {
         Self {
-            buffer: Buffer::new(),
+            buffer: OutputBuffer::new(),
             scale,
         }
     }
@@ -206,7 +206,7 @@ impl Cesium3DTilesWriter {
 }
 
 impl PointCloudWriter for Cesium3DTilesWriter {
-    fn add_points(&mut self, other: &mut Buffer) { 
+    fn add_points(&mut self, other: &mut InternalBuffer) { 
         self.buffer.move_from(other);
     }
 

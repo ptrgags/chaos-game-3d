@@ -1,14 +1,23 @@
 use crate::vector::Vec3;
+use crate::multivector::Multivector;
 
 /// A buffer is a container of colored points.
 /// It is stored as a pair of parallel vectors of points and colors.
 #[derive(Clone)]
-pub struct Buffer {
-    points: Vec<Vec3>,
-    colors: Vec<Vec3>,
+pub struct Buffer<T> {
+    points: Vec<T>,
+    colors: Vec<T>,
 }
 
-impl Buffer {
+/// Since transformations (see xforms.rs) are maps of 
+/// `Multivector -> Multivector`, algorithms should store lists of multivectors
+/// not Vec3 to avoid excessive packing/unpacking.
+pub type InternalBuffer = Buffer<Multivector>;
+
+/// When outputing a point cloud, use the more compact vector of point
+pub type OutputBuffer = Buffer<Vec3>;
+
+impl<T> Buffer<T> {
     pub fn new() -> Self {
         Self {
             points: Vec::new(),
@@ -16,18 +25,18 @@ impl Buffer {
         }
     }
 
-    pub fn from_vectors(points: Vec<Vec3>, colors: Vec<Vec3>) -> Self {
+    pub fn from_vectors(points: Vec<T>, colors: Vec<T>) -> Self {
         Self {
             points,
             colors
         }
     }
 
-    pub fn get_points(&self) -> &Vec<Vec3> {
+    pub fn get_points(&self) -> &Vec<T> {
         return &self.points;
     }
 
-    pub fn get_colors(&self) -> &Vec<Vec3> {
+    pub fn get_colors(&self) -> &Vec<T> {
         return &self.colors;
     }
 
@@ -44,7 +53,7 @@ impl Buffer {
     }
 
     /// Add a new point to the buffer
-    pub fn add(&mut self, point: Vec3, color: Vec3) {
+    pub fn add(&mut self, point: T, color: T) {
         self.points.push(point);
         self.colors.push(color);
     }
@@ -55,7 +64,7 @@ impl Buffer {
     }
 
     /// Get an iterator over this buffer. This iterator clones values
-    pub fn points_iter(self) -> BufferIterator {
+    pub fn points_iter(self) -> BufferIterator<T> {
         BufferIterator {
             buffer: self,
             index: 0
@@ -66,13 +75,13 @@ impl Buffer {
 /// Iterate over a buffer's (point, color) pairs. This clones points rather
 /// than taking a reference or taking ownership. I may regret this someday,
 /// we'll see.
-pub struct BufferIterator {
-    buffer: Buffer,
+pub struct BufferIterator<T> {
+    buffer: Buffer<T>,
     index: usize
 }
 
-impl Iterator for BufferIterator {
-    type Item = (Vec3, Vec3);
+impl<T> Iterator for BufferIterator<T> {
+    type Item = (T, T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.buffer.len() {

@@ -1,4 +1,4 @@
-use crate::buffers::Buffer;
+use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
 
 use rand::Rng;
@@ -13,7 +13,7 @@ pub trait InitialSet {
     /// Generate a set of points. This may be called several times, and each
     /// time it must produce a new buffer. This uses a mutable reference since
     /// it must be 
-    fn generate(&mut self) -> Buffer; 
+    fn generate(&mut self) -> InternalBuffer; 
     /// Get the number of points in the initial set for measuring complexity.
     fn len(&self) -> usize;
 }
@@ -73,8 +73,8 @@ impl RandomBox {
 }
 
 impl InitialSet for RandomBox {
-    fn generate(&mut self) -> Buffer {
-        let mut buf = Buffer::new();
+    fn generate(&mut self) -> InternalBuffer {
+        let mut buf = InternalBuffer::new();
 
         // Find the bounding box for generating points
         let half_dims = self.dimensions.scale(0.5);
@@ -153,8 +153,8 @@ impl RandomLine {
 }
 
 impl InitialSet for RandomLine {
-    fn generate(&mut self) -> Buffer {
-        let mut buf = Buffer::new();
+    fn generate(&mut self) -> InternalBuffer {
+        let mut buf = InternalBuffer::new();
 
         // Generate N random points, uniformly distributed over the 
         // line segment

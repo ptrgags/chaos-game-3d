@@ -57,7 +57,7 @@ pub struct TranslatedSandwich {
     translation: Multivector,
 }
 
-impl TranslatedSandwitch {
+impl TranslatedSandwich {
     pub fn new(
             scalar: Multivector, sandwich: Multivector, translation: Multivector) 
             -> Self {
@@ -90,7 +90,7 @@ impl TranslatedSandwitch {
 
         let cos_part = Multivector::scalar(half_angle.cos());
         let sin_part = unit_bivector.scale(half_angle.sin());
-        let rotor = cos_part.add(sin_part);
+        let rotor = cos_part.add(&sin_part);
 
         Self {
             scalar: Multivector::one(),
@@ -103,7 +103,7 @@ impl TranslatedSandwitch {
         Self {
             scalar: Multivector::scalar(s),
             sandwich: Multivector::one(),
-            translation: Multivector:zero(),
+            translation: Multivector::zero(),
         }
     }
 
@@ -112,9 +112,9 @@ impl TranslatedSandwitch {
     ///           = (s1s2) (a2a1) v (a2a1)^(-1) + (s2 a2 (d1) a2^(-1) + d2)
     ///           = (s1s2) (a2a1) v (a2a1)^(-1) + f2(d1)
     pub fn compose(&self, other: &Self) -> Self {
-        let scalar = self.scalar.mul(other.scalar);
-        let sandwich = self.sandwich.mul(other.sandwich);
-        let translation = self.transform(other.translation);
+        let scalar = self.scalar.mul(&other.scalar);
+        let sandwich = self.sandwich.mul(&other.sandwich);
+        let translation = self.transform(&other.translation);
 
         Self {
             scalar,
@@ -124,12 +124,12 @@ impl TranslatedSandwitch {
     }
 }
 
-impl Transform for TranslatedSandwitch {
+impl Transform for TranslatedSandwich {
     /// Compute f(v) = s a v a^(-1) + d
     fn transform(&self, point: &Multivector) -> Multivector {
-        let sandwiched = self.sandwich.sandwich_product(point);
-        let scaled = self.scalar.mul(sandwitched);
-        let translated = self.scaled.add(self.translation);
+        let sandwiched = self.sandwich.sandwich_product(&point);
+        let scaled = self.scalar.mul(&sandwiched);
+        let translated = scaled.add(&self.translation);
 
         translated
     }
@@ -212,7 +212,6 @@ impl Debug for TRS {
 }
 */
 
-/*
 /// Parse a transformation from JSON of the form
 ///
 /// ```text
@@ -232,4 +231,3 @@ pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
         _ => panic!("xform type must be 'trs' for now")
     }
 }
-*/
