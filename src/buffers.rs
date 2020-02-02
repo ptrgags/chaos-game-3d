@@ -64,9 +64,10 @@ impl<T: Clone> Buffer<T> {
     }
 
     /// Get an iterator over this buffer. This iterator clones values
-    pub fn points_iter(self) -> BufferIterator<T> {
+    pub fn points_iter(&self) -> BufferIterator<T> {
         BufferIterator {
-            buffer: self,
+            points: &self.points,
+            colors: &self.colors,
             index: 0
         }
     }
@@ -75,21 +76,22 @@ impl<T: Clone> Buffer<T> {
 /// Iterate over a buffer's (point, color) pairs. This clones points rather
 /// than taking a reference or taking ownership. I may regret this someday,
 /// we'll see.
-pub struct BufferIterator<T: Clone> {
-    buffer: Buffer<T>,
+pub struct BufferIterator<'a, T: Clone> {
+    points: &'a Vec<T>,
+    colors: &'a Vec<T>,
     index: usize
 }
 
-impl<T: Clone> Iterator for BufferIterator<T> {
-    type Item = (T, T);
+impl<'a, T: Clone> Iterator for BufferIterator<'a, T> {
+    type Item = (&'a T, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.buffer.len() {
+        if self.index >= self.points.len() {
             return None
         }
 
-        let pos = self.buffer.points[self.index];
-        let color = self.buffer.colors[self.index];
+        let pos = &self.points[self.index];
+        let color = &self.colors[self.index];
         self.index += 1;
         
         Some((pos, color))

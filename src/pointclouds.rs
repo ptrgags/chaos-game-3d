@@ -27,7 +27,9 @@ impl CSVWriter {
 
 impl PointCloudWriter for CSVWriter {
     fn add_points(&mut self, other: &mut InternalBuffer) { 
-        self.buffer.move_from(other);
+        for (point, color) in other.points_iter() {
+            self.buffer.add(point.to_vec3(), color.to_vec3())
+        }
     }
 
     fn save(&self, fname: &str) {
@@ -207,7 +209,9 @@ impl Cesium3DTilesWriter {
 
 impl PointCloudWriter for Cesium3DTilesWriter {
     fn add_points(&mut self, other: &mut InternalBuffer) { 
-        self.buffer.move_from(other);
+        for (point, color) in other.points_iter() {
+            self.buffer.add(point.to_vec3(), color.to_vec3())
+        }
     }
 
     fn save(&self, dir_name: &str) {

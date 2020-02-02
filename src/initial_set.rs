@@ -90,7 +90,7 @@ impl InitialSet for RandomBox {
             let z = self.rng.gen_range(min.z(), max.z());
         
             let point = Multivector::vector(x as f64, y as f64, z as f64);
-            buf.add(point, color);
+            buf.add(point, color.clone());
         }
 
         buf
@@ -169,7 +169,7 @@ impl InitialSet for RandomLine {
             let weighted_end = end.scale(t);
             let point = weighted_start.add(&weighted_end);
 
-            buf.add(point, color);
+            buf.add(point, color.clone());
         }
 
         buf

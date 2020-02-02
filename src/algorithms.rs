@@ -84,7 +84,7 @@ impl Algorithm for ChaosGame {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.buffer.add(pos, color_vec)
+                self.buffer.add(pos.clone(), color_vec.clone())
             }
 
             pos = self.position_ifs.transform(&pos);

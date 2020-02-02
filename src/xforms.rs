@@ -20,7 +20,7 @@ impl TransformChain {
     }
 
     pub fn from_json(chain_desc: &JsonValue) -> Self {
-        let xforms_json = chain_desc[1];
+        let xforms_json = &chain_desc[1];
         
         let mut transforms: Vec<Box<dyn Transform>> = Vec::new();
         let mut current_sandwich = TranslatedSandwich::identity();
@@ -46,7 +46,6 @@ impl TransformChain {
                     // We've encountered a non-sandwich transform, so
                     // add the old sandwich to the list of transformations
                     // and start a new transform with identity
-                    let old_sandwich = current_sandwich;
                     transforms.push(Box::new(current_sandwich));
                     current_sandwich = TranslatedSandwich::identity();
                     sandwich_active = false;
@@ -70,7 +69,7 @@ impl TransformChain {
 impl Transform for TransformChain {
     fn transform(&self, point: &Multivector) -> Multivector {
         let mut result = point.clone();
-        for xform in self.transforms {
+        for xform in self.transforms.iter() {
             result = xform.transform(&result);
         }
 
@@ -195,32 +194,49 @@ impl TranslatedSandwich {
 
         match xform_type {
             "translate" => {
-                let [x, y, z] = &parameters[..];
-                let displacement = Multivector::vector(*x, *y, *z);
-                Self::translation(displacement)
+                if let [x, y, z] = &parameters[..] {
+                    let displacement = Multivector::vector(*x, *y, *z);
+                    Self::translation(displacement)
+                } else {
+                    panic!("should be [\"translate\", x, y, z]")
+                }
             }
             "rotate" => {
-                let [nx, ny, nz, theta] = &parameters[..];
-                let axis = Multivector::vector(*nx, *ny, *nz);
-                Self::rotation(axis, *theta)
+                if let [nx, ny, nz, theta] = &parameters[..] {
+                    let axis = Multivector::vector(*nx, *ny, *nz);
+                    Self::rotation(axis, *theta)
+                } else {
+                    panic!("should be [\"rotate\", nx, ny, nz, theta]")
+                }
             }
             "scale" => {
-                let [k] = &parameters[..];
-                Self::scale(*k)
+                if let [k] = &parameters[..] {
+                    Self::scale(*k)
+                } else {
+                    panic!("should be [\"scale\", k]")
+                }
             }
             "reflect_vec" => {
-                let [nx, ny, nz] = &parameters[..];
-                let direction = Multivector::vector(*nx, *ny, *nz).normalize();
-                let negate = Multivector::scalar(-1.0);
-                let no_translation = Multivector::zero();
-                Self::new(negate, direction, no_translation)
+                if let [nx, ny, nz] = &parameters[..] {
+                    let direction = 
+                        Multivector::vector(*nx, *ny, *nz).normalize();
+                    let negate = Multivector::scalar(-1.0);
+                    let no_translation = Multivector::zero();
+                    Self::new(negate, direction, no_translation)
+                } else {
+                    panic!("should be [\"reflect_vec\", nx, ny, nz]")
+                }
             }
             "reflect_thru_vec" => {
-                let [nx, ny, nz] = &parameters[..];
-                let direction = Multivector::vector(*nx, *ny, *nz).normalize();
-                let stay_positive = Multivector::one();
-                let no_translation = Multivector::zero();
-                Self::new(stay_positive, direction, no_translation)
+                if let [nx, ny, nz] = &parameters[..] {
+                    let direction = 
+                        Multivector::vector(*nx, *ny, *nz).normalize();
+                    let stay_positive = Multivector::one();
+                    let no_translation = Multivector::zero();
+                    Self::new(stay_positive, direction, no_translation)
+                } else {
+                    panic!("should be [\"reflect_thru_vec\", nx, ny, nz]")
+                }
             }
             _ => panic!("transformation type must be one of {:?}", valid_names)
         }
