@@ -127,8 +127,8 @@ impl Multivector {
                 0.0, 0.0, 0.0,
                 t
             ],
-            start_index: BIVECTOR_OFFSET,
-            end_index: TRIVECTOR_OFFSET
+            start_index: TRIVECTOR_OFFSET,
+            end_index: END_OFFSET
         }
     }
 
@@ -169,7 +169,7 @@ impl Multivector {
                 let b = other.components[j];
                 let index = MULT_COMPONENTS[i][j];
                 let sign = MULT_SIGNS[i][j];
-                result[index] = sign * a * b;
+                result[index] += sign * a * b;
 
                 start = start.min(index);
                 end = end.max(index);
@@ -259,7 +259,7 @@ impl Multivector {
     pub fn norm(&self) -> f64 {
         let rev = self.reverse();
         let product = self.mul(&rev);
-        
+
         product.components[SCALAR_OFFSET]
     }
 
@@ -278,6 +278,7 @@ impl Multivector {
 /// Debug format: Multivector[s, x, y, z, xy, xz, yz, t]
 impl Debug for Multivector {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Multivector{:?}", self.components)
+        write!(f, "Multivector{:?}({}-{})", 
+           self.components, self.start_index, self.end_index)
     }
 }

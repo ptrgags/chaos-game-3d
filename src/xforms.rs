@@ -211,7 +211,8 @@ impl TranslatedSandwich {
             "rotate" => {
                 if let [nx, ny, nz, theta] = &parameters[..] {
                     let axis = Multivector::vector(*nx, *ny, *nz);
-                    Self::rotation(axis, (*theta) * 2.0 * PI)
+                    let angle = *theta * 2.0 * PI;
+                    Self::rotation(axis, angle)
                 } else {
                     panic!("should be [\"rotate\", nx, ny, nz, theta]")
                 }

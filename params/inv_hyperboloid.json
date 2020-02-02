@@ -1,0 +1,26 @@
+{
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "color": [0.8, 0.4, 0.2],
+        "type": "line",
+        "start": [1.1, -50, 50],
+        "end": [1.1, 50, -50],
+        "num_points": 500
+    },
+    "initial_set_copies": 20,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["invert"],
+            ["rotate", 0, 0, 1, 0.0625],
+            ["rotate", 0, 0, -1, 0.0625]
+        ]
+    },
+    "color_ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["identity"]
+        ]
+    }
+}

@@ -159,7 +159,7 @@ impl InitialSet for RandomLine {
         let mut buf = InternalBuffer::new();
         let color = Multivector::from_vec3(&self.color);
         let start = Multivector::from_vec3(&self.start);
-        let end = Multivector::from_vec3(&self.start);
+        let end = Multivector::from_vec3(&self.end);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
