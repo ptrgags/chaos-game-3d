@@ -4,7 +4,7 @@ use crate::multivector::Multivector;
 /// A buffer is a container of colored points.
 /// It is stored as a pair of parallel vectors of points and colors.
 #[derive(Clone)]
-pub struct Buffer<T> {
+pub struct Buffer<T: Clone> {
     points: Vec<T>,
     colors: Vec<T>,
 }
@@ -17,7 +17,7 @@ pub type InternalBuffer = Buffer<Multivector>;
 /// When outputing a point cloud, use the more compact vector of point
 pub type OutputBuffer = Buffer<Vec3>;
 
-impl<T> Buffer<T> {
+impl<T: Clone> Buffer<T> {
     pub fn new() -> Self {
         Self {
             points: Vec::new(),
@@ -75,12 +75,12 @@ impl<T> Buffer<T> {
 /// Iterate over a buffer's (point, color) pairs. This clones points rather
 /// than taking a reference or taking ownership. I may regret this someday,
 /// we'll see.
-pub struct BufferIterator<T> {
+pub struct BufferIterator<T: Clone> {
     buffer: Buffer<T>,
     index: usize
 }
 
-impl<T> Iterator for BufferIterator<T> {
+impl<T: Clone> Iterator for BufferIterator<T> {
     type Item = (T, T);
 
     fn next(&mut self) -> Option<Self::Item> {

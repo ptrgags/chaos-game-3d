@@ -4,6 +4,7 @@ use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
 use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
+use crate::multivector::Multivector;
 use crate::pointclouds::{Cesium3DTilesWriter, PointCloudWriter};
 
 /// The earth has a radius of about 6.371 million meters. Scale up our
@@ -76,8 +77,8 @@ impl ChaosGame {
 impl Algorithm for ChaosGame {
     fn iterate(&mut self) {
         // Start with a random position and color
-        let mut pos = Vec3::random();
-        let mut color_vec = Vec3::random_color();
+        let mut pos = Multivector::from_vec3(&Vec3::random());
+        let mut color_vec = Multivector::from_vec3(&Vec3::random_color());
 
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 

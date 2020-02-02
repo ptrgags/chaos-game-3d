@@ -1,3 +1,5 @@
+use crate::vector::Vec3;
+
 /// A multivector in Clifford Algebra Cl(3)
 ///
 /// m = s + xe1 + ye2 + ze2 + xye12 + xze13 + yze23 + te123
@@ -127,6 +129,18 @@ impl Multivector {
             start_index: BIVECTOR_OFFSET,
             end_index: TRIVECTOR_OFFSET
         }
+    }
+
+    /// Create a vector from a Vec3
+    pub fn from_vec3(vector: &Vec3) -> Self {
+        Self::vector(*vector.x() as f64, *vector.y() as f64, *vector.z() as f64)
+    }
+
+    pub fn to_vec3(&self) -> Vec3 {
+        let x = self.components[VECTOR_OFFSET];
+        let y = self.components[VECTOR_OFFSET + 1];
+        let z = self.components[VECTOR_OFFSET + 2];
+        Vec3::new(x as f32, y as f32, z as f32)
     }
 
     /// Add two multivectors together, which is a componentwise sum
