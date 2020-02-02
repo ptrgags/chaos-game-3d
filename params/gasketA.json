@@ -3,15 +3,26 @@
     "initial_set": {
         "type": "box",
         "center": [0, 0, 0],
-        "dims": [1, 1, 1],
+        "dims": [2, 2, 0.001],
         "color": [0, 1, 1],
-        "num_points": 500
+        "num_points": 10000
     },
-    "initial_set_copies": 20,
-    "iters": 100,
+    "initial_set_copies": 1,
+    "iters": 10,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
+            ["chain", [
+                ["rotate", 0, 1, 0, 0.25],
+                ["scale", 2.0],
+                ["translate", 1, 0, 0],
+                ["invert"],
+                ["rotate", 0, 1, 0, 0.25],
+                ["scale", 0.5],
+                ["translate", 0, 0, 0.5]
+            ]]
+        ],
+        "comment": [
             ["chain", [
                 ["rotate", 0, 1, 0, 0.25],
                 ["scale", 2.0],
