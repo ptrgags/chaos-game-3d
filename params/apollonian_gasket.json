@@ -2,22 +2,23 @@
     "algorithm": "chaos",
     "initial_set": {
         "type": "box",
-        "center": [0, 0, 0],
-        "dims": [2, 2, 0.001],
-        "color": [0, 1, 1],
-        "num_points": 100
+        "start": [-10, 0, 0],
+        "end": [10, 0, 0],
+        "center": [0.4, 0, 0],
+        "dims": [0.1, 0.001, 0.1],
+        "color": [0.8, 0.1, 0.1],
+        "num_points": 1000
     },
-    "initial_set_copies": 10,
+    "initial_set_copies": 1,
     "iters": 1000000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["rotate", 0, 1, 0, 0.25],
-                ["scale", 2.0],
+                ["scale", 2],
                 ["translate", 1, 0, 0],
                 ["invert"],
-                ["reflect_vec", 1, 0, 0],
                 ["rotate", 0, 1, 0, 0.25],
                 ["scale", 0.5],
                 ["translate", 0, 0, 0.5]
@@ -26,7 +27,6 @@
                 ["translate", 0, 0, -0.5],
                 ["scale", 2],
                 ["rotate", 0, -1, 0, 0.25],
-                ["reflect_vec", 1, 0, 0],
                 ["invert"],
                 ["translate", -1, 0, 0],
                 ["scale", 0.5],
@@ -44,7 +44,18 @@
                 ["invert"],
                 ["translate", -1, 0, -1]
             ]],
-            ["rotate", 0, 0, 1, 0.25]
+            ["chain", [
+                ["translate", 0, 1, 1],
+                ["invert"],
+                ["reflect_vec", 0, 1, 0],
+                ["translate", 0, 1, -1]
+            ]],
+            ["chain", [
+                ["translate", 0, -1, 1],
+                ["reflect_vec", 0, 1, 0],
+                ["invert"],
+                ["translate", 0, -1, -1]
+            ]]
         ]
     },
     "color_ifs": {
