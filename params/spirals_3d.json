@@ -10,14 +10,15 @@
         "num_points": 100
     },
     "initial_set_copies": 1,
-    "iters": 3000,
+    "iters": 10000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["rotate", 0, 0, 1, 0.01],
                 ["scale", 1.01]
-            ]]
+            ]],
+            ["+inverse"]
         ]
     }, 
     "color_ifs": {

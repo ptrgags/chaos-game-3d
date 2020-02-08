@@ -8,6 +8,10 @@ use crate::multivector::Multivector;
 pub trait Transform {
     /// Transform a point into another point in the same space.
     fn transform(&self, point: &Multivector) -> Multivector;
+
+    /// Compute the inverse of this transformation if it is well-defined
+    /// or None if not possible.
+    fn inverse(&self) -> Option<Box<dyn Transform>>;
 }
 
 /// Chain of transformations applied in the order specified.
@@ -97,6 +101,27 @@ impl Transform for TransformChain {
 
         result
     }
+
+    /// Taking the inverse of a transformation chain is the same as inverting
+    /// each transform and reversing the order:
+    ///
+    /// ```text
+    /// (f1f2f3...fn)^(-1) = fn^(-1)...f3^(-1)f2^(-1)f1^(-1)
+    /// ```
+    fn inverse(&self) -> Option<Box<dyn Transform>> {
+        let xforms = self.transforms.iter().rev().map(|xform| {
+            match xform.inverse() {
+                Some(inv) => inv,
+                None => panic!(concat!(
+                    "Transformation chain is not invertible because it ",
+                    "contains a non-invertible transformation"))
+            }
+        }).collect();
+
+        let chain = Self::new(xforms);
+        let boxed = Box::new(chain);
+        Some(boxed)
+    }
 }
 
 /// A fancy composition of sandwich product, scalar product and addition of
@@ -138,7 +163,9 @@ impl TranslatedSandwich {
     /// - a trivector (for space inversions)
     /// d is a vector representing a vector (for translation)
     pub fn new(
-            scalar: Multivector, sandwich: Multivector, translation: Multivector) 
+            scalar: Multivector,
+            sandwich: Multivector, 
+            translation: Multivector) 
             -> Self {
         Self {
             scalar,
@@ -321,6 +348,33 @@ impl Transform for TranslatedSandwich {
 
         translated
     }
+
+    /// The inverse of a sandwich transform is derived as follows:
+    ///
+    /// ```text
+    ///     v' = s a v a^(-1) + d
+    /// v' - d = s a v a^(-1)
+    /// s^(-1) a^(-1) (v' - d) a = v
+    /// s^(-1) a^(-1) v' a - s^(-1) a^(-1) d a = v
+    ///
+    /// so
+    ///
+    /// s' = s^(-1)
+    /// a' = a^(-1)
+    /// d' = s' a' d a^(-1)
+    /// ```
+    fn inverse(&self) -> Option<Box<dyn Transform>> {
+        let inv_scalar = self.scalar.inverse();
+        let inv_sandwich = self.sandwich.inverse();
+        let inv_translation = inv_scalar
+            .mul(&inv_sandwich)
+            .mul(&self.translation)
+            .mul(&self.sandwich);
+
+        let xform = Self::new(inv_scalar, inv_sandwich, inv_translation);
+        let boxed = Box::new(xform);
+        Some(boxed)
+    }
 }
 
 /// Sphere inversion in 3D
@@ -336,6 +390,13 @@ impl Inverse {
 impl Transform for Inverse {
     fn transform(&self, point: &Multivector) -> Multivector {
         point.inverse()
+    }
+
+    /// Inverse transformations are self-inverses!
+    fn inverse(&self) -> Option<Box<dyn Transform>> {
+        let inv = Self::new();
+        let boxed = Box::new(inv);
+        Some(boxed)
     }
 }
 
