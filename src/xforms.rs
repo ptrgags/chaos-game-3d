@@ -10,6 +10,17 @@ pub trait Transform {
     fn transform(&self, point: &Multivector) -> Multivector;
 }
 
+/// Chain of transformations applied in the order specified.
+/// for example, if the transformations were specified
+/// ```text
+/// ["chain", [
+///     ["scale", k],
+///     ["rotate", nx, ny, nz, theta],
+///     ["translate", x, y, z]
+/// ]]
+/// ```
+///
+/// This would produce the transformation TRS(v) (scaling applied first)
 pub struct TransformChain {
     transforms: Vec<Box<dyn Transform>>,
 }
@@ -21,6 +32,14 @@ impl TransformChain {
         }
     }
 
+    /// Create a transformation chain from JSON of the form:
+    /// ```text
+    /// ["chain", [<xform JSON 1>, <xform JSON 2>, ...]]
+    /// ```
+    ///
+    /// Note that any adjacent TranslatedSandwich transformations are
+    /// composed together to reduce the total number of transformations applied
+    /// at each iteration.
     pub fn from_json(chain_desc: &JsonValue) -> Self {
         let xforms_json = &chain_desc[1];
         
@@ -107,6 +126,17 @@ pub struct TranslatedSandwich {
 }
 
 impl TranslatedSandwich {
+    /// General sandwich transformation
+    ///
+    /// s n v n^(-1) + d
+    ///
+    /// where: 
+    /// s is a scalar (for scaling coordinates)
+    /// n is a multivector, one of:
+    /// - a unit length vector (for reflections)
+    /// - a rotor (for rotations)
+    /// - a trivector (for space inversions)
+    /// d is a vector representing a vector (for translation)
     pub fn new(
             scalar: Multivector, sandwich: Multivector, translation: Multivector) 
             -> Self {
@@ -117,6 +147,8 @@ impl TranslatedSandwich {
         }
     }
 
+    /// Identity. Stay in place
+    /// The map I(v) = v = 1 1 v 1^(-1) + 0
     pub fn identity() -> Self {
         Self { 
             scalar: Multivector::one(), 
@@ -125,6 +157,8 @@ impl TranslatedSandwich {
         }
     }
 
+    /// Translation: shift points in space
+    /// The map T(v) = v + d = 1 1 v 1^(-1) + d
     pub fn translation(d: Multivector) -> Self {
         Self {
             scalar: Multivector::one(),
@@ -133,6 +167,15 @@ impl TranslatedSandwich {
         }
     }
 
+    /// Rotation
+    /// 
+    /// Given n = axis of rotation (vector)
+    ///       theta = angle to rotate around the axis (scalar)
+    ///
+    /// Let r = cos(theta/2) + sin(theta/2) * B
+    ///     B = n* = n * -e123
+    ///
+    /// Then R(v) = r v r^(-1) = 1 r v r^(-1) + 0
     pub fn rotation(axis: Multivector, angle: f64) -> Self {
         let unit_bivector = axis.dual().normalize();
         let half_angle = angle / 2.0;
@@ -148,6 +191,8 @@ impl TranslatedSandwich {
         }
     }
 
+    /// Scale
+    /// S(v) = kv = k 1 v 1^(-1) + 0
     pub fn scale(s: f64) -> Self {
         Self {
             scalar: Multivector::scalar(s),
@@ -172,6 +217,22 @@ impl TranslatedSandwich {
         }
     }
 
+    /// Create a Translated Sandwich from JSON of one of the forms:
+    /// ```text
+    /// ["identity"]
+    /// ["translate", x, y, z]        // translation factor
+    /// ["rotate", nx, ny, nz, theta] // axis and angle
+    /// ["scale", k]                  // Scale factor. Uniform only for now.
+    /// ["invert"]                    // Sphere inversion
+    /// ["reflect_vec", nx, ny, nz]   // Reflect in plane normal to this vector.
+    ///                               // In other words, flip the projection of
+    ///                               // a coordinate onto this normal vector
+    /// ["reflect_thru_vec", x, y, z] // Fix the direction specified by this
+    ///                               // direction and flip the other two
+    ///                               // orthogonal directions. This is like
+    ///                               // a 180 degree rotation around the
+    ///                               // vector.
+    /// ```
     pub fn from_json(xform_desc: &JsonValue) -> Self {
         let xform_type = xform_desc[0]
             .as_str()
@@ -262,6 +323,8 @@ impl Transform for TranslatedSandwich {
     }
 }
 
+/// Sphere inversion in 3D
+/// V(v) = v^(-1) = v / |v|^2
 pub struct Inverse {}
 
 impl Inverse {
@@ -281,6 +344,8 @@ impl Transform for Inverse {
 /// ```text
 /// [type, params...]
 /// ```
+///
+/// See the other transformation types for more information.
 pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     let xform_type = xform_desc[0]
         .as_str()
