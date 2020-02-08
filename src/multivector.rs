@@ -72,14 +72,17 @@ impl Multivector {
         }
     }
 
+    /// Get the scalar 1
     pub fn one() -> Self {
         Self::scalar(1.0)
     }
 
+    /// Get the scalar 0
     pub fn zero() -> Self {
         Self::scalar(0.0)
     }
 
+    /// Get a scalar s
     pub fn scalar(s: f64) -> Self {
         Self {
             components: [
@@ -93,6 +96,7 @@ impl Multivector {
         }
     }
 
+    /// Get a vector xe1 + ye2 + ze3
     pub fn vector(x: f64, y: f64, z: f64) -> Self {
         Self {
             components: [
@@ -106,6 +110,7 @@ impl Multivector {
         }
     }
 
+    /// Get a vector xye12 + xze13 + yze23
     pub fn bivector(xy: f64, xz: f64, yz: f64) -> Self {
         Self {
             components: [
@@ -119,6 +124,7 @@ impl Multivector {
         }
     }
 
+    /// Get a trivector te123
     pub fn trivector(t: f64) -> Self {
         Self {
             components: [
@@ -137,6 +143,7 @@ impl Multivector {
         Self::vector(*vector.x() as f64, *vector.y() as f64, *vector.z() as f64)
     }
 
+    /// Convert the vector part to a Vec3, ignoring other components
     pub fn to_vec3(&self) -> Vec3 {
         let x = self.components[VECTOR_OFFSET];
         let y = self.components[VECTOR_OFFSET + 1];
