@@ -8,7 +8,7 @@ type Child<T> = Option<Box<T>>;
 /// Octree node
 pub struct OctNode {
     /// 8 children. This is always either completely empty or completely full 
-    children: [Child<OctNode>; 8],
+    children: Vec<OctNode>,
     /// Bounding box for this node
     bounds: BBox,
     /// Store points in this node. They are stored as Vec3 to be more compact
@@ -29,7 +29,7 @@ impl OctNode {
     /// derived from this node.
     pub fn root_node(radius: f32, capacity: usize) -> Self {
         Self {
-            children: [None, None, None, None, None, None, None, None],
+            children: Vec::new(),
             bounds: BBox::new(
                 -radius, radius, 
                 -radius, radius, 
@@ -44,7 +44,7 @@ impl OctNode {
     /// Create an empty child node with given bounds
     pub fn child_node(bounds: BBox, capacity: usize) -> Self {
         Self {
-            children: [None, None, None, None, None, None, None, None],
+            children: Vec::new(),
             bounds,
             points: OutputBuffer::new(),
             capacity,
@@ -55,13 +55,7 @@ impl OctNode {
 
     /// Check if a node is a leaf node by checking that it has no children
     pub fn is_leaf(&self) -> bool {
-        for child in self.children.iter() {
-            if let Some(_) = child {
-                return false;
-            }
-        }
-
-        true
+        self.children.is_empty()
     }
 
     /// Check if a node is full up to capacity
@@ -114,8 +108,7 @@ impl OctNode {
             // Recursive case: Find the octant which the point is in, and
             // insert into the child node
             let quadrant = self.bounds.find_quadrant(&point);
-            let child = &mut self.children[quadrant]
-                .expect("Unexpected null child");
+            let child = &mut self.children[quadrant];
             let result = child.add_point_recursive(
                 point, color, depth + 1, max_depth);
             if result {
@@ -138,9 +131,9 @@ impl OctNode {
     fn subdivide(&mut self) {
         assert!(self.is_leaf(), "can only subdivide leaf nodes");
         let child_bounds = self.bounds.subdivide();
-        for (i, bounds) in child_bounds.into_iter().enumerate() {
-            let child = Self::child_node(*bounds, self.capacity);
-            self.children[i] = Some(Box::new(child))
+        for bounds in child_bounds.into_iter() {
+            let child = Self::child_node(bounds, self.capacity);
+            self.children.push(child);
         }
     }
 }

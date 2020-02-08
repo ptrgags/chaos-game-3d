@@ -43,7 +43,7 @@ impl BBox {
         (dx * dx + dy * dy + dz * dz).sqrt()
     }
 
-    pub fn subdivide(&self) -> [Self; 8] {
+    pub fn subdivide(&self) -> Vec<Self> {
         let center = self.center();
         let cx = *center.x();
         let cy = *center.y();
@@ -56,7 +56,7 @@ impl BBox {
         let z1 = self.bottom;
         let z2 = self.top;
 
-        [
+        vec![
             Self::new(x1, cx, y1, cy, z1, cz),
             Self::new(cx, x2, y1, cy, z1, cz),
             Self::new(x1, cx, cy, y2, z1, cz),
