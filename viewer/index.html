@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/Cesium/Cesium.js"></script> <link href="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet"> <script type="module" src="main.js"></script> <style>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.66/Build/CesiumUnminified/Cesium.js"></script> 
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.66/Build/Cesium/Widgets/widgets.css" rel="stylesheet"> 
+    <script type="module" src="main.js"></script> 
+    <style>
         body {
             height: 100%;
             margin: 0;
@@ -35,7 +38,7 @@
             margin-right: 20px;
         }
 
-        select {
+        select, button {
             background: #303336;
             color: #edffff;
             border: 1px solid #555555;
@@ -63,7 +66,8 @@
             <option value="spirals_3d">3D Logarithmic Spirals</option>
         </select><br/>
         <span class="heading">Point Cloud Attenuation</span>
-        <input id="attenuation" type="checkbox" checked/>
+        <input id="attenuation" type="checkbox" checked/><br/>
+        <button id="reload">Reload Tileset</button>
     </div>
 </body>
 </html>

@@ -16,9 +16,12 @@
         "xforms": [
             ["chain", [
                 ["rotate", 0, 0, 1, 0.01],
-                ["scale", 1.01]
+                ["scale", 0.9900990099009900990099]
             ]],
-            ["+inverse"]
+            ["chain", [
+                ["rotate", 0, 0, -1, 0.01],
+                ["scale", 1.01]
+            ]]
         ]
     }, 
     "color_ifs": {
