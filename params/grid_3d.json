@@ -11,30 +11,19 @@
     "iters": 100,
     "ifs": {
         "chooser": "uniform",
-        "xforms": [{
-            "type": "trs",
-            "translate": [2, 0, 0]
-        }, {
-            "type": "trs",
-            "translate": [-2, 0, 0]
-        }, {
-            "type": "trs",
-            "translate": [0, 2, 0]
-        }, {
-            "type": "trs",
-            "translate": [0, -2, 0]
-        }, {
-            "type": "trs",
-            "translate": [0, 0, 2]
-        }, {
-            "type": "trs",
-            "translate": [0, 0, -2]
-        }]
+        "xforms": [
+            ["translate",  2,  0,  0],
+            ["translate", -2,  0,  0],
+            ["translate",  0,  2,  0],
+            ["translate",  0, -2,  0],
+            ["translate",  0,  0,  2],
+            ["translate",  0,  0, -2]
+        ]
     },
     "color_ifs": {
         "chooser": "uniform",
-        "xforms": [{
-            "type": "trs"
-        }]
+        "xforms": [
+            ["identity"]
+        ]
     }
 }

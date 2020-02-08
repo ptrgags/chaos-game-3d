@@ -1,5 +1,6 @@
-use crate::buffers::Buffer;
+use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
+use crate::multivector::Multivector;
 
 use rand::Rng;
 use rand::prelude::ThreadRng;
@@ -13,7 +14,7 @@ pub trait InitialSet {
     /// Generate a set of points. This may be called several times, and each
     /// time it must produce a new buffer. This uses a mutable reference since
     /// it must be 
-    fn generate(&mut self) -> Buffer; 
+    fn generate(&mut self) -> InternalBuffer; 
     /// Get the number of points in the initial set for measuring complexity.
     fn len(&self) -> usize;
 }
@@ -73,13 +74,14 @@ impl RandomBox {
 }
 
 impl InitialSet for RandomBox {
-    fn generate(&mut self) -> Buffer {
-        let mut buf = Buffer::new();
+    fn generate(&mut self) -> InternalBuffer {
+        let mut buf = InternalBuffer::new();
 
         // Find the bounding box for generating points
         let half_dims = self.dimensions.scale(0.5);
         let min = self.center - half_dims;
         let max = self.center + half_dims;
+        let color = Multivector::from_vec3(&self.color);
 
         // Generate N random points, uniformly distributed over the box.
         for _ in 0..self.num_points {
@@ -87,8 +89,8 @@ impl InitialSet for RandomBox {
             let y = self.rng.gen_range(min.y(), max.y());
             let z = self.rng.gen_range(min.z(), max.z());
         
-            let point = Vec3::new(x, y, z);
-            buf.add(point, self.color);
+            let point = Multivector::vector(x as f64, y as f64, z as f64);
+            buf.add(point, color.clone());
         }
 
         buf
@@ -153,18 +155,21 @@ impl RandomLine {
 }
 
 impl InitialSet for RandomLine {
-    fn generate(&mut self) -> Buffer {
-        let mut buf = Buffer::new();
+    fn generate(&mut self) -> InternalBuffer {
+        let mut buf = InternalBuffer::new();
+        let color = Multivector::from_vec3(&self.color);
+        let start = Multivector::from_vec3(&self.start);
+        let end = Multivector::from_vec3(&self.end);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
         for _ in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
-            let weighted_start = self.start.scale(1.0 - t);
-            let weighted_end = self.end.scale(t);
-            let point = weighted_start + weighted_end;
+            let weighted_start = start.scale(1.0 - t);
+            let weighted_end = end.scale(t);
+            let point = weighted_start.add(&weighted_end);
 
-            buf.add(point, self.color);
+            buf.add(point, color.clone());
         }
 
         buf

@@ -3,8 +3,9 @@ use json::JsonValue;
 use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
 use crate::plotters::{self, Plotter};
-use crate::buffers::Buffer;
+use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
+use crate::multivector::Multivector;
 
 /// The earth has a radius of about 6.371 million meters. Scale up our
 /// model so it's a bit bigger than this.
@@ -28,9 +29,9 @@ const STARTUP_ITERS: usize = 10;
 /// Barnsley)
 pub struct ChaosGame {
     /// IFS for transforming the points
-    position_ifs: IFS<f32>,
+    position_ifs: IFS,
     /// IFS for transforming the colors
-    color_ifs: IFS<f32>,
+    color_ifs: IFS,
     /// Octree-based plotter to store the resulting fractal/tiling
     output: Box<dyn Plotter>,
     /// Number of iterations to perform
@@ -39,8 +40,8 @@ pub struct ChaosGame {
 
 impl ChaosGame {
     pub fn new(
-            position_ifs: IFS<f32>, 
-            color_ifs: IFS<f32>, 
+            position_ifs: IFS, 
+            color_ifs: IFS, 
             output: Box<dyn Plotter>,
             num_iters: usize) -> Self {
         Self {
@@ -79,14 +80,14 @@ impl ChaosGame {
 impl Algorithm for ChaosGame {
     fn iterate(&mut self) {
         // Start with a random position and color
-        let mut pos = Vec3::random();
-        let mut color_vec = Vec3::random_color();
+        let mut pos = Multivector::from_vec3(&Vec3::random());
+        let mut color_vec = Multivector::from_vec3(&Vec3::random_color());
 
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.output.plot_point(pos, color_vec)
+                self.output.plot_point(pos.to_vec3(), color_vec.to_vec3())
             }
 
             pos = self.position_ifs.transform(&pos);
@@ -101,7 +102,7 @@ impl Algorithm for ChaosGame {
         // TODO: Pick better camera settings so we can zoom in closer
         /*
         let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
-        writer.add_points(&mut self.output_buffer);
+        writer.add_points(&mut self.buffer);
         writer.save(fname);
         */
     }
@@ -119,9 +120,9 @@ impl Algorithm for ChaosGame {
 /// at each iteration.
 pub struct ChaosSets { 
     /// IFS for transforming the points
-    position_ifs: IFS<f32>,
+    position_ifs: IFS,
     /// IFS for transforming colors
-    color_ifs: IFS<f32>,
+    color_ifs: IFS,
     /// Pattern for the initial sets
     initial_set: Box<dyn InitialSet>,
     /// How many initial sets to create. Each one is transformed independently
@@ -135,8 +136,8 @@ pub struct ChaosSets {
 
 impl ChaosSets {
     pub fn new(
-            position_ifs: IFS<f32>, 
-            color_ifs: IFS<f32>, 
+            position_ifs: IFS, 
+            color_ifs: IFS, 
             initial_set: Box<dyn InitialSet>, 
             initial_copies: usize, 
             output: Box<dyn Plotter>,
@@ -152,12 +153,13 @@ impl ChaosSets {
     }
 
     /// Apply the position/color IFS to a buffer, and produce a new buffer
-    pub fn transform_buffer(&mut self, buffer: Buffer) -> Buffer {
+    pub fn transform_buffer(
+            &mut self, buffer: InternalBuffer) -> InternalBuffer {
         let new_positions = 
             self.position_ifs.transform_points(buffer.get_points());
         let new_colors = self.color_ifs.transform_points(buffer.get_colors());
 
-        Buffer::from_vectors(new_positions, new_colors)
+        InternalBuffer::from_vectors(new_positions, new_colors)
     }
 
     /// Parse a Chaos Sets instance from JSON of the form:
@@ -196,9 +198,10 @@ impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
         // Generate a number of initial sets. They will be transformed
         // independently. This helps to view more of the search space
-        let mut buffers: Vec<Buffer> = (0..self.initial_copies).map(|_| {
-            self.initial_set.generate()
-        }).collect();
+        let mut buffers: Vec<InternalBuffer> = 
+            (0..self.initial_copies)
+                .map(|_| { self.initial_set.generate() })
+                .collect();
 
         // Only write the first copy to the output, since they are all in
         // the same location
@@ -208,7 +211,7 @@ impl Algorithm for ChaosSets {
         // and plot the results in the output buffer.
         // TODO: This could totally be done in parallel. Try Rust threads!
         for _ in 0..self.num_iters {
-            let mut new_buffers: Vec<Buffer> = Vec::new();
+            let mut new_buffers: Vec<InternalBuffer> = Vec::new();
             for buf in buffers.into_iter() {
                 let new_buf = self.transform_buffer(buf);
                 self.output.plot_buffer(&new_buf);
@@ -225,7 +228,7 @@ impl Algorithm for ChaosSets {
         // TODO: Pick better camera settings so we can zoom in closer
         /*
         let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
-        writer.add_points(&mut self.output_buffer);
+        writer.add_points(&mut self.buffer);
         writer.save(fname);
         */
     }
