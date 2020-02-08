@@ -1,9 +1,7 @@
 use json::JsonValue;
 
-use crate::xforms;
-use crate::xforms::Transform;
-use crate::choosers;
-use crate::choosers::Chooser;
+use crate::xforms::{self, Transform, TranslatedSandwich};
+use crate::choosers::{self, Chooser, UniformChooser};
 use crate::multivector::Multivector;
 
 // Type aliases for brevity
@@ -34,6 +32,16 @@ impl IFS {
         Self { xforms, chooser }
     }
 
+    /// Create the simplest possible IFS: the identity transformation
+    /// and a unfiorm chooser
+    pub fn identity() -> Self {
+        let identity_xform = Box::new(TranslatedSandwich::identity());
+        Self {
+            xforms: vec![identity_xform],
+            chooser: Box::new(UniformChooser::new(1))
+        }
+    }
+
     /// Transform an individual point using a randomly-selected transformation
     /// from this IFS. The Chooser determines the random distribution
     pub fn transform(&mut self, vector: &Multivector) -> Multivector {
@@ -61,9 +69,15 @@ impl IFS {
 /// }
 /// ```
 pub fn from_json(json: &JsonValue) -> IFS {
-    let xforms = parse_xforms(&json["xforms"]);
-    let chooser = choosers::from_json(&json["chooser"], xforms.len());
-    IFS::new(xforms, chooser)
+    match json {
+        JsonValue::Null => IFS::identity(),
+        JsonValue::Object(_) => {
+            let xforms = parse_xforms(&json["xforms"]);
+            let chooser = choosers::from_json(&json["chooser"], xforms.len());
+            IFS::new(xforms, chooser)
+        },
+        _ => panic!("IFS JSON must be an object or null")
+    }
 }
 
 /// Parse an array of transformations from JSON
