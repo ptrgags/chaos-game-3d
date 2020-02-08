@@ -1,19 +1,32 @@
 use crate::bbox::BBox;
-use crate::buffers::Buffer;
+use crate::buffers::{OutputBuffer};
 use crate::vector::Vec3;
 
+/// Pointer to a child node, which can be null.
 type Child<T> = Option<Box<T>>;
 
+/// Octree node
 pub struct OctNode {
+    /// 8 children. This is always either completely 
     children: [Child<OctNode>; 8],
+    /// Bounding box for this node
     bounds: BBox,
-    points: Buffer,
+    /// Store points in this node. They are stored as Vec3 to be more compact
+    /// and because this matches the 3D Tiles spec
+    points: OutputBuffer,
+    /// How many points can fit in this node
     capacity: usize,
+    /// How many fits currently are in this node
     count: usize,
+    /// Total color. This can be used along with count to compute the average
+    /// color
     color_sum: Vec3,
 }
 
 impl OctNode {
+    /// Create an empty root node surrounding the origin. The half-width "radius"
+    /// of the box must be specified since all other node bounding boxes are
+    /// derived from this node.
     pub fn root_node(radius: f32, capacity: usize) -> Self {
         Self {
             children: [None, None, None, None, None, None, None, None],
@@ -21,24 +34,26 @@ impl OctNode {
                 -radius, radius, 
                 -radius, radius, 
                 -radius, radius),
-            points: Buffer::new(),
+            points: OutputBuffer::new(),
             capacity,
             count: 0,
             color_sum: Vec3::zero(),
         }
     }
 
+    /// Create an empty child node with given bounds
     pub fn child_node(bounds: BBox, capacity: usize) -> Self {
         Self {
             children: [None, None, None, None, None, None, None, None],
             bounds,
-            points: Buffer::new(),
+            points: OutputBuffer::new(),
             capacity,
             count: 0,
             color_sum: Vec3::zero(),
         }
     }
 
+    /// Check if a node is a leaf node by checking that it has no children
     pub fn is_leaf(&self) -> bool {
         for child in self.children.iter() {
             if let Some(_) = child {
@@ -49,6 +64,7 @@ impl OctNode {
         true
     }
 
+    /// Check if a node is full up to capacity
     pub fn is_full(&self) -> bool {
         self.points.len() == self.capacity
     }
@@ -86,7 +102,7 @@ impl OctNode {
                 None => {
                     // Limit the tree's depth to prevent infinite loops.
                     // This can happen if a point is repeated many times.
-                    if (depth < max_depth) {
+                    if depth < max_depth {
                         self.add_child(quadrant);
                     }
                 }

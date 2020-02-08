@@ -2,7 +2,7 @@ use json::JsonValue;
 
 use crate::vector::Vec3;
 use crate::octrees::OctNode;
-use crate::buffers::Buffer;
+use crate::buffers::InternalBuffer;
 
 /// Octree-based point cloud plotter. There are different types for raw
 /// scatter plots and density plots
@@ -12,9 +12,9 @@ pub trait Plotter {
 
     /// Plot many points from a buffer. This is just an iteration of
     /// plot_point().
-    fn plot_buffer(&mut self, buffer: &Buffer) {
+    fn plot_buffer(&mut self, buffer: &InternalBuffer) {
         for (point, color) in buffer.points_iter() {
-            self.plot_point(point, color);
+            self.plot_point(point.to_vec3(), color.to_vec3());
         }
     }
 
