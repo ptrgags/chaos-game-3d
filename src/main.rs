@@ -6,7 +6,6 @@ extern crate rand;
 mod macros;
 mod xforms;
 mod vector;
-mod quaternion;
 mod ifs;
 mod initial_set;
 mod choosers;
@@ -14,6 +13,7 @@ mod parameters;
 mod algorithms;
 mod buffers;
 mod pointclouds;
+mod multivector;
 
 use std::env;
 

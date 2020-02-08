@@ -1,14 +1,26 @@
 use crate::vector::Vec3;
+use crate::multivector::Multivector;
 
 /// A buffer is a container of colored points.
 /// It is stored as a pair of parallel vectors of points and colors.
+/// The type is generic because this is used both for containing multivectors
+/// when computing points and the more compact Vec3 when writing points to a
+/// file
 #[derive(Clone)]
-pub struct Buffer {
-    points: Vec<Vec3>,
-    colors: Vec<Vec3>,
+pub struct Buffer<T: Clone> {
+    points: Vec<T>,
+    colors: Vec<T>,
 }
 
-impl Buffer {
+/// Since transformations (see xforms.rs) are maps of 
+/// `Multivector -> Multivector`, algorithms should store lists of multivectors
+/// not Vec3 to avoid excessive packing/unpacking.
+pub type InternalBuffer = Buffer<Multivector>;
+
+/// When outputing a point cloud, use the more compact vector of point
+pub type OutputBuffer = Buffer<Vec3>;
+
+impl<T: Clone> Buffer<T> {
     pub fn new() -> Self {
         Self {
             points: Vec::new(),
@@ -16,18 +28,25 @@ impl Buffer {
         }
     }
 
-    pub fn from_vectors(points: Vec<Vec3>, colors: Vec<Vec3>) -> Self {
+    /// Construct from parallel vectors of points and a vector of colors
+    pub fn from_vectors(points: Vec<T>, colors: Vec<T>) -> Self {
+        assert!(
+            points.len() == colors.len(), 
+            "points and colors must have the same length");
+
         Self {
             points,
             colors
         }
     }
 
-    pub fn get_points(&self) -> &Vec<Vec3> {
+    /// Return the list of points without colors
+    pub fn get_points(&self) -> &Vec<T> {
         return &self.points;
     }
 
-    pub fn get_colors(&self) -> &Vec<Vec3> {
+    /// Return the list of colors without points
+    pub fn get_colors(&self) -> &Vec<T> {
         return &self.colors;
     }
 
@@ -44,7 +63,7 @@ impl Buffer {
     }
 
     /// Add a new point to the buffer
-    pub fn add(&mut self, point: Vec3, color: Vec3) {
+    pub fn add(&mut self, point: T, color: T) {
         self.points.push(point);
         self.colors.push(color);
     }
@@ -55,32 +74,32 @@ impl Buffer {
     }
 
     /// Get an iterator over this buffer. This iterator clones values
-    pub fn points_iter(self) -> BufferIterator {
+    pub fn points_iter(&self) -> BufferIterator<T> {
         BufferIterator {
-            buffer: self,
+            points: &self.points,
+            colors: &self.colors,
             index: 0
         }
     }
 }
 
-/// Iterate over a buffer's (point, color) pairs. This clones points rather
-/// than taking a reference or taking ownership. I may regret this someday,
-/// we'll see.
-pub struct BufferIterator {
-    buffer: Buffer,
+/// Iterate over a buffer's (point, color) pairs in read-only fashion
+pub struct BufferIterator<'a, T: Clone> {
+    points: &'a Vec<T>,
+    colors: &'a Vec<T>,
     index: usize
 }
 
-impl Iterator for BufferIterator {
-    type Item = (Vec3, Vec3);
+impl<'a, T: Clone> Iterator for BufferIterator<'a, T> {
+    type Item = (&'a T, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.buffer.len() {
+        if self.index >= self.points.len() {
             return None
         }
 
-        let pos = self.buffer.points[self.index];
-        let color = self.buffer.colors[self.index];
+        let pos = &self.points[self.index];
+        let color = &self.colors[self.index];
         self.index += 1;
         
         Some((pos, color))
