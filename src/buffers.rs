@@ -3,6 +3,9 @@ use crate::multivector::Multivector;
 
 /// A buffer is a container of colored points.
 /// It is stored as a pair of parallel vectors of points and colors.
+/// The type is generic because this is used both for containing multivectors
+/// when computing points and the more compact Vec3 when writing points to a
+/// file
 #[derive(Clone)]
 pub struct Buffer<T: Clone> {
     points: Vec<T>,
@@ -25,17 +28,24 @@ impl<T: Clone> Buffer<T> {
         }
     }
 
+    /// Construct from parallel vectors of points and a vector of colors
     pub fn from_vectors(points: Vec<T>, colors: Vec<T>) -> Self {
+        assert!(
+            points.len() == colors.len(), 
+            "points and colors must have the same length");
+
         Self {
             points,
             colors
         }
     }
 
+    /// Return the list of points without colors
     pub fn get_points(&self) -> &Vec<T> {
         return &self.points;
     }
 
+    /// Return the list of colors without points
     pub fn get_colors(&self) -> &Vec<T> {
         return &self.colors;
     }
@@ -73,9 +83,7 @@ impl<T: Clone> Buffer<T> {
     }
 }
 
-/// Iterate over a buffer's (point, color) pairs. This clones points rather
-/// than taking a reference or taking ownership. I may regret this someday,
-/// we'll see.
+/// Iterate over a buffer's (point, color) pairs in read-only fashion
 pub struct BufferIterator<'a, T: Clone> {
     points: &'a Vec<T>,
     colors: &'a Vec<T>,
