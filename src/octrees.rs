@@ -7,7 +7,7 @@ type Child<T> = Option<Box<T>>;
 
 /// Octree node
 pub struct OctNode {
-    /// 8 children. This is always either completely 
+    /// 8 children. This is always either completely empty or completely full 
     children: [Child<OctNode>; 8],
     /// Bounding box for this node
     bounds: BBox,
@@ -81,78 +81,67 @@ impl OctNode {
         self.add_point_recursive(point, color, 0, max_depth);
     }
 
-    // TODO: Plan this algorithm a little more
+    /// Add a point to the octree recursively. If there are already many points
+    /// in the relevant leaf node, the point may be discarded.
+    ///
+    /// This returns true if the point was added, or false if the point was
+    /// discarded because it didn't fit.
     fn add_point_recursive(
-            &mut self, point: Vec3, color: Vec3, depth: u8, max_depth: u8) {
-        if self.is_leaf() {
-            if self.points.len() < self.capacity {
-                self.points.add(point, color);
+            &mut self, 
+            point: Vec3, 
+            color: Vec3, 
+            depth: u8, 
+            max_depth: u8) -> bool {
+        let is_leaf = self.is_leaf();
+        let is_full = self.is_full();
+        if is_leaf && !is_full {
+            // Base case 1: We're at a leaf with some space. just add the point. 
+            self.points.add(point, color);
+            self.count += 1;
+            self.color_sum = self.color_sum + color;
+            return true;
+        } else if is_leaf && is_full && depth < max_depth {
+            // Base case 2: We're at a full leaf. Subdivide this node and
+            // retry the add operation on this node which is now an internal
+            // node. Note that this always produces 8 children
+            self.subdivide();
+            return self.add_point_recursive(point, color, depth, max_depth);
+        } else if is_leaf && is_full && depth == max_depth {
+            // Base case 3: We're at a full leaf but we've hit the depth
+            // limit. Just discard the point to prevent infinite loops
+            return false;
+        } else if !is_leaf {
+            // Recursive case: Find the octant which the point is in, and
+            // insert into the child node
+            let quadrant = self.bounds.find_quadrant(&point);
+            let child = &mut self.children[quadrant]
+                .expect("Unexpected null child");
+            let result = child.add_point_recursive(
+                point, color, depth + 1, max_depth);
+            if result {
                 self.count += 1;
                 self.color_sum = self.color_sum + color;
-            } else {
-                self.subdivide();
             }
+            return result;
         } else {
-            let quadrant = self.bounds.find_quadrant(&point);
-            match &mut self.children[quadrant] {
-                Some(child) => {
-                    child.add_point_recursive(
-                        point, color, depth + 1, max_depth);
-                },
-                None => {
-                    // Limit the tree's depth to prevent infinite loops.
-                    // This can happen if a point is repeated many times.
-                    if depth < max_depth {
-                        self.add_child(quadrant);
-                    }
-                }
-            }
+            panic!(
+                "Invalid case: is_leaf: {}, is_full: {}, depth: {}/{}",
+                is_leaf,
+                is_full,
+                depth,
+                max_depth);
         }
     }
 
-
-    /*
-    pub fn add(&mut self, point: Vec3, color: Vec3) {
-
-        if self.is_leaf() {
-            self.points.add(point, color);
-
-            if self.points.len() > self.capacity {
-                self.subdivide();
-            }
-        } else {
-            let quadrant = self.bounds.find_quadrant(&point);
-            match &mut self.children[quadrant] {
-                Some(child) => { 
-                    child.add(point, color);
-                },
-                None => {
-                    self.add_child(quadrant, point, color);
-                }
-            }
-        }
-    }
-    */
-
-    /*
+    /// Subdivide a leaf node into an interior node with 8 children, one
+    /// per octant.
     fn subdivide(&mut self) {
-        /*
-        let mut children: [OctNode; 8] = self.bounds.subdivide().into_iter().map(|bounds| {
-            Self::child_node(bounds, self.capacity)
-        }).collect();
-
-        for bounds in child_bounds.into_iter() {
-            Self::child_node(bounds, self.capacity);
+        assert!(self.is_leaf(), "can only subdivide leaf nodes");
+        let child_bounds = self.bounds.subdivide();
+        for (i, bounds) in child_bounds.into_iter().enumerate() {
+            let child = Self::child_node(*bounds, self.capacity);
+            self.children[i] = Some(Box::new(child))
         }
-        */
-    }
-    */
-
-    fn add_child(&mut self, quadrant: usize, point: Vec3, color: Vec3) {
-        let bounds = self.bounds.make_quadrant(quadrant);
-        let mut child = Self::child_node(bounds, self.capacity);
-        child.add(point, color);
-        self.children[quadrant] = Some(Box::new(child));
     }
 }
 
