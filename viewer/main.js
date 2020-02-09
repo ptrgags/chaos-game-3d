@@ -18,6 +18,15 @@ function set_model(model_id) {
     viewer.scene.primitives.add(tileset);
 }
 
+function configure_camera() {
+    const camera = viewer.scene.camera;
+    const frustum = camera.frustum;
+
+    // Prevent clipping when we zoom in close to see details
+    frustum.near = 0.001;
+    frustum.far = 1e11;
+}
+
 // Not sure why this isn't working... 
 const BIGGER_THAN_EARTH = 1000000.0;
 let unit_sphere;
@@ -80,3 +89,4 @@ reload_button.addEventListener('click', () => {
 });
 
 set_model('sierpinski');
+configure_camera();
