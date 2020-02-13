@@ -10,11 +10,11 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
 let tileset;
 let attenuation = true;
 function set_model(model_id) {
+    viewer.scene.primitives.remove(tileset);
+
     const url = `${model_id}/tileset.json`;
     tileset = new Cesium.Cesium3DTileset({url});
     tileset.pointCloudShading.attenuation = attenuation;
-
-    viewer.scene.primitives.removeAll();
     viewer.scene.primitives.add(tileset);
 }
 
@@ -39,6 +39,62 @@ function add_reference_geometry() {
     const entity = new Cesium.Entity(options);
     viewer.entities.add(entity);
     */
+
+    const scene = viewer.scene;
+    
+    // Draw a blue ellipsoid and position it on the globe surface.
+
+var radii = new Cesium.Cartesian3(10000000.0, 10000000.0, 10000000.0);
+// Create a ellipsoid geometry.
+var ellipsoidGeometry = new Cesium.EllipsoidGeometry({
+    vertexFormat : Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+    radii : radii
+});
+
+var outline = new Cesium.EllipsoidOutlineGeometry({
+    radii : radii,
+    stackPartitions : 16,
+    slicePartitions : 8
+});
+
+// Create a geometry instance using the geometry
+// and model matrix created above.
+var ellipsoidInstance = new Cesium.GeometryInstance({
+    geometry : ellipsoidGeometry,
+    attributes : {
+        color : Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.BLUE)
+    }
+});
+
+// Create a geometry instance using the geometry
+// and model matrix created above.
+var outlineInstance = new Cesium.GeometryInstance({
+    geometry : outline,
+    attributes : {
+        color : Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.WHITE)
+    }
+});
+
+
+// Add the geometry instance to primitives.
+scene.primitives.add(new Cesium.Primitive({
+    geometryInstances : ellipsoidInstance,
+    asynchronous: true,
+    appearance : new Cesium.PerInstanceColorAppearance({
+        translucent : true,
+        closed : true
+    })
+}));
+
+// Add the geometry instance to primitives.
+scene.primitives.add(new Cesium.Primitive({
+    geometryInstances : outlineInstance,
+    asynchronous: true,
+    appearance : new Cesium.PerInstanceColorAppearance({
+        flat: true,
+        lineWidth : Math.min(2.0, scene.maximumAliasedLineWidth)
+    })
+}));
 
     /*
     unit_sphere = viewer.entities.add(new Cesium.Entity({
@@ -80,3 +136,4 @@ reload_button.addEventListener('click', () => {
 });
 
 set_model('sierpinski');
+add_reference_geometry();
