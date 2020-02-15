@@ -2,12 +2,12 @@
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
-        "dims": [0.01, 4, 4],
+        "dims": [0.01, 0.01, 4],
         "center": [0, 0, 0],
         "color": [0.3, 0.8, 0.4],
-        "num_points": 400
+        "num_points": 100
     },
-    "initial_set_copies": 2,
+    "initial_set_copies": 5,
     "iters": 10000,
     "ifs": {
         "chooser": "uniform",
