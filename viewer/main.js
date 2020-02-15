@@ -11,7 +11,11 @@ let tileset;
 let attenuation = true;
 function set_model(model_id) {
     const url = `${model_id}/tileset.json`;
-    tileset = new Cesium.Cesium3DTileset({url});
+    tileset = new Cesium.Cesium3DTileset({
+        url,
+        degbugShowBoundingVolume: true,
+        degbugShowContentBoundingVolume: true
+    });
     tileset.pointCloudShading.attenuation = attenuation;
 
     viewer.scene.primitives.removeAll();

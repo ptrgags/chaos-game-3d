@@ -1,5 +1,7 @@
+use std::fs::{File, create_dir_all};
+use std::io::prelude::*;
+
 use json::JsonValue;
-use std::fs::create_dir_all;
 
 use crate::vector::Vec3;
 use crate::octrees::OctNode;
@@ -49,6 +51,7 @@ impl ScatterPlot {
     ///     "radius": r,
     /// }
     pub fn from_json(json: &JsonValue) -> Self {
+        const SCALE: f32 = 10000000.0;
         let max_depth = json["max_depth"]
             .as_u8()
             .expect("max_depth must be a positive integer");
@@ -59,12 +62,60 @@ impl ScatterPlot {
             .as_f32()
             .expect("radius must be a float");
 
-        Self::new(radius, capacity, max_depth)
+        Self::new(SCALE * radius, capacity, max_depth)
     }
 
     to_box!(Plotter);
 
-    fn make_tileset_json(&self, _dirname: &str) {
+    fn make_tileset_json(&self, dirname: &str) {
+        let root_tile = Self::make_tileset_json_recursive(&self.root, dirname);
+        const SCALE: f32 = 10000000.0;
+        let tileset = object!{
+            "asset" => object!{
+                "version" => "1.0",
+            },
+            "geometricError" => 5.0 * SCALE,
+            "root" => root_tile
+        };
+
+        let fname = format!("{}/tileset.json", dirname);
+        let mut file = File::create(fname)
+            .expect("failed to open tileset.json");
+        file.write_all(json::stringify(tileset).as_bytes())
+            .expect("failed to write tileset.json");
+    }
+
+    fn make_tileset_json_recursive(tree: &OctNode, prefix: &str) -> JsonValue {
+        if tree.is_leaf() && tree.is_empty() {
+            JsonValue::Null
+        } else if tree.is_leaf() { 
+            let fname = format!("{}.pnts", prefix);
+            object!{
+                "boundingVolume" => tree.bounding_volume_json(),
+                "geometricError" => 0.0,
+                "refine" => "ADD",
+                "content" => object!{
+                    "uri" => fname
+                }
+            }
+        } else {
+            let mut children: Vec<JsonValue> = Vec::new();
+            for (quadrant, child) in tree.labeled_children().iter() {
+                let new_prefix = format!("{}/{}", prefix, quadrant);
+                let child_json = 
+                    Self::make_tileset_json_recursive(child, &new_prefix);
+                if child_json.is_object() {
+                    children.push(child_json);
+                }
+            }
+
+            object!{
+                "boundingVolume" => tree.bounding_volume_json(),
+                "geometricError" => tree.geometric_error(),
+                "refine" => "ADD",
+                "children" => JsonValue::Array(children)
+            }
+        }
     }
     
     fn make_pnts_files(&self, dirname: &str) {

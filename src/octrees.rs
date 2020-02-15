@@ -1,3 +1,5 @@
+use json::JsonValue;
+
 use crate::bbox::BBox;
 use crate::buffers::{OutputBuffer};
 use crate::vector::Vec3;
@@ -64,6 +66,17 @@ impl OctNode {
     /// Check if a node has no points
     pub fn is_empty(&self) -> bool {
         self.points.len() == 0
+    }
+
+    /// Estimate the geometric error by taking the diagonal length of
+    /// the bounding box of this node
+    pub fn geometric_error(&self) -> f32 {
+        self.bounds.diagonal_len()
+    }
+
+    /// Format the bounding box in JSON format to match the 3D tiles spec
+    pub fn bounding_volume_json(&self) -> JsonValue {
+        self.bounds.to_json()
     }
 
     /// Return pairs of (quadrant, child) for each child in an internal node

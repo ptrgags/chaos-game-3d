@@ -1,3 +1,5 @@
+use json::JsonValue;
+
 use crate::vector::Vec3;
 
 const X_BIT: usize = 0b001usize;
@@ -35,12 +37,29 @@ impl BBox {
             (self.bottom + self.top) / 2.0)
     }
 
+    /// Compute the length of the diagonal of this bounding box. This is
+    /// used for estimating geometric error
     pub fn diagonal_len(&self) -> f32 { 
         let dx = self.right - self.left;
         let dy = self.back - self.front;
         let dz = self.top - self.bottom;
 
         (dx * dx + dy * dy + dz * dz).sqrt()
+    }
+
+    /// Format this box in JSON format as used in the Cesium 3D Tiles Spec
+    pub fn to_json(&self) -> JsonValue{
+        let center = self.center();
+        let dx = self.right - self.left;
+        let dy = self.back - self.front;
+        let dz = self.top - self.bottom;
+
+        array![
+            *center.x(), *center.y(), *center.z(),
+            0.5 * dx, 0.0, 0.0,
+            0.0, 0.5 * dy, 0.0,
+            0.0, 0.0, 0.5 * dz 
+        ]
     }
 
     pub fn subdivide(&self) -> Vec<Self> {
