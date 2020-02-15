@@ -1,4 +1,5 @@
 use json::JsonValue;
+use std::fs::create_dir_all;
 
 use crate::vector::Vec3;
 use crate::octrees::OctNode;
@@ -50,7 +51,7 @@ impl ScatterPlot {
     pub fn from_json(json: &JsonValue) -> Self {
         let max_depth = json["max_depth"]
             .as_u8()
-            .expect("node_capacity must be a positive integer");
+            .expect("max_depth must be a positive integer");
         let capacity = json["node_capacity"]
             .as_usize()
             .expect("node_capacity must be a positive integer");
@@ -62,6 +63,31 @@ impl ScatterPlot {
     }
 
     to_box!(Plotter);
+
+    fn make_tileset_json(&self, _dirname: &str) {
+    }
+    
+    fn make_pnts_files(&self, dirname: &str) {
+        let prefix = format!("{}/0", dirname);
+        Self::make_pnts_files_recursive(&self.root, &prefix);
+    }
+
+    fn make_pnts_files_recursive(tree: &OctNode, prefix: &str) {
+        if tree.is_leaf() && tree.is_empty() {
+            // If the leaf is empty, no need to generate a file
+            return;
+        } else if tree.is_leaf() { 
+            let fname = format!("{}.pnts", prefix);
+            tree.write_pnts(&fname)
+        } else {
+            let error_msg = format!("could not create directory {}", prefix);
+            create_dir_all(prefix).expect(&error_msg);
+            for (quadrant, child) in tree.labeled_children().iter() {
+                let new_prefix = format!("{}/{}", prefix, quadrant);
+                Self::make_pnts_files_recursive(child, &new_prefix);
+            }
+        }
+    }
 }
 
 impl Plotter for ScatterPlot {
@@ -69,8 +95,10 @@ impl Plotter for ScatterPlot {
         self.root.add_point(point, color, self.max_depth);
     }
 
-    fn save(&mut self, _dirname: &str) {
-        panic!("not implemented yet!");
+    fn save(&mut self, dirname: &str) {
+        create_dir_all(dirname).expect("could not create tileset directory");
+        self.make_tileset_json(dirname);
+        self.make_pnts_files(dirname);
     }
 }
 
