@@ -13,6 +13,7 @@ mod parameters;
 mod algorithms;
 mod buffers;
 mod pointclouds;
+mod pnts_writer;
 mod bbox;
 mod octrees;
 mod plotters;
