@@ -17,6 +17,7 @@ function set_model(model_id) {
         degbugShowContentBoundingVolume: true
     });
     tileset.pointCloudShading.attenuation = attenuation;
+    tileset.maximumScreenSpaceError = 0;
 
     viewer.scene.primitives.removeAll();
     viewer.scene.primitives.add(tileset);

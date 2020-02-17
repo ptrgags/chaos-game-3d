@@ -54,12 +54,14 @@ impl BBox {
         let dy = self.back - self.front;
         let dz = self.top - self.bottom;
 
-        array![
-            *center.x(), *center.y(), *center.z(),
-            0.5 * dx, 0.0, 0.0,
-            0.0, 0.5 * dy, 0.0,
-            0.0, 0.0, 0.5 * dz 
-        ]
+        object!{
+            "box" => array![
+                *center.x(), *center.y(), *center.z(),
+                0.5 * dx, 0.0, 0.0,
+                0.0, 0.5 * dy, 0.0,
+                0.0, 0.0, 0.5 * dz 
+            ]
+        }
     }
 
     pub fn subdivide(&self) -> Vec<Self> {

@@ -68,7 +68,8 @@ impl ScatterPlot {
     to_box!(Plotter);
 
     fn make_tileset_json(&self, dirname: &str) {
-        let root_tile = Self::make_tileset_json_recursive(&self.root, dirname);
+        let prefix = format!("{}/0", dirname);
+        let root_tile = Self::make_tileset_json_recursive(&self.root, &prefix);
         const SCALE: f32 = 10000000.0;
         let tileset = object!{
             "asset" => object!{
