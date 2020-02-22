@@ -4,8 +4,16 @@ use json::JsonValue;
 
 use crate::vector::Vec3;
 
+/**
+ * Bounding box structure
+ *
+ * This contains two vectors, one for the minimum extent (left, front, bottom)
+ * and the maximum extent (right, back, top)
+ */
 pub struct BBox {
+    /// Minimum coordinate (left, front, bottom)
     min: Vec3,
+    /// Maximum coordinate (right, back, top)
     max: Vec3,
 }
 
@@ -23,6 +31,8 @@ impl BBox {
         }
     }
 
+    /// The center of the box is the midpoint in each direction, that is
+    /// (min + max) / 2
     pub fn center(&self) -> Vec3 {
         (self.min + self.max).scale(0.5)
     }
@@ -51,6 +61,9 @@ impl BBox {
         }
     }
 
+    /// Subdivide this bounding box into 8 octants, evenly divided along
+    /// each axis. The children bounding boxes are returned in a vector
+    /// ordered by quadrant number from 0b000 to 0b111
     pub fn subdivide(&self) -> Vec<Self> {
         let center = self.center();
         let cx = *center.x();
@@ -77,6 +90,9 @@ impl BBox {
         ]
     }
 
+    /// Check if a point is contained inside this box. The minimum bounds
+    /// are inclusive and the maximum bounds are exclusive, much like
+    /// typical range checks when indexing.
     pub fn contains(&self, vec: &Vec3) -> bool {
         let x = *vec.x();
         let y = *vec.y();
@@ -97,6 +113,14 @@ impl BBox {
         )
     }
 
+    /// Determine which octant a point is in. There are 8 octants, numbered
+    /// from 0 to 7, but it's better to think about them in binary.
+    ///
+    /// 0bZYX
+    ///
+    /// where Z = 1 if the z coordinate is greater than center z
+    ///       Y = 1 if the y coordinate is greater than center y
+    ///       X = 1 if the x coordinate is greater than center x
     pub fn find_quadrant(&self, vec: &Vec3) -> usize {
         let from_center = *vec - self.center();
 
@@ -104,7 +128,7 @@ impl BBox {
         let y_positive = (*from_center.y() > 0.0) as usize;
         let z_positive = (*from_center.z() > 0.0) as usize;
 
-        x_positive | (y_positive << 1) | (z_positive << 2)
+        (z_positive << 2) | (y_positive << 1) | x_positive
     }
 }
 
