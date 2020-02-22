@@ -55,18 +55,6 @@ impl<T: Clone> Buffer<T> {
         return &self.colors;
     }
 
-    /// Move points from other to the end of self, leaving other empty.
-    pub fn move_from(&mut self, other: &mut Self) {
-        self.points.append(&mut other.points);
-        self.colors.append(&mut other.colors);
-    }
-
-    /// Copy points from other to the end of self.
-    pub fn copy_from(&mut self, other: &Self) {
-        self.points.extend(other.points.iter().cloned());
-        self.colors.extend(other.colors.iter().cloned());
-    }
-
     /// Add a new point to the buffer
     pub fn add(&mut self, point: T, color: T) {
         self.points.push(point);

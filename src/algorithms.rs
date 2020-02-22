@@ -7,10 +7,6 @@ use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
 use crate::multivector::Multivector;
 
-/// The earth has a radius of about 6.371 million meters. Scale up our
-/// model so it's a bit bigger than this.
-const BIGGER_THAN_EARTH: f32 = 10000000.0;
-
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
 pub trait Algorithm {
@@ -97,18 +93,10 @@ impl Algorithm for ChaosGame {
 
     fn save(&mut self, fname: &str) {
         self.output.save(fname);
-        // Scale the model up so we don't deal with the camera's clipping
-        // problems.
-        // TODO: Pick better camera settings so we can zoom in closer
-        /*
-        let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
-        writer.add_points(&mut self.buffer);
-        writer.save(fname);
-        */
     }
 
-    // The complexity of the basic chaos game is O(n) where n is the number
-    // of iterations
+    /// The complexity of the basic chaos game is O(n) where n is the number
+    /// of iterations
     fn complexity(&self) -> usize {
         self.num_iters
     }
@@ -223,14 +211,6 @@ impl Algorithm for ChaosSets {
 
     fn save(&mut self, fname: &str) {
         self.output.save(fname);
-        // Scale the model up so we don't deal with the camera's clipping
-        // problems.
-        // TODO: Pick better camera settings so we can zoom in closer
-        /*
-        let mut writer = Cesium3DTilesWriter::new(BIGGER_THAN_EARTH);
-        writer.add_points(&mut self.buffer);
-        writer.save(fname);
-        */
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 

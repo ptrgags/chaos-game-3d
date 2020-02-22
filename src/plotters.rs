@@ -66,6 +66,10 @@ impl ScatterPlot {
 
     to_box!(Plotter);
 
+    /// Generate a tileset.json file by traversing the tree and collecting
+    /// metadata.
+    ///
+    /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tileset
     fn make_tileset_json(&self, dirname: &str) {
         let prefix = "0";
         let root_tile = Self::make_tileset_json_recursive(&self.root, &prefix);
@@ -84,6 +88,9 @@ impl ScatterPlot {
             .expect("failed to write tileset.json");
     }
 
+    /// Generate the tree of tiles including URIs to each .pnts file
+    ///
+    /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tile
     fn make_tileset_json_recursive(tree: &OctNode, prefix: &str) -> JsonValue {
         if tree.is_leaf() && tree.is_empty() {
             JsonValue::Null
@@ -117,11 +124,14 @@ impl ScatterPlot {
         }
     }
     
+    /// Generate the .pnts files, one for each tile that contains data.
     fn make_pnts_files(&self, dirname: &str) {
         let prefix = format!("{}/0", dirname);
         Self::make_pnts_files_recursive(&self.root, &prefix);
     }
 
+    /// Traverse the tree, generating .pnts files at leaves and directories
+    /// at interior nodes.
     fn make_pnts_files_recursive(tree: &OctNode, prefix: &str) {
         if tree.is_leaf() && tree.is_empty() {
             // If the leaf is empty, no need to generate a file
@@ -145,6 +155,8 @@ impl Plotter for ScatterPlot {
         self.root.add_point(point, color, self.max_depth);
     }
 
+    /// Save the tileset into a directory of the given name. This creates
+    /// the directory if it does not already exist
     fn save(&mut self, dirname: &str) {
         create_dir_all(dirname).expect("could not create tileset directory");
         self.make_tileset_json(dirname);
