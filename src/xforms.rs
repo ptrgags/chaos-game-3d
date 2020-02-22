@@ -221,7 +221,8 @@ impl TranslatedSandwich {
     /// ```text
     /// ["identity"]
     /// ["translate", x, y, z]        // translation factor
-    /// ["rotate", nx, ny, nz, theta] // axis and angle
+    /// ["rotate", nx, ny, nz, theta] // axis and angle. Theta is a fraction of 
+    ///                               // 2 PI 
     /// ["scale", k]                  // Scale factor. Uniform only for now.
     /// ["invert"]                    // Sphere inversion
     /// ["reflect_vec", nx, ny, nz]   // Reflect in plane normal to this vector.
@@ -339,6 +340,48 @@ impl Transform for Inverse {
     }
 }
 
+/// non-uniform scaling can't be expressed as a sandwich product, so
+/// represent this separately
+pub struct NonUniformScale {
+    factors: Multivector
+}
+
+impl NonUniformScale {
+    pub fn new(factors: Multivector) -> Self {
+        Self { factors }
+    }
+
+    pub fn from_json(xform_desc: &JsonValue) -> Self {
+        let parameters: Vec<f64> = match xform_desc {
+            JsonValue::Array(components) => 
+                components[1..].iter().map(|x| {
+                    x.as_f64()
+                    .expect("nonuniform: parameters must be floats")
+                }).collect(),
+            _ => Vec::new()
+        };
+
+        if parameters.len() != 3 {
+            panic!(
+                "{:?}: nonuniform scale must have 3 components.", 
+                parameters);
+        }
+        
+        let factors = Multivector::vector(
+            parameters[0], parameters[1], parameters[2]);
+
+        Self {
+            factors 
+        }
+    }
+}
+
+impl Transform for NonUniformScale {
+    fn transform(&self, point: &Multivector) -> Multivector {
+        point.mul_components(&self.factors)
+    }
+}
+
 /// Parse a transformation from JSON of the form
 ///
 /// ```text
@@ -354,6 +397,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     let valid_names: Vec<&str> = vec![
         "chain",
         "invert",
+        "scale3",
         "identity",
         "translate",
         "rotate",
@@ -365,6 +409,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     match &xform_type[..] {
         "chain" => Box::new(TransformChain::from_json(&xform_desc)),
         "invert" => Box::new(Inverse::new()),
+        "scale3" => Box::new(NonUniformScale::from_json(&xform_desc)),
         "identity" |
         "translate" | 
         "rotate" | 
