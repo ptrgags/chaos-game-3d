@@ -31,7 +31,9 @@ pub trait Plotter {
 /// This plotter also has a maximum depth to prevent infinite loops if
 /// a voxel at the smallest resolution becomes full of points.
 pub struct ScatterPlot {
+    /// Root of the underlying octree
     root: OctNode,
+    /// Maximum depth of the tree, beyond which points are discarded
     max_depth: u8,
 }
 
@@ -164,11 +166,142 @@ impl Plotter for ScatterPlot {
     }
 }
 
+/// Allow for different calculations of density plots
+pub enum DensityType {
+    /// Basic density: points at a node / total points
+    Density,
+    /// Like basic density, but take a logarithm of the result
+    LogDensity,
+}
+
+/// Density plot: instead of storing every point, use the octree as a voxel
+/// grid and count up points that land in each bucket. When it comes time
+/// to generate a point cloud, the counts will be divided by the total number
+/// of points to compute the density. One point will be generated per voxel
+/// at the center of the cell.
+pub struct DensityPlot {
+    /// Support both density and log density plots to allow experimentation
+    density_type: DensityType,
+    /// Root of the underlying octree
+    root: OctNode,
+    /// Depth of the tree. The grid will have a resolution of 2^depth in all
+    /// three directions for a grid of 8^depth voxels
+    depth: u8,
+    /// The number of points that were successfully plotted in the octree
+    /// (out-of-bounds values are ignored). Storing this in 64-bits since
+    /// 4 billion iterations won't be enough for me ;)
+    total_points: u64,
+}
+
+impl DensityPlot {
+    pub fn new(density_type: DensityType, radius: f32, depth: u8) -> Self {
+        Self {
+            density_type,
+            root: OctNode::root_node(radius, 1),
+            depth,
+            total_points: 0,
+        }
+    }
+
+    /// Load a plotter from JSON of the form:
+    /// {
+    ///     "type": "density",
+    ///     "density_type": "density" | "log_density",
+    ///     "depth": d,
+    ///     "radius": r,
+    /// }
+    pub fn from_json(json: &JsonValue) -> Self {
+        let depth = json["depth"]
+            .as_u8()
+            .expect("max_depth must be a positive integer");
+
+        let density_type_str = json["density"]
+            .as_str()
+            .expect("density_type must be a string");
+
+        let density_type = match density_type_str {
+            "density" => DensityType::Density,
+            "log_density" => DensityType::LogDensity,
+            _ => panic!("density_type must be either density or log_density")
+        };
+
+        let radius = json["radius"]
+            .as_f32()
+            .expect("radius must be a float");
+
+        Self::new(density_type, radius, depth)
+    }
+
+    to_box!(Plotter);
+
+    fn compute_densities(&mut self) {
+        //TODO
+        /*
+        Self::compute_densities_recursive(self.root, self.total_points); 
+        */
+    }
+
+    fn compute_densities_recursive(tree: &OctNode) {
+        // TODO
+        
+    }
+
+    /// Generate a tileset.json file by traversing the tree and collecting
+    /// metadata. This must be called after self.compute_densities() so the
+    /// points will be generated.
+    ///
+    /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tileset
+    fn make_tileset_json(&self, dirname: &str) {
+        // TODO
+        /*
+        let prefix = "0";
+        let root_tile = Self::make_tileset_json_recursive(&self.root, &prefix);
+        let tileset = object!{
+            "asset" => object!{
+                "version" => "1.0",
+            },
+            "geometricError" => 5.0,
+            "root" => root_tile
+        };
+
+        let fname = format!("{}/tileset.json", dirname);
+        let mut file = File::create(fname)
+            .expect("failed to open tileset.json");
+        file.write_all(json::stringify(tileset).as_bytes())
+            .expect("failed to write tileset.json");
+            */
+    }
+
+    fn make_pnts_files(&self, dirname: &str) {
+        /*
+        let prefix = format!("{}/0", dirname);
+        Self::make_pnts_files_recursive(&self.root, &prefix);
+        */
+    }
+
+}
+
+impl Plotter for DensityPlot {
+    fn plot_point(&mut self, point: Vec3, color: Vec3) {
+        self.total_points += 
+            self.root.count_point(point, color, self.depth) as u64;
+    }
+
+    /// Save the tileset into a directory of the given name. This creates
+    /// the directory if it does not already exist
+    fn save(&mut self, dirname: &str) {
+        create_dir_all(dirname).expect("could not create tileset directory");
+        self.compute_densities();
+        self.make_tileset_json(dirname);
+        self.make_pnts_files(dirname);
+    }
+}
+
 /// Parse a point cloud plotter from a JSON object of the form:
 ///
 /// ```text
 /// {
-///     "type": "scatter",
+///     "type": "scatter" | "density",
 ///     ...params
 /// }
 /// ```
@@ -180,6 +313,7 @@ pub fn from_json(json: &JsonValue) -> Box<dyn Plotter> {
 
     match &plotter_type[..] {
         "scatter" => ScatterPlot::from_json(&json).to_box(),
+        "density" => DensityPlot::from_json(&json).to_box(),
         _ => panic!("Plotter type must be one of, {:?}", valid_plotters)
     }
 }

@@ -16,7 +16,7 @@ pub struct OctNode {
     points: OutputBuffer,
     /// How many points can fit in this node
     capacity: usize,
-    /// How many fits currently are in this node
+    /// How many points currently are in this node
     count: usize,
     /// Total color. This can be used along with count to compute the average
     /// color
@@ -152,6 +152,42 @@ impl OctNode {
                 depth,
                 max_depth);
         }
+    }
+
+    /// Add a point to this subtree. 
+    ///
+    /// Returns true if the point was added
+    pub fn count_point(
+            &mut self, point: Vec3, color: Vec3, depth: u8) -> bool {
+        
+        // Discard points outside the grid
+        if !self.bounds.contains(&point) {
+            return false;
+        } 
+
+        self.count_point_recursive(point, color, depth);
+        return true;
+    }
+
+    fn count_point_recursive(&mut self, point: Vec3, color: Vec3, depth: u8) {
+        // Update this node's count
+        self.count += 1;
+        self.color_sum = self.color_sum + color;
+
+        // Stop once we hit the desired depth
+        if depth == 0 {
+            return;
+        } 
+
+        // Make sure we can continue down the tree
+        if self.is_leaf() {
+            self.subdivide();
+        }
+
+        // keep propagating down the tree until we reach the desired depth
+        let quadrant = self.bounds.find_quadrant(&point);
+        let child = &mut self.children[quadrant];
+        child.count_point_recursive(point, color, depth - 1);
     }
 
     /// Subdivide a leaf node into an interior node with 8 children, one
