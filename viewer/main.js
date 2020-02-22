@@ -1,19 +1,29 @@
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZTVjMjExYy0wYWVlLTRmNzktODM4Ni0zNzRlMjdjZDIxZmMiLCJpZCI6MTg5MTksInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzQ2ODg1MzJ9.aeY06JtwkvYi5MylE_cJd8QveIxvjUIb-E4HtGJ6gbg';
 
 const defined = Cesium.defined;
-
+const Matrix4 = Cesium.Matrix4;
+const Cartesian3 = Cesium.Cartesian3;
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
     globe: false
 });
 
+const BIGGER_THAN_EARTH = 10000000.0;
+
 let tileset;
 let attenuation = true;
 function set_model(model_id) {
     const url = `${model_id}/tileset.json`;
+
+
+    const scaleAmount = new Cartesian3(
+        BIGGER_THAN_EARTH, BIGGER_THAN_EARTH, BIGGER_THAN_EARTH);
+    const scale = Matrix4.fromScale(scaleAmount);
+
     tileset = new Cesium.Cesium3DTileset({
         url,
         debugShowBoundingVolume: true,
+        modelMatrix: scale
     });
     tileset.pointCloudShading.attenuation = attenuation;
     tileset.maximumScreenSpaceError = 0;

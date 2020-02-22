@@ -26,10 +26,6 @@ const BATCH_TABLE_BINARY_LENGTH: u32 = 0;
 const BATCH_TABLE_LENGTH: u32 = 
     BATCH_TABLE_JSON_LENGTH + BATCH_TABLE_BINARY_LENGTH;
 
-/// Scale points Larger than earth so they show up better in the viewer.
-/// Hopefully after I tweak some camera settings, this can be set to 1
-const SCALE: f32 = 10000000.0;
-
 /// Custom writer for a Cesium 3D Tiles .pnts file that records points and
 /// colors to a binary file. see
 /// https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification/TileFormats/PointCloud
@@ -169,7 +165,7 @@ impl PntsWriter {
         let mut colors: Vec<u8> = Vec::new();
 
         for (point, color) in buffer.points_iter() {
-            let point_bytes: [u8; 12] = point.scale(SCALE).pack();
+            let point_bytes: [u8; 12] = point.pack();
             positions.extend_from_slice(&point_bytes);
 
             let color_bytes: [u8; 3] = color.to_color().pack();

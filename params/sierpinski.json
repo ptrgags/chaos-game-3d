@@ -1,10 +1,10 @@
 {
     "algorithm": "chaos",
-    "iters": 1000,
+    "iters": 1000000,
     "plotter": {
         "type": "scatter",
-        "node_capacity": 10,
-        "max_depth": 8,
+        "node_capacity": 1000,
+        "max_depth": 4,
         "radius": 1
     },
     "ifs": {

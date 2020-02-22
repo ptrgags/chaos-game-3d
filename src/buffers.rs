@@ -40,6 +40,11 @@ impl<T: Clone> Buffer<T> {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.points.clear();
+        self.colors.clear();
+    }
+
     /// Return the list of points without colors
     pub fn get_points(&self) -> &Vec<T> {
         return &self.points;

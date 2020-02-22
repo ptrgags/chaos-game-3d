@@ -163,6 +163,14 @@ impl OctNode {
             let child = Self::child_node(bounds, self.capacity);
             self.children.push(child);
         }
+
+        // Move all the points in the current buffer to the children
+        for (point, color) in self.points.points_iter() {
+            let quadrant = self.bounds.find_quadrant(&point);
+            let child = &mut self.children[quadrant]; 
+            child.points.add(*point, *color);
+        }
+        self.points.clear();
     }
 }
 

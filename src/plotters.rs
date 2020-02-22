@@ -51,7 +51,6 @@ impl ScatterPlot {
     ///     "radius": r,
     /// }
     pub fn from_json(json: &JsonValue) -> Self {
-        const SCALE: f32 = 10000000.0;
         let max_depth = json["max_depth"]
             .as_u8()
             .expect("max_depth must be a positive integer");
@@ -62,21 +61,19 @@ impl ScatterPlot {
             .as_f32()
             .expect("radius must be a float");
 
-        Self::new(SCALE * radius, capacity, max_depth)
+        Self::new(radius, capacity, max_depth)
     }
 
     to_box!(Plotter);
 
     fn make_tileset_json(&self, dirname: &str) {
-        println!("{}", dirname);
         let prefix = "0";
         let root_tile = Self::make_tileset_json_recursive(&self.root, &prefix);
-        const SCALE: f32 = 10000000.0;
         let tileset = object!{
             "asset" => object!{
                 "version" => "1.0",
             },
-            "geometricError" => 5.0 * SCALE,
+            "geometricError" => 5.0,
             "root" => root_tile
         };
 
