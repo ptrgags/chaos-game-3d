@@ -12,6 +12,7 @@ const BIGGER_THAN_EARTH = 10000000.0;
 
 let tileset;
 let attenuation = true;
+let show_bboxes = false;
 function set_model(model_id) {
     const url = `${model_id}/tileset.json`;
 
@@ -22,7 +23,7 @@ function set_model(model_id) {
 
     tileset = new Cesium.Cesium3DTileset({
         url,
-        debugShowBoundingVolume: true,
+        debugShowBoundingVolume: show_bboxes,
         modelMatrix: scale
     });
     tileset.pointCloudShading.attenuation = attenuation;
@@ -38,12 +39,21 @@ model_select.addEventListener('change', (e) => {
     set_model(model_id);
 });
 
-const checkbox = document.getElementById('attenuation');
-checkbox.addEventListener('change', (e) => {
+const attenuation_checkbox = document.getElementById('attenuation');
+attenuation_checkbox.addEventListener('change', (e) => {
     attenuation = e.target.checked;
 
     if (defined(tileset)) {
         tileset.pointCloudShading.attenuation = attenuation;
+    }
+});
+
+const bbox_checkbox = document.getElementById('show-bboxes');
+bbox_checkbox.addEventListener('change', (e) => {
+    show_bboxes = e.target.checked;
+
+    if (defined(tileset)) {
+        tileset.debugShowBoundingVolume = show_bboxes;
     }
 });
 
