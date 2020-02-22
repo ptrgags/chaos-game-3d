@@ -13,8 +13,7 @@ function set_model(model_id) {
     const url = `${model_id}/tileset.json`;
     tileset = new Cesium.Cesium3DTileset({
         url,
-        degbugShowBoundingVolume: true,
-        degbugShowContentBoundingVolume: true
+        debugShowBoundingVolume: true,
     });
     tileset.pointCloudShading.attenuation = attenuation;
     tileset.maximumScreenSpaceError = 0;
