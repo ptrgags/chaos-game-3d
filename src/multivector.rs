@@ -186,6 +186,27 @@ impl Multivector {
         Self::new(result, start, end + 1)
     }
 
+    /// Scale a multivector component-wise. This isn't a usual operation,
+    /// but it's useful to emulate non-uniform scaling of vectors which is
+    /// the only place I intend to use it.
+    ///
+    /// This only scales components between the other's start and end, as
+    /// that is the only valid data is providided. However, this returns
+    /// a new multivector of the same size as this one. Caller beware :)
+    pub fn mul_components(&self, other: &Self) -> Self {
+        let mut result = [0.0; 8];
+
+        for i in self.start_index..self.end_index {
+            result[i] = self.components[i];
+        }
+
+        for i in other.start_index..other.end_index {
+            result[i] *= other.components[i];
+        }
+
+        Self::new(result, self.start_index, self.end_index)
+    }
+
     /// The product
     ///
     /// ```text
