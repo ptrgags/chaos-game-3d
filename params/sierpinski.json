@@ -1,6 +1,12 @@
 {
     "algorithm": "chaos",
     "iters": 1000000,
+    "plotter": {
+        "type": "scatter",
+        "node_capacity": 1000,
+        "max_depth": 4,
+        "radius": 1
+    },
     "ifs": {
         "chooser": "uniform",
         "xforms": [

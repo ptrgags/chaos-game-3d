@@ -12,7 +12,10 @@ mod choosers;
 mod parameters;
 mod algorithms;
 mod buffers;
-mod pointclouds;
+mod pnts_writer;
+mod bbox;
+mod octrees;
+mod plotters;
 mod multivector;
 
 use std::env;

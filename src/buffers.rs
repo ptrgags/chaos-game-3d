@@ -40,6 +40,11 @@ impl<T: Clone> Buffer<T> {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.points.clear();
+        self.colors.clear();
+    }
+
     /// Return the list of points without colors
     pub fn get_points(&self) -> &Vec<T> {
         return &self.points;
@@ -48,18 +53,6 @@ impl<T: Clone> Buffer<T> {
     /// Return the list of colors without points
     pub fn get_colors(&self) -> &Vec<T> {
         return &self.colors;
-    }
-
-    /// Move points from other to the end of self, leaving other empty.
-    pub fn move_from(&mut self, other: &mut Self) {
-        self.points.append(&mut other.points);
-        self.colors.append(&mut other.colors);
-    }
-
-    /// Copy points from other to the end of self.
-    pub fn copy_from(&mut self, other: &Self) {
-        self.points.extend(other.points.iter().cloned());
-        self.colors.extend(other.colors.iter().cloned());
     }
 
     /// Add a new point to the buffer

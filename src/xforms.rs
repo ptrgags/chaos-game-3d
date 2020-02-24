@@ -90,6 +90,8 @@ impl TransformChain {
 
         Self::new(transforms)
     }
+
+    to_box!(Transform);
 }
 
 impl Transform for TransformChain {
@@ -248,7 +250,8 @@ impl TranslatedSandwich {
     /// ```text
     /// ["identity"]
     /// ["translate", x, y, z]        // translation factor
-    /// ["rotate", nx, ny, nz, theta] // axis and angle
+    /// ["rotate", nx, ny, nz, theta] // axis and angle. Theta is a fraction of 
+    ///                               // 2 PI 
     /// ["scale", k]                  // Scale factor. Uniform only for now.
     /// ["invert"]                    // Sphere inversion
     /// ["reflect_vec", nx, ny, nz]   // Reflect in plane normal to this vector.
@@ -337,6 +340,8 @@ impl TranslatedSandwich {
             _ => panic!("transformation type must be one of {:?}", valid_names)
         }
     }
+
+    to_box!(Transform);
 }
 
 impl Transform for TranslatedSandwich {
@@ -385,6 +390,8 @@ impl Inverse {
     pub fn new() -> Self {
         Self {}
     }
+
+    to_box!(Transform);
 }
 
 impl Transform for Inverse {
@@ -397,6 +404,67 @@ impl Transform for Inverse {
         let inv = Self::new();
         let boxed = Box::new(inv);
         Some(boxed)
+    }
+}
+
+/// non-uniform scaling can't be expressed as a sandwich product, so
+/// represent this separately
+pub struct NonUniformScale {
+    factors: Multivector
+}
+
+impl NonUniformScale {
+    pub fn new(factors: Multivector) -> Self {
+        Self { factors }
+    }
+
+    pub fn from_json(xform_desc: &JsonValue) -> Self {
+        let parameters: Vec<f64> = match xform_desc {
+            JsonValue::Array(components) => 
+                components[1..].iter().map(|x| {
+                    x.as_f64()
+                    .expect("nonuniform: parameters must be floats")
+                }).collect(),
+            _ => Vec::new()
+        };
+
+        if parameters.len() != 3 {
+            panic!(
+                "{:?}: nonuniform scale must have 3 components.", 
+                parameters);
+        }
+        
+        let factors = Multivector::vector(
+            parameters[0], parameters[1], parameters[2]);
+
+        Self {
+            factors 
+        }
+    }
+
+    to_box!(Transform);
+}
+
+impl Transform for NonUniformScale {
+    fn transform(&self, point: &Multivector) -> Multivector {
+        point.mul_components(&self.factors)
+    }
+
+    /// For non-uniform scales, the inverse is the reciprocal scale in each
+    /// dimension.
+    ///
+    /// (s_x, s_y, s_z) -> (1/s_x, 1/s_y, 1/s_z);
+    fn inverse(&self) -> Option<Box<dyn Transform>> {
+        // TODO: I should allow subscripting multivectors. This could be
+        // written much more simply then.
+        let old_vec = self.factors.to_vec3();
+        let sx = (1.0 / *old_vec.x()) as f64;
+        let sy = (1.0 / *old_vec.y()) as f64;
+        let sz = (1.0 / *old_vec.z()) as f64;
+        let new_factors = Multivector::vector(sx, sy, sz);
+
+        let result = Self::new(new_factors);
+        Some(result.to_box())
     }
 }
 
@@ -415,6 +483,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     let valid_names: Vec<&str> = vec![
         "chain",
         "invert",
+        "scale3",
         "identity",
         "translate",
         "rotate",
@@ -424,15 +493,16 @@ pub fn from_json(xform_desc: &JsonValue) -> Box<dyn Transform> {
     ];
 
     match &xform_type[..] {
-        "chain" => Box::new(TransformChain::from_json(&xform_desc)),
-        "invert" => Box::new(Inverse::new()),
+        "chain" => TransformChain::from_json(&xform_desc).to_box(),
+        "invert" => Inverse::new().to_box(),
+        "scale3" => NonUniformScale::from_json(&xform_desc).to_box(),
         "identity" |
         "translate" | 
         "rotate" | 
         "scale" | 
         "reflect_vec" | 
         "reflect_thru_vec" => 
-            Box::new(TranslatedSandwich::from_json(&xform_desc)),
+            TranslatedSandwich::from_json(&xform_desc).to_box(),
         _ => panic!("xforms: xform type must be one of {:?}", valid_names)
     }
 }
