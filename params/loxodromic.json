@@ -7,6 +7,12 @@
         "color": [0.3, 0.8, 0.4],
         "num_points": 100
     },
+    "plotter": {
+        "type": "scatter",
+        "node_capacity": 10000,
+        "max_depth": 5,
+        "radius": 4
+    },
     "initial_set_copies": 5,
     "iters": 10000,
     "ifs": {
