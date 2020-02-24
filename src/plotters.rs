@@ -159,7 +159,9 @@ impl Plotter for ScatterPlot {
     /// the directory if it does not already exist
     fn save(&mut self, dirname: &str) {
         create_dir_all(dirname).expect("could not create tileset directory");
+        println!("Generating tileset JSON...");
         self.make_tileset_json(dirname);
+        println!("Generating .pnts files...");
         self.make_pnts_files(dirname);
     }
 }
