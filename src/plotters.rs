@@ -77,7 +77,7 @@ impl ScatterPlot {
             "asset" => object!{
                 "version" => "1.0",
             },
-            "geometricError" => 5.0,
+            "geometricError" => 1e7,
             "root" => root_tile
         };
 

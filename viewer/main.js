@@ -52,10 +52,13 @@ function set_model(model_id) {
     // Force all tiles to load. This is a bit dangerous for large tilesets,
     // but until I fix some camera issues, this is the only way to render
     // things properly
-    tileset.maximumScreenSpaceError = 0;
+    //tileset.maximumScreenSpaceError = 0;
 
     viewer.scene.primitives.add(tileset);
 }
+
+// Something to experiment with later.
+//viewer.scene.logarithmicDepthBuffer = false;
 
 function configure_camera() {
     const camera = viewer.scene.camera;
