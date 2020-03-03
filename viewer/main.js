@@ -49,6 +49,14 @@ function set_model(model_id) {
     // because sometimes the fractal structure is clearer with smaller points.
     tileset.pointCloudShading.attenuation = attenuation;
 
+    tileset.style = new Cesium.Cesium3DTileStyle({
+        defines: {
+            wave: '(0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * length(${POSITION})))',
+            color3: 'vec3(${COLOR}.x, ${COLOR}.y, ${COLOR}.z)',
+        },
+        color: 'vec4(${wave} * vec3(${COLOR}), 1.0)'
+    });
+
     // Force all tiles to load. This is a bit dangerous for large tilesets,
     // but until I fix some camera issues, this is the only way to render
     // things properly
