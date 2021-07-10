@@ -106,11 +106,9 @@ impl BBox {
         let back = *self.max.y();
         let top = *self.max.z();
 
-        (
-            left <= x && x < right && 
-            front <= y && y < back &&
-            bottom <= z && z < top
-        )
+        left <= x && x < right && 
+        front <= y && y < back &&
+        bottom <= z && z < top
     }
 
     /// Determine which octant a point is in. There are 8 octants, numbered

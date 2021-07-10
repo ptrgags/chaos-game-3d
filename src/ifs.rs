@@ -80,10 +80,49 @@ pub fn from_json(json: &JsonValue) -> IFS {
     }
 }
 
-/// Parse an array of transformations from JSON
+/// Parse an array of transformations from JSON.
 /// See the `xforms` module for more information.
+///
+/// There is also a shortcut transformation:
+/// ["+inverse"]
+///
+/// When this element is encountered, the previous transformation's inverse
+/// is added. This is a handy shortcut since often I want to describe groups
+/// of transformations which requires specifying their inverses.
 fn parse_xforms(xform_arr: &JsonValue) -> Vec<Xform> {
-    xform_arr.members().map(|xform_desc| {
-        xforms::from_json(&xform_desc)
-    }).collect()
+    let mut result = Vec::new();
+ 
+    for xform_desc in xform_arr.members() {
+        let type_name = xform_desc[0]
+            .as_str()
+            .expect("xforms: transformation type must be a string");
+
+        match type_name {
+            "+inverse" => add_inverse(&mut result),
+            _ => {
+                let xform = xforms::from_json(&xform_desc);
+                result.push(xform);
+            }
+        };
+    }
+
+    result
+}
+
+/// For brevity, instead of typing out a function and its inverses, just
+/// add the shortcut ["+inverse"] after a transformation, and its inverse
+/// will be added to the list
+fn add_inverse(results: &mut Vec<Xform>) {
+    if results.is_empty() {
+        panic!(concat!(
+            "[\"+inverse\"] should be listed after a transformation in the ",
+            "xforms list"));
+    }
+
+    let n = results.len();
+    let inv = results[n - 1]
+        .inverse()
+        .expect(
+            "[\"+inverse\"] may only go after an invertible transformation");
+    results.push(inv);
 }

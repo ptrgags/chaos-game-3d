@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/CesiumUnminified/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet"> 
-    <script type="module" src="main.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.66/Build/CesiumUnminified/Cesium.js"></script> 
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.66/Build/Cesium/Widgets/widgets.css" rel="stylesheet"> 
+    <script type="module" src="main.js"></script> 
     <style>
         body {
             height: 100%;
@@ -35,10 +35,9 @@
             color: #edffff;
             font-family: sans-serif;
             font-size: 0.8rem;
-            margin-right: 20px;
         }
 
-        select {
+        select, button {
             background: #303336;
             color: #edffff;
             border: 1px solid #555555;
@@ -63,11 +62,33 @@
             <option value="inv_hyperboloid">Inverse Hyperboloid</option>
             <option value="elliptic">Elliptic(?) Mobius Transformation</option>
             <option value="rotate_xy_yz">4-fold Rotation in planes xy, yz</option>
+            <option value="spirals_3d">3D Logarithmic Spirals</option>
+            <option value="hyperbolic">3D Hyperbolic Transformation</option>
+            <option value="loxodromic">3D Loxodromic Transformation</option>
+            <option value="loxodromic2">Perpendicular Loxodromic Transformation</option>
+            <option value="orthogonal_loxodromics">Orthogonal Loxodromic Transformations</option>
+            <option value="aa_loxodromic">Axis-Aligned Loxodromic</option>
+            <option value="double_rotation">Double Rotation</option>
+            <option value="many_vertices">Many Vertices Sierpinski</option>
+            <option value="uneven_sierpinski">Uneven Sierpinski Tetrahedron</option>
+            <option value="conjugated_sierpinski">Conjugated Sierpinski Tetrahedron</option>
+            <option value="sierpinski_tesselation">Sierpinski Tesselation</option>
         </select><br/>
         <span class="heading">Point Cloud Attenuation</span>
-        <input id="attenuation" type="checkbox" checked/><br />
+        <input id="attenuation" type="checkbox" checked/><br/>
         <span class="heading">Show Bounding Boxes</span>
-        <input id="show-bboxes" type="checkbox"/>
+        <input id="show-bboxes" type="checkbox"/><br/>
+        <span class="heading">Unit Sphere</span>
+        <input id="unit-sphere" type="checkbox"/>
+        <span class="heading">Unit Cube</span>
+        <input id="unit-cube" type="checkbox"/><br/>
+        <span class="heading">X-Axis</span>
+        <input id="x-axis" type="checkbox"/>
+        <span class="heading">Y-Axis</span>
+        <input id="y-axis" type="checkbox"/>
+        <span class="heading">Z-Axis</span>
+        <input id="z-axis" type="checkbox"/><br/>
+        <button id="reload">Reload Tileset</button>
     </div>
 </body>
 </html>
