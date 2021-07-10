@@ -91,7 +91,7 @@ impl Algorithm for ChaosGame {
             pos = self.position_ifs.transform(&pos);
             color_vec = self.color_ifs.transform(&color_vec);
 
-            // Show progress every 100K iterations
+            // Show progress every UPDATE_FREQ iterations
             if i > STARTUP_ITERS && i % UPDATE_FREQ == STARTUP_ITERS {
                 println!(
                     "Completed ~{}/{} chunks of 100K iterations", 

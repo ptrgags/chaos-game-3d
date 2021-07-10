@@ -66,6 +66,7 @@ impl Vec3 {
 
     /// Make the vector unit length.
     /// `normalize(v) = v / length(v)`
+    /*
     pub fn normalize(&self) -> Vec3 {
         let len = self.length();
         let x = self.x() / len;
@@ -74,6 +75,7 @@ impl Vec3 {
 
         Vec3::new(x, y, z)
     }
+    */
 
     /// Scale the vector.
     /// `S_k v = k * v
