@@ -1,22 +1,29 @@
 {
     "algorithm": "chaos",
     "iters": 100000,
+    "plotter": {
+        "type": "scatter",
+        "node_capacity": 1000,
+        "max_depth": 4,
+        "radius": 100
+    },
     "ifs": {
         "chooser": "uniform",
-        "xforms": [{
-            "type": "trs",
-            "translate": [0, 0, 0.1],
-            "rotate": ["axis_angle", 0.1963495, 0, 0, 1]
-        }, {
-            "type": "trs",
-            "translate": [0, 0, -0.1],
-            "rotate": ["axis_angle", 0.1963495, 0, 0, -1]
-        }]
+        "xforms": [
+            ["chain", [
+                ["rotate", 0, 0, 1, 0.1963495],
+                ["translate", 0, 0, 0.1]
+            ]],
+            ["chain", [
+                ["rotate", 0, 0, -1, 0.1963495],
+                ["translate", 0, 0, -0.1]
+            ]]
+        ]
     },
     "color_ifs": {
         "chooser": "uniform",
-        "xforms": [{
-            "type": "trs"
-        }]
+        "xforms": [
+            ["identity"]
+        ]
     }
 }

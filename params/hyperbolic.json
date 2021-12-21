@@ -1,0 +1,47 @@
+{
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.01, 10, 10],
+        "center": [0, 1, 0],
+        "color": [0.5, 0.5, 0.4],
+        "num_points": 500
+    },
+    "initial_set_copies": 2,
+    "iters": 1000,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+                ["translate", -1, 0, 0],
+                ["scale", 0.5],
+                ["reflect_vec", 1, 0, 0],
+                ["invert"],
+                ["translate", -1, 0, 0],
+
+                ["scale", 2.0],
+
+                ["translate", 1, 0, 0],
+                ["invert"],
+                ["reflect_vec", 1, 0, 0],
+                ["scale", 2],
+                ["translate", 1, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", -1, 0, 0],
+                ["scale", 0.5],
+                ["reflect_vec", 1, 0, 0],
+                ["invert"],
+                ["translate", -1, 0, 0],
+
+                ["scale", 0.5],
+
+                ["translate", 1, 0, 0],
+                ["invert"],
+                ["reflect_vec", 1, 0, 0],
+                ["scale", 2],
+                ["translate", 1, 0, 0]
+            ]]
+        ]
+    }
+}

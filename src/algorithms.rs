@@ -78,6 +78,8 @@ impl Algorithm for ChaosGame {
         // Start with a random position and color
         let mut pos = Multivector::from_vec3(&Vec3::random());
         let mut color_vec = Multivector::from_vec3(&Vec3::random_color());
+        const UPDATE_FREQ: usize = 100000;
+        let complexity = self.complexity() / UPDATE_FREQ;
 
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
@@ -88,6 +90,14 @@ impl Algorithm for ChaosGame {
 
             pos = self.position_ifs.transform(&pos);
             color_vec = self.color_ifs.transform(&color_vec);
+
+            // Show progress every UPDATE_FREQ iterations
+            if i > STARTUP_ITERS && i % UPDATE_FREQ == STARTUP_ITERS {
+                println!(
+                    "Completed ~{}/{} chunks of 100K iterations", 
+                    (i - STARTUP_ITERS) / UPDATE_FREQ, 
+                    complexity);
+            }
         }
     }
 

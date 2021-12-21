@@ -111,6 +111,7 @@ impl Multivector {
     }
 
     /// Get a vector xye12 + xze13 + yze23
+    /*
     pub fn bivector(xy: f64, xz: f64, yz: f64) -> Self {
         Self {
             components: [
@@ -123,6 +124,7 @@ impl Multivector {
             end_index: TRIVECTOR_OFFSET
         }
     }
+    */
 
     /// Get a trivector te123
     pub fn trivector(t: f64) -> Self {

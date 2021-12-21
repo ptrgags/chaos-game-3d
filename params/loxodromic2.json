@@ -1,0 +1,55 @@
+{
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.01, 4, 4],
+        "center": [0, 0, 0],
+        "color": [0.9, 0.5, 0.1],
+        "num_points": 50
+    },
+    "plotter": {
+        "type": "scatter",
+        "node_capacity": 10000,
+        "max_depth": 5,
+        "radius": 4
+    },
+    "initial_set_copies": 5,
+    "iters": 1000,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+                ["translate", -1, 0, 0],
+                ["scale", 0.5],
+                ["reflect_vec", 1, 0, 0],
+                ["invert"],
+                ["translate", -1, 0, 0],
+
+                ["rotate", 0, 0, 1, -0.0015836],
+                ["scale", 1.064847],
+
+                ["translate", 1, 0, 0],
+                ["invert"],
+                ["reflect_vec", 1, 0, 0],
+                ["scale", 2],
+                ["translate", 1, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", -1, 0, 0],
+                ["scale", 0.5],
+                ["reflect_vec", 1, 0, 0],
+                ["invert"],
+                ["translate", -1, 0, 0],
+
+                ["scale", 0.939102],
+                ["rotate", 0, 0, -1, -0.0015836],
+
+                ["translate", 1, 0, 0],
+                ["invert"],
+                ["reflect_vec", 1, 0, 0],
+                ["scale", 2],
+                ["translate", 1, 0, 0]
+            ]]
+        ]
+    }
+}

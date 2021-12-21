@@ -1,3 +1,5 @@
+import {ReferenceGeometry} from './ReferenceGeometry.js';
+
 const defined = Cesium.defined;
 const Matrix4 = Cesium.Matrix4;
 const Cartesian3 = Cesium.Cartesian3;
@@ -21,7 +23,6 @@ let show_bboxes = false;
 
 // Switch to a new model
 function set_model(model_id) {
-    // Remove the old tileset from the scene
     viewer.scene.primitives.remove(tileset);
 
     const url = `${model_id}/tileset.json`;
@@ -48,12 +49,46 @@ function set_model(model_id) {
     // because sometimes the fractal structure is clearer with smaller points.
     tileset.pointCloudShading.attenuation = attenuation;
 
+    /*
+     * Experiment: Color by distance from center
+    tileset.style = new Cesium.Cesium3DTileStyle({
+        defines: {
+            wave: '(0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * length(${POSITION})))',
+            color3: 'vec3(${COLOR}.x, ${COLOR}.y, ${COLOR}.z)',
+        },
+        color: 'vec4(${wave} * vec3(${COLOR}), 1.0)'
+    });
+    */
+
     // Force all tiles to load. This is a bit dangerous for large tilesets,
     // but until I fix some camera issues, this is the only way to render
     // things properly
-    tileset.maximumScreenSpaceError = 0;
+    //tileset.maximumScreenSpaceError = 0;
 
     viewer.scene.primitives.add(tileset);
+}
+
+// Something to experiment with later.
+viewer.scene.logarithmicDepthBuffer = false;
+
+function configure_camera() {
+    const camera = viewer.scene.camera;
+    const frustum = camera.frustum;
+
+    // Prevent clipping when we zoom in close to see details
+    frustum.near = 1e-4;
+    frustum.far = 1e11;
+}
+
+const ref_geometry = new ReferenceGeometry(viewer.scene);
+function init_reference_geometry() {
+    for (const id of ReferenceGeometry.GEOMETRY_IDS) {
+        const checkbox = document.getElementById(id);
+        checkbox.addEventListener('change', (e) => {
+            const show = e.target.checked;
+            ref_geometry.toggle_geometry(id, show);
+        });
+    }
 }
 
 // Select a model
@@ -85,4 +120,14 @@ bbox_checkbox.addEventListener('change', (e) => {
     }
 });
 
+const reload_button = document.getElementById('reload');
+reload_button.addEventListener('click', () => {
+    const model_id = model_select.value;
+    set_model(model_id);
+});
+
 set_model('sierpinski');
+configure_camera();
+init_reference_geometry();
+
+window.viewer = viewer;
