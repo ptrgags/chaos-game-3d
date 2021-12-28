@@ -71,3 +71,126 @@ Some ideas for metadata:
     first?) or even an array of the latest N transformations. Coloring by this
     could be useful
 * Color Transformation IDs. (similar to the previous point)
+
+## 2021-12-28 Insights About Multivectors
+
+The past couple days I've been exploring the math of CGA to see how useful it
+will be. The biggest concern is efficiency, as a naive multivector
+multiplication is 1024 multiplications and 992 additions! I determined using the
+3D CGA setting of [this utility on bivector.net](https://bivector.net/tools.html).
+Can we avoid this?
+
+I conjecture this is possible in this case. Some observations/hunches:
+
+* The most common operation I need to perform is transforming points. This
+    is always a sandwich product `VPV~` where `V` is a versor, `P` is a point
+    and `~` indicates the reverse operation.
+* To compose transformations I need to multiply versors together.
+* Versors have some constraints:
+  * Their reverse is equal to their inverse `V^(-1) = V~`
+  * Therefore, they have length 1, as `VV~ = VV^(-1) = 1`
+  * In practice, versors either have only odd blades or only even blades (more
+        on this below)
+* if `a, b` are multivectors with only odd blades or only even blades, then
+    their product has only odd blades or only even blades. (More on this below)
+
+With this information, I think I can get away with only representing half the
+terms at a time. This means storing 16 rather than 32 terms, and the multiplication
+table is at worst 16x16 = 256 which is 4 times smaller!
+
+### 3D CGA - Real, Minkowski, and Mixed Blades
+
+One thing I noticed when working through the math is there are two subspaces:
+
+* "Real" blades using only `x`, `y`, and `z`
+* "Minkowski" blades using only `n` (-) and `p` (+). (or `inf` and `origin`)
+* "Mixed" blades using both real and Minkowski blades
+
+Looking back at [this page from the Python clifford library](https://clifford.readthedocs.io/en/v1.0.3/ConformalGeometricAlgebra.html#Operations), this is what they mean
+by "verser purely/partly/out of E0". 
+
+Since real and minkowski blades are orthogonal, you can find plenty of cases
+where multiplications commute/anticommute. Some examples:
+
+```
+(v)(np) = -nvp = npv // moving a vector 1 place introduces a negative sign
+Bnp = nBp = npB // moving a bivector 1 place keeps the same sign
+```
+
+The other interesting thing is that when it comes to "blade parity", the parity
+of the real vectors can be treated independently, like a tuple of 
+`(real parity, minkowski parity)`. It's not very helpful for this application,
+but I found it neat that this is isomorphic to `(Z2 x Z2, +)` 
+(Z2 is the integers mod 2)
+
+### Odd and Even Versors
+
+For this application, the transformations I will concern myself with are:
+
+* Translations (scalar + mixed bivector)
+* Rotations (scalar + real bivector)
+* Scales (scalar + minkowski bivector)
+* Reflections (real vector)
+* Inversions (minkowski vector)
+* (and compositions of the above)
+
+Translations, rotations, and scales are all `scalar + bivector` which are both
+even blades. Reflections and sphere inversions are `vector` which are odd blades.
+
+When you start composing these together, after a lot of tedious calculations,
+you start to notice a pattern:
+
+* Odd blades: vector + trivector + 5-vector
+* Even blades: scalar + bivector + quadvector
+
+Multiplication table:
+
+|  | odd | even |
+|--|-----|------|
+| odd  | even | odd  |
+| even | odd  | even |
+
+If the table looks familiar, it's the same as the addition group
+for odd/even integers (or integers mod 2 if odd = 1 and even = 0)
+
+The result is always all odd blades or all even blades, never a sum of both.
+This means you never reach the worst case of a 32-term multivector. At worst,
+you'll have 16 terms (all odd or all even). This is a solid first step in
+making the geometric product less expensive.
+
+While investigating the above, I came across the [Cartan-Dieudonné theorem](https://en.wikipedia.org/wiki/Cartan%E2%80%93Dieudonn%C3%A9_theorem) which I think is an 
+explanation for this? I don't fully understand the wording of the theorem, but
+I think it's saying that isometries can always be decomposed into reflections.
+And that's true here. Odd multivectors represent "reflection-like"
+transformations. Even sphere inversion is like a reflection in the `p` direction.
+
+Meanwhile, even multivectors represent "rotation-like" transformations. Or
+perhaps "exponential" since they are derived from the exponential function.
+* rotations are of course rotation-like
+* Dilations are hyperbolic rotations in the Minkowski plane. Due to the
+    cosh/sinh instead of cos/sin it causes stretching rather than rotation
+* Translations are degenerate rotations in a mixed plane (between a real vector
+    and the `inf` null vector). Due to the use of a null vector, things cancel
+    out and just move points towards infinity.
+
+### Implementation Details
+
+So far I started sketching out a `Versor` class. Some features:
+
+* I only store 16 terms + an indicator of versor parity
+* for even versors, the layout is `[scalar, bivector, quadvector]`
+* for odd versors, the layout is `[5-vector, trivector, vector]`
+* I'm continuing to use the start/stop indices so multiplication lookup tables
+    will be as small as possible
+* While not strictly a versor (actually they're null vectors), points are
+    always odd, so I'm representing them with this same class. I may separate
+    this out in the future, not sure yet.
+
+However, I'm still not done:
+
+* At some point I need to bite the bullet and implement the geometric product
+    table. While no calculation will use more than a quarter of the table,
+    all sections of the table are reachable.
+* I need to figure out how to streamline sandwich products. I think I can
+    get away with only computing the terms that contribute to a vector,
+    but trying to implement that without branching might get tricky.
