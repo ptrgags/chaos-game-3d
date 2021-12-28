@@ -1,5 +1,5 @@
 use crate::vector::Vec3;
-use crate::multivector::Multivector;
+use crate::versor::Versor;
 
 /// A buffer is a container of colored points.
 /// It is stored as a pair of parallel vectors of points and colors.
@@ -15,7 +15,7 @@ pub struct Buffer<T: Clone> {
 /// Since transformations (see xforms.rs) are maps of 
 /// `Multivector -> Multivector`, algorithms should store lists of multivectors
 /// not Vec3 to avoid excessive packing/unpacking.
-pub type InternalBuffer = Buffer<Multivector>;
+pub type InternalBuffer = Buffer<Versor>;
 
 /// When outputing a point cloud, use the more compact vector of point
 pub type OutputBuffer = Buffer<Vec3>;

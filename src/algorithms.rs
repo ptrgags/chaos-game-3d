@@ -5,7 +5,7 @@ use crate::initial_set::{self, InitialSet};
 use crate::plotters::{self, Plotter};
 use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
-use crate::multivector::Multivector;
+use crate::versor::Versor;
 
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
@@ -76,8 +76,8 @@ impl ChaosGame {
 impl Algorithm for ChaosGame {
     fn iterate(&mut self) {
         // Start with a random position and color
-        let mut pos = Multivector::from_vec3(&Vec3::random());
-        let mut color_vec = Multivector::from_vec3(&Vec3::random_color());
+        let mut pos = Versor::from_vec3(&Vec3::random());
+        let mut color_vec = Versor::from_vec3(&Vec3::random_color());
         const UPDATE_FREQ: usize = 100000;
         let complexity = self.complexity() / UPDATE_FREQ;
 

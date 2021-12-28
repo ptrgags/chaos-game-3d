@@ -1,11 +1,10 @@
 use json::JsonValue;
 
-use crate::xforms::{self, Transform, TranslatedSandwich};
+use crate::xforms::{self, Xform};
 use crate::choosers::{self, Chooser, UniformChooser};
-use crate::multivector::Multivector;
+use crate::versor::Versor;
 
 // Type aliases for brevity
-pub type Xform = Box<dyn Transform>;
 pub type XformSelector = Box<dyn Chooser>;
 
 /// An Iterated Function System is a set of functions (transformations) that 
@@ -35,7 +34,7 @@ impl IFS {
     /// Create the simplest possible IFS: the identity transformation
     /// and a unfiorm chooser
     pub fn identity() -> Self {
-        let identity_xform = Box::new(TranslatedSandwich::identity());
+        let identity_xform = Xform::identity();
         Self {
             xforms: vec![identity_xform],
             chooser: Box::new(UniformChooser::new(1))
@@ -44,16 +43,16 @@ impl IFS {
 
     /// Transform an individual point using a randomly-selected transformation
     /// from this IFS. The Chooser determines the random distribution
-    pub fn transform(&mut self, vector: &Multivector) -> Multivector {
+    pub fn transform(&mut self, point: &Versor) -> Versor {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
-        xform.transform(vector)
+        xform.transform(point)
     }
 
     /// Transform a vector containing points. This is used for transforming
     /// the points/colors of a Buffer.
     pub fn transform_points(
-            &mut self, points: &Vec<Multivector>) -> Vec<Multivector> {
+            &mut self, points: &Vec<Versor>) -> Vec<Versor> {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
 
@@ -120,9 +119,6 @@ fn add_inverse(results: &mut Vec<Xform>) {
     }
 
     let n = results.len();
-    let inv = results[n - 1]
-        .inverse()
-        .expect(
-            "[\"+inverse\"] may only go after an invertible transformation");
+    let inv = results[n - 1].inverse();
     results.push(inv);
 }

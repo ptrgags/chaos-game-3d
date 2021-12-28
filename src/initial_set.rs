@@ -1,6 +1,7 @@
 use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
 use crate::multivector::Multivector;
+use crate::versor::Versor;
 
 use rand::Rng;
 use rand::prelude::ThreadRng;
@@ -81,7 +82,7 @@ impl InitialSet for RandomBox {
         let half_dims = self.dimensions.scale(0.5);
         let min = self.center - half_dims;
         let max = self.center + half_dims;
-        let color = Multivector::from_vec3(&self.color);
+        let color = Versor::from_vec3(&self.color);
 
         // Generate N random points, uniformly distributed over the box.
         for _ in 0..self.num_points {
@@ -89,7 +90,7 @@ impl InitialSet for RandomBox {
             let y = self.rng.gen_range(min.y(), max.y());
             let z = self.rng.gen_range(min.z(), max.z());
         
-            let point = Multivector::vector(x as f64, y as f64, z as f64);
+            let point = Versor::point(x as f64, y as f64, z as f64);
             buf.add(point, color.clone());
         }
 
@@ -157,18 +158,15 @@ impl RandomLine {
 impl InitialSet for RandomLine {
     fn generate(&mut self) -> InternalBuffer {
         let mut buf = InternalBuffer::new();
-        let color = Multivector::from_vec3(&self.color);
-        let start = Multivector::from_vec3(&self.start);
-        let end = Multivector::from_vec3(&self.end);
+        let color = Versor::from_vec3(&self.color);
+        let start = Versor::from_vec3(&self.start);
+        let end = Versor::from_vec3(&self.end);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
         for _ in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
-            let weighted_start = start.scale(1.0 - t);
-            let weighted_end = end.scale(t);
-            let point = weighted_start.add(&weighted_end);
-
+            let point = Versor::lerp(&start, &end, t);
             buf.add(point, color.clone());
         }
 

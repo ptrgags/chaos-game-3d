@@ -1,4 +1,6 @@
-#[derive(Clone)]
+use crate::vector::Vec3;
+
+#[derive(Clone, PartialEq)]
 enum VersorParity {
     Even,
     Odd
@@ -52,21 +54,31 @@ pub struct Versor {
 }
 
 impl Versor {
-    pub fn rotation(axis: [f64; 3], angle: f64) -> Self {
-        let [x, y, z] = axis;
-        let half_angle = angle / 2.0;
+    pub fn identity() -> Self {
+        let mut components = [0.0; 16];
+        components[SCALAR] = 1.0;
+        Self {
+            components,
+            parity: VersorParity::Even,
+            start_index: SCALAR_START,
+            end_index: SCALAR_END
+        }
+    }
+
+    pub fn rotation(nx: f64, ny: f64, nz: f64, angle_rad: f64) -> Self {
+        let half_angle = angle_rad / 2.0;
         let c = half_angle.cos();
         let s = half_angle.sin();
         // cos(theta/2) + sin(theta/2)B
         let mut components = [0.0; 16];
         components[SCALAR] = c;
-        components[BIVECTOR_YZ] = s * x;
-        components[BIVECTOR_ZX] = s * y;
-        components[BIVECTOR_YZ] = s * z;
+        components[BIVECTOR_YZ] = s * nx;
+        components[BIVECTOR_ZX] = s * ny;
+        components[BIVECTOR_YZ] = s * nz;
         Self {
             components,
             parity: VersorParity::Even,
-            start_index: SCALAR,
+            start_index: SCALAR_START,
             end_index: BIVECTOR_NP
         }
     }
@@ -87,8 +99,7 @@ impl Versor {
         }
     }
 
-    pub fn translation(offset: [f64; 3]) -> Self {
-        let [x, y, z] = offset;
+    pub fn translation(x: f64, y: f64, z: f64) -> Self {
         let hx = 0.5 * x;
         let hy = 0.5 * y;
         let hz = 0.5 * z;
@@ -108,8 +119,7 @@ impl Versor {
         }
     }
 
-    pub fn reflection(normal: [f64; 3]) -> Self {
-        let [nx, ny, nz] = normal;
+    pub fn reflection(nx: f64, ny: f64, nz: f64) -> Self {
         let mut components = [0.0; 16];
         components[VECTOR_X] = nx;
         components[VECTOR_Y] = ny;
@@ -133,8 +143,7 @@ impl Versor {
         }
     }
 
-    pub fn point(position: [f64; 3]) -> Self {
-        let [x, y, z] = position;
+    pub fn point(x: f64, y: f64, z: f64) -> Self {
         let mag_sqr = x * x + y * y + z * z;
         
         // x + 1/2x^2 inf + origin
@@ -157,6 +166,14 @@ impl Versor {
         }
     }
 
+    pub fn from_vec3(position: &Vec3) -> Self {
+        Self::point(
+            *position.x() as f64,
+            *position.y() as f64,
+            *position.z() as f64
+        )
+    }
+
     pub fn reverse(&self) -> Self {
         let mut components = self.components.clone();
 
@@ -172,6 +189,45 @@ impl Versor {
             parity: self.parity.clone(),
             start_index: self.start_index,
             end_index: self.end_index
+        }
+    }
+
+    pub fn geometric_product(&self, other: &Self) -> Self {
+        todo!();
+    }
+
+    pub fn sandwich_product(&self, other: &Self) -> Self {
+        todo!();
+    }
+
+    // for points only
+    pub fn to_vec3(&self) -> Vec3 {
+        let x = self.components[VECTOR_X];
+        let y = self.components[VECTOR_Y];
+        let z = self.components[VECTOR_Z];
+        Vec3::new(x as f32, y as f32, z as f32)
+    }
+
+    pub fn lerp(a: &Self, b: &Self, t: f64) -> Self {
+        if a.parity != b.parity {
+            panic!("can only lerp versors of the same parity");
+        }
+
+        let start_index = a.start_index.min(b.start_index);
+        let end_index = a.end_index.max(b.end_index);
+
+        let mut components = [0.0; 16];
+        let p = 1.0 - t;
+        let q = t;
+        for i in start_index..end_index {
+            components[i] = p * a.components[i] + q * b.components[i];
+        }
+
+        Self {
+            components: components,
+            parity: a.parity.clone(),
+            start_index,
+            end_index
         }
     }
 }
