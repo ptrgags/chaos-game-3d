@@ -17,6 +17,7 @@ mod bbox;
 mod octrees;
 mod plotters;
 mod multivector;
+mod versor;
 
 use std::env;
 
