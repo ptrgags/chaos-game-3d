@@ -71,3 +71,12 @@ Some ideas for metadata:
     first?) or even an array of the latest N transformations. Coloring by this
     could be useful
 * Color Transformation IDs. (similar to the previous point)
+
+## 2022-01-02 Refactoring 3D Tiles Output
+
+Today I started working on the 3D Tiles Next output, but I soon realized that
+this requires refactoring things a bit. I pulled out a `TilesetWriter` struct
+(since I will likely have variations on this in the future for implicit tiling)
+and I stubbed out a `GlbWriter` class to parallel the older `PntsWriter`. I
+will likely keep both around for a while since the 3D Tiles Next extensions
+are still experimental and may change.
