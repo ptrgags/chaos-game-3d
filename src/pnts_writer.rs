@@ -1,6 +1,7 @@
-use crate::buffers::OutputBuffer;
 use std::fs::File;
 use std::io::prelude::*;
+
+use crate::buffers::OutputBuffer;
 
 /// Cesium Point Cloud format version 1.0
 const PNTS_VERSION: u32 = 1;

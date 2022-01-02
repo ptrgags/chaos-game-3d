@@ -17,6 +17,8 @@ mod bbox;
 mod octrees;
 mod plotters;
 mod multivector;
+mod tileset_writer;
+mod glb_writer;
 
 use std::env;
 

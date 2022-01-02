@@ -1,9 +1,9 @@
 use json::JsonValue;
 
 use crate::bbox::BBox;
-use crate::buffers::{OutputBuffer};
+use crate::buffers::OutputBuffer;
 use crate::vector::Vec3;
-use crate::pnts_writer::PntsWriter;
+
 
 /// Octree node
 pub struct OctNode {
@@ -84,11 +84,9 @@ impl OctNode {
         self.children.iter().enumerate().collect()
     }
 
-    /// Write the points in this node's buffer to a Cesium 3D tiles
-    /// .pnts file.
-    pub fn write_pnts(&self, fname: &str) {
-        let mut writer = PntsWriter::new(); 
-        writer.write(fname, &self.points);
+    /// Borrow the points. This is used when writing data to disk
+    pub fn get_points(&self) -> &OutputBuffer {
+        &self.points
     }
 
     /// Add a point from the top of the tree down. If this overfills the node,
