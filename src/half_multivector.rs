@@ -6,44 +6,59 @@ enum Parity {
     Odd
 }
 
-// even:
-// [s, yz, zx, xy, np, xn, xp, yn, yp, zn, zp, _, _, _, _, _]
+// Even multivectors:
+// [s, yzpn, xzpn, xypn, xyzn, xyzp, xy, xz, xp, xn, yz, yp, yn, zp, zn, pn]
 const SCALAR: usize = 0;
-const BIVECTOR_YZ: usize = 1;
-const BIVECTOR_ZX: usize = 2;
-const BIVECTOR_XY: usize = 3;
-const BIVECTOR_NP: usize = 4;
-const BIVECTOR_XN: usize = 5;
-const BIVECTOR_XP: usize = 6;
-const BIVECTOR_YN: usize = 7;
-const BIVECTOR_YP: usize = 8;
-const BIVECTOR_ZN: usize = 9;
-const BIVECTOR_ZP: usize = 10;
-// TODO: what order to list quadvectors?
+const YZPN: usize = 1;
+const XZPN: usize = 2;
+const XYPN: usize = 3;
+const XYZN: usize = 4;
+const XYZP: usize = 5;
+const XY: usize = 6;
+const XZ: usize = 7;
+const XP: usize = 8;
+const XN: usize = 9;
+const YZ: usize = 10;
+const YP: usize = 11;
+const YN: usize = 12;
+const ZP: usize = 13;
+const ZN: usize = 14;
+const PN: usize = 15;
 
 const SCALAR_START: usize = 0;
 const SCALAR_END: usize = 1;
-const BIVECTOR_START: usize = 1;
-const BIVECTOR_END: usize = 11;
-const QUADVECTOR_START: usize = 11;
-const QUADVECTOR_END: usize = 16;
+const QUADVECTOR_START: usize = 1;
+const QUADVECTOR_END: usize = 6;
+const BIVECTOR_START: usize = 6;
+const BIVECTOR_END: usize = 16;
 
-// odd terms:
-// [xyznp, _, _, _, _, _, _, _, _, _, _, x, y, z, n, p]
-const PSEUDOSCALAR: usize = 0;
-// TODO: What order to list trivectors?
-const VECTOR_X: usize = 11;
-const VECTOR_Y: usize = 12;
-const VECTOR_Z: usize = 13;
-const VECTOR_N: usize = 14;
-const VECTOR_P: usize = 15;
+
+// Odd multivectors:
+// [xyzpn, x, y, z, p, n, zpn, ypn, yzn, yzp, xpn, xzn, xzp, xyn, xyp, xyz]
+const XYZPN: usize = 0;
+const X: usize = 1;
+const Y: usize = 2;
+const Z: usize = 3;
+const P: usize = 4;
+const N: usize = 5;
+const ZPN: usize = 6;
+const YPN: usize = 7;
+const YZN: usize = 8;
+const YZP: usize = 9;
+const XPN: usize = 10;
+const XZN: usize = 11;
+const XZP: usize = 12;
+const XYN: usize = 13;
+const XYP: usize = 14;
+const XYZ: usize = 15;
 
 const PSEUDOSCALAR_START: usize = 0;
 const PSEUDOSCALAR_END: usize = 1;
-const TRIVECTOR_START: usize = 1;
-const TRIVECTOR_END: usize = 11;
-const VECTOR_START: usize = 11;
-const VECTOR_END: usize = 16;
+const VECTOR_START: usize = 1;
+const VECTOR_END: usize = 6;
+const TRIVECTOR_START: usize = 6;
+const TRIVECTOR_END: usize = 16;
+
 
 #[derive(Clone)]
 pub struct HalfMultivector {
@@ -72,14 +87,14 @@ impl HalfMultivector {
         // cos(theta/2) + sin(theta/2)B
         let mut components = [0.0; 16];
         components[SCALAR] = c;
-        components[BIVECTOR_YZ] = s * nx;
-        components[BIVECTOR_ZX] = s * ny;
-        components[BIVECTOR_YZ] = s * nz;
+        components[YZ] = -s * nx;
+        components[XZ] = s * ny;
+        components[XY] = -s * nz;
         Self {
             components,
             parity: Parity::Even,
             start_index: SCALAR_START,
-            end_index: BIVECTOR_NP
+            end_index: YZ + 1
         }
     }
 
@@ -90,12 +105,12 @@ impl HalfMultivector {
         // cosh(ln(alpha) / 2) + sinh(ln(alpha) / 2) np
         let mut components = [0.0; 16];
         components[SCALAR] = c;
-        components[BIVECTOR_NP] = s;
+        components[PN] = -s;
         Self {
             components,
             parity: Parity::Even,
             start_index: SCALAR,
-            end_index: BIVECTOR_XN,
+            end_index: BIVECTOR_END,
         }
     }
 
@@ -104,42 +119,46 @@ impl HalfMultivector {
         let hy = 0.5 * y;
         let hz = 0.5 * z;
         let mut components = [0.0; 16];
+        // 1 + infx + infy + infz
+        // = 1 + (n + p)x + (n + p)y + (n + p)z
+        // = 1 - xn - xp - yn - yp - zn - zp
         components[SCALAR] = 1.0;
-        components[BIVECTOR_XN] = -hx;
-        components[BIVECTOR_XP] = -hx;
-        components[BIVECTOR_YN] = -hy;
-        components[BIVECTOR_YP] = -hy;
-        components[BIVECTOR_ZN] = -hz;
-        components[BIVECTOR_ZP] = -hz;
+        components[XP] = -hx;
+        components[XN] = -hx;
+        components[YP] = -hy;
+        components[YN] = -hy;
+        components[ZP] = -hz;
+        components[ZN] = -hz;
+        
         Self {
             components,
             parity: Parity::Even,
             start_index: SCALAR_START,
-            end_index: BIVECTOR_END
+            end_index: ZN + 1
         }
     }
 
     pub fn reflection(nx: f64, ny: f64, nz: f64) -> Self {
         let mut components = [0.0; 16];
-        components[VECTOR_X] = nx;
-        components[VECTOR_Y] = ny;
-        components[VECTOR_Z] = nz;
+        components[X] = nx;
+        components[Y] = ny;
+        components[Z] = nz;
         Self {
             components,
             parity: Parity::Odd,
-            start_index: VECTOR_X,
-            end_index: VECTOR_N
+            start_index: VECTOR_START,
+            end_index: Z + 1
         }
     }
 
     pub fn inversion() -> Self {
         let mut components = [0.0; 16];
-        components[VECTOR_P] = 1.0;
+        components[P] = 1.0;
         Self {
             components,
             parity: Parity::Odd,
-            start_index: VECTOR_P,
-            end_index: VECTOR_END
+            start_index: P,
+            end_index: P + 1
         }
     }
 
@@ -153,15 +172,15 @@ impl HalfMultivector {
         let p = 0.5 * (mag_sqr - 1.0);
 
         let mut components = [0.0; 16];
-        components[VECTOR_X] = x;
-        components[VECTOR_Y] = y;
-        components[VECTOR_Z] = z;
-        components[VECTOR_N] = n;
-        components[VECTOR_P] = p;
+        components[X] = x;
+        components[Y] = y;
+        components[Z] = z;
+        components[P] = p;
+        components[N] = n;
         Self {
             components,
             parity: Parity::Odd,
-            start_index: VECTOR_X,
+            start_index: VECTOR_START,
             end_index: VECTOR_END
         }
     }
@@ -202,9 +221,9 @@ impl HalfMultivector {
 
     // for points only
     pub fn to_vec3(&self) -> Vec3 {
-        let x = self.components[VECTOR_X];
-        let y = self.components[VECTOR_Y];
-        let z = self.components[VECTOR_Z];
+        let x = self.components[X];
+        let y = self.components[Y];
+        let z = self.components[Z];
         Vec3::new(x as f32, y as f32, z as f32)
     }
 

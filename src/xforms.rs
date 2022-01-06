@@ -71,9 +71,8 @@ fn get_versor(versor_desc: &JsonValue) -> HalfMultivector {
     ];
 
     match xform_type {
-        "identity" => {
-            HalfMultivector::identity()
-        },
+        "identity" => HalfMultivector::identity(),
+        "invert" => HalfMultivector::inversion(),
         "translate" => {
             if let [x, y, z] = &parameters[..] {
                 HalfMultivector::translation(*x, *y, *z)
