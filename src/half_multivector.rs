@@ -59,6 +59,45 @@ const VECTOR_END: usize = 6;
 const TRIVECTOR_START: usize = 6;
 const TRIVECTOR_END: usize = 16;
 
+const COMPONENTS_EVEN_EVEN: [[usize; 16]; 16] = [
+    [1, YZPN, XZPN, XYPN, XYZN, XYZP, XY, XZ, XP, XN, YZ, YP, YN, ZP, ZN, PN],
+    [YZPN, 1, XY, XZ, XP, XN, XZPN, XYPN, XYZN, XYZP, PN, ZN, ZP, YN, YP, YZ],
+    [XZPN, XY, 1, YZ, YP, YN, YZPN, PN, ZN, ZP, XYPN, XYZN, XYZP, XN, XP, XZ],
+    [XYPN, XZ, YZ, 1, ZP, ZN, PN, YZPN, YN, YP, XZPN, XN, XP, XYZN, XYZP, XY],
+    [XYZN, XP, YP, ZP, 1, PN, ZN, YN, YZPN, YZ, XN, XZPN, XZ, XYPN, XY, XYZP],
+    [XYZP, XN, YN, ZN, PN, 1, ZP, YP, YZ, YZPN, XP, XZ, XZPN, XY, XYPN, XYZN],
+    [XY, XZPN, YZPN, PN, ZN, ZP, 1, YZ, YP, YN, XZ, XP, XN, XYZP, XYZN, XYPN],
+    [XZ, XYPN, PN, YZPN, YN, YP, YZ, 1, ZP, ZN, XY, XYZP, XYZN, XP, XN, XZPN],
+    [XP, XYZN, ZN, YN, YZPN, YZ, YP, ZP, 1, PN, XYZP, XY, XYPN, XZ, XZPN, XN],
+    [XN, XYZP, ZP, YP, YZ, YZPN, YN, ZN, PN, 1, XYZN, XYPN, XY, XZPN, XZ, XP],
+    [YZ, PN, XYPN, XZPN, XN, XP, XZ, XY, XYZP, XYZN, 1, ZP, ZN, YP, YN, YZPN],
+    [YP, ZN, XYZN, XN, XZPN, XZ, XP, XYZP, XY, XYPN, ZP, 1, PN, YZ, YZPN, YN],
+    [YN, ZP, XYZP, XP, XZ, XZPN, XN, XYZN, XYPN, XY, ZN, PN, 1, YZPN, YZ, YP],
+    [ZP, YN, XN, XYZN, XYPN, XY, XYZP, XP, XZ, XZPN, YP, YZ, YZPN, 1, PN, ZN],
+    [ZN, YP, XP, XYZP, XY, XYPN, XYZN, XN, XZPN, XZ, YN, YZPN, YZ, PN, 1, ZP],
+    [PN, YZ, XZ, XY, XYZP, XYZN, XYPN, XZPN, XN, XP, YZPN, YN, YP, ZN, ZP, 1],
+];
+
+const COMPONENTS_ODD_ODD: [[usize; 16]; 16] = COMPONENTS_EVEN_EVEN;
+
+const SIGNS_EVEN_EVEN: [[i8; 16]; 16] = [
+    [1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1],
+    [1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1, 1],
+    [1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1, 1],
+    [1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1, 1],
+    [1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, 1],
+    [1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1, 1],
+    [1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1, 1],
+    [1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1, 1],
+    [1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1, 1],
+    [1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1],
+    [1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, 1],
+    [1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1, 1],
+    [1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1, 1],
+    [1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1, 1],
+    [1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1, 1],
+    [1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1, 1],
+];
 
 #[derive(Clone)]
 pub struct HalfMultivector {
