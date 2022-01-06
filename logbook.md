@@ -194,3 +194,27 @@ However, I'm still not done:
 * I need to figure out how to streamline sandwich products. I think I can
     get away with only computing the terms that contribute to a vector,
     but trying to implement that without branching might get tricky.
+
+
+## 2022-01-06 Chip away at CGA multiplication
+
+Today I started working on the multiplication tables for CGA:
+
+* I renamed `Versor` to `HalfMultivector` since I plan to use the same type for
+    both versors (unit multivectors) and points (null vectors)
+* I started taking the [3D CGA Cayley table from bivector.net](https://bivector.net/tools.html)
+    and turning it into lookup tables. Though first I copied the table into
+    Google Sheets to reorder the components to group the components by parity.
+    I think at least in terms of the components there's some rotation symmetry
+    in the table that can be exploited (it seems like the even * even components
+    are the same as the odd * odd components?). This is not true of the sign
+    though, I'm still trying to figure out the relationship here.
+* I also reordered the components to better match the table. The odd vectors
+    are listed backwards so components line up with their dual component
+  * Even half-multivectors: `[scalar, quadvector, bivector]`
+  * Odd half-multivectors: `[5-vector, vector, trivector]`
+* I also swapped the order of the negative and positive unit vectors to match
+    the cayley table (which puts the negative component last)
+
+The intent of matching the table is it's easier to get correct, it's mostly
+copy in the table and do regex replaces (e.g. `e123 -> XYZ`)
