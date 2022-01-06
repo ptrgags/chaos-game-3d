@@ -2,7 +2,7 @@ use json::JsonValue;
 
 use crate::xforms::{self, Xform};
 use crate::choosers::{self, Chooser, UniformChooser};
-use crate::versor::Versor;
+use crate::half_multivector::HalfMultivector;
 
 // Type aliases for brevity
 pub type XformSelector = Box<dyn Chooser>;
@@ -43,7 +43,7 @@ impl IFS {
 
     /// Transform an individual point using a randomly-selected transformation
     /// from this IFS. The Chooser determines the random distribution
-    pub fn transform(&mut self, point: &Versor) -> Versor {
+    pub fn transform(&mut self, point: &HalfMultivector) -> HalfMultivector {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
         xform.transform(point)
@@ -52,7 +52,7 @@ impl IFS {
     /// Transform a vector containing points. This is used for transforming
     /// the points/colors of a Buffer.
     pub fn transform_points(
-            &mut self, points: &Vec<Versor>) -> Vec<Versor> {
+            &mut self, points: &Vec<HalfMultivector>) -> Vec<HalfMultivector> {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
 

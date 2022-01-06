@@ -1,7 +1,7 @@
 use crate::vector::Vec3;
 
 #[derive(Clone, PartialEq)]
-enum VersorParity {
+enum Parity {
     Even,
     Odd
 }
@@ -46,20 +46,20 @@ const VECTOR_START: usize = 11;
 const VECTOR_END: usize = 16;
 
 #[derive(Clone)]
-pub struct Versor {
+pub struct HalfMultivector {
     components: [f64; 16],
-    parity: VersorParity,
+    parity: Parity,
     start_index: usize,
     end_index: usize
 }
 
-impl Versor {
+impl HalfMultivector {
     pub fn identity() -> Self {
         let mut components = [0.0; 16];
         components[SCALAR] = 1.0;
         Self {
             components,
-            parity: VersorParity::Even,
+            parity: Parity::Even,
             start_index: SCALAR_START,
             end_index: SCALAR_END
         }
@@ -77,7 +77,7 @@ impl Versor {
         components[BIVECTOR_YZ] = s * nz;
         Self {
             components,
-            parity: VersorParity::Even,
+            parity: Parity::Even,
             start_index: SCALAR_START,
             end_index: BIVECTOR_NP
         }
@@ -93,7 +93,7 @@ impl Versor {
         components[BIVECTOR_NP] = s;
         Self {
             components,
-            parity: VersorParity::Even,
+            parity: Parity::Even,
             start_index: SCALAR,
             end_index: BIVECTOR_XN,
         }
@@ -113,7 +113,7 @@ impl Versor {
         components[BIVECTOR_ZP] = -hz;
         Self {
             components,
-            parity: VersorParity::Even,
+            parity: Parity::Even,
             start_index: SCALAR_START,
             end_index: BIVECTOR_END
         }
@@ -126,7 +126,7 @@ impl Versor {
         components[VECTOR_Z] = nz;
         Self {
             components,
-            parity: VersorParity::Odd,
+            parity: Parity::Odd,
             start_index: VECTOR_X,
             end_index: VECTOR_N
         }
@@ -137,7 +137,7 @@ impl Versor {
         components[VECTOR_P] = 1.0;
         Self {
             components,
-            parity: VersorParity::Odd,
+            parity: Parity::Odd,
             start_index: VECTOR_P,
             end_index: VECTOR_END
         }
@@ -160,7 +160,7 @@ impl Versor {
         components[VECTOR_P] = p;
         Self {
             components,
-            parity: VersorParity::Odd,
+            parity: Parity::Odd,
             start_index: VECTOR_X,
             end_index: VECTOR_END
         }

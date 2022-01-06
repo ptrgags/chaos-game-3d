@@ -16,8 +16,8 @@ mod pnts_writer;
 mod bbox;
 mod octrees;
 mod plotters;
-mod multivector;
-mod versor;
+//mod multivector;
+mod half_multivector;
 
 use std::env;
 
