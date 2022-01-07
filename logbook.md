@@ -218,3 +218,19 @@ Today I started working on the multiplication tables for CGA:
 
 The intent of matching the table is it's easier to get correct, it's mostly
 copy in the table and do regex replaces (e.g. `e123 -> XYZ`)
+
+## 2022-01-07 Finish Tables
+
+Today I finished adding the tables. I verified that the program now compiles
+and runs, but I haven't yet verified its correctness.
+
+Next Steps:
+
+* Add unit tests to make sure that multiplication works correctly. The tables
+    are large, so data entry errors are likely
+* Design a series of simple IFSs to test that the transformations are visually
+    correct.
+* I want to continue thinking about the sandwich product, I think there's some
+    optimizations that can be made by making use of the 
+    commutivity/anticommutivity of various blades, but still working through
+    the math on paper.

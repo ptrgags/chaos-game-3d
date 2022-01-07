@@ -1,9 +1,19 @@
+use std::cmp::Eq;
+
 use crate::vector::Vec3;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Parity {
     Even,
     Odd
+}
+
+fn get_product_parity(left: &Parity, right: &Parity) -> Parity {
+    if left == right {
+        Parity::Even
+    } else {
+        Parity::Odd
+    }
 }
 
 // Even multivectors:
@@ -27,7 +37,9 @@ const PN: usize = 15;
 
 const SCALAR_START: usize = 0;
 const SCALAR_END: usize = 1;
+#[allow(dead_code)]
 const QUADVECTOR_START: usize = 1;
+#[allow(dead_code)]
 const QUADVECTOR_END: usize = 6;
 const BIVECTOR_START: usize = 6;
 const BIVECTOR_END: usize = 16;
@@ -52,14 +64,20 @@ const XYN: usize = 13;
 const XYP: usize = 14;
 const XYZ: usize = 15;
 
+#[allow(dead_code)]
 const PSEUDOSCALAR_START: usize = 0;
+#[allow(dead_code)]
 const PSEUDOSCALAR_END: usize = 1;
 const VECTOR_START: usize = 1;
 const VECTOR_END: usize = 6;
+#[allow(dead_code)]
 const TRIVECTOR_START: usize = 6;
+#[allow(dead_code)]
 const TRIVECTOR_END: usize = 16;
 
-const COMPONENTS_EVEN_EVEN: [[usize; 16]; 16] = [
+type ComponentLUT = [[usize; 16]; 16];
+
+const COMPONENTS_EVEN_EVEN: ComponentLUT = [
     [1, YZPN, XZPN, XYPN, XYZN, XYZP, XY, XZ, XP, XN, YZ, YP, YN, ZP, ZN, PN],
     [YZPN, 1, XY, XZ, XP, XN, XZPN, XYPN, XYZN, XYZP, PN, ZN, ZP, YN, YP, YZ],
     [XZPN, XY, 1, YZ, YP, YN, YZPN, PN, ZN, ZP, XYPN, XYZN, XYZP, XN, XP, XZ],
@@ -78,9 +96,41 @@ const COMPONENTS_EVEN_EVEN: [[usize; 16]; 16] = [
     [PN, YZ, XZ, XY, XYZP, XYZN, XYPN, XZPN, XN, XP, YZPN, YN, YP, ZN, ZP, 1],
 ];
 
-const COMPONENTS_ODD_ODD: [[usize; 16]; 16] = COMPONENTS_EVEN_EVEN;
+const COMPONENTS_ODD_ODD: ComponentLUT = COMPONENTS_EVEN_EVEN;
 
-const SIGNS_EVEN_EVEN: [[i8; 16]; 16] = [
+const COMPONENTS_EVEN_ODD: ComponentLUT = [
+    [XYZPN, X, Y, Z, P, N, ZPN, YPN, YZN, YZP, XPN, XZN, XZP, XYN, XYP, XYZ],
+    [X, XYZPN, ZPN, YPN, YZN, YZP, Y, Z, P, N, XYZ, XYP, XYN, XZP, XZN, XPN],
+    [Y, ZPN, XYZPN, XPN, XZN, XZP, X, XYZ, XYP, XYN, Z, P, N, YZP, YZN, YPN],
+    [Z, YPN, XPN, XYZPN, XYN, XYP, XYZ, X, XZP, XZN, Y, YZP, YZN, P, N, ZPN],
+    [P, YZN, XZN, XYN, XYZPN, XYZ, XYP, XZP, X, XPN, YZP, Y, YPN, Z, ZPN, N],
+    [N, YZP, XZP, XYP, XYZ, XYZPN, XYN, XZN, XPN, X, YZN, YPN, Y, ZPN, Z, P],
+    [ZPN, Y, X, XYZ, XYP, XYN, XYZPN, XPN, XZN, XZP, YPN, YZN, YZP, N, P, Z],
+    [YPN, Z, XYZ, X, XZP, XZN, XPN, XYZPN, XYN, XYP, ZPN, N, P, YZN, YZP, Y],
+    [YZN, P, XYP, XZP, X, XPN, XZN, XYN, XYZPN, XYZ, N, ZPN, Z, YPN, Y, YZP],
+    [YZP, N, XYN, XZN, XPN, X, XZP, XYP, XYZ, XYZPN, P, Z, ZPN, Y, YPN, YZN],
+    [XPN, XYZ, Z, Y, YZP, YZN, YPN, ZPN, N, P, XYZPN, XYN, XYP, XZN, XZP, X],
+    [XZN, XYP, P, YZP, Y, YPN, YZN, N, ZPN, Z, XYN, XYZPN, XYZ, XPN, X, XZP],
+    [XZP, XYN, N, YZN, YPN, Y, YZP, P, Z, ZPN, XYP, XYZ, XYZPN, X, XPN, XZN],
+    [XYN, XZP, YZP, P, Z, ZPN, N, YZN, YPN, Y, XZN, XPN, X, XYZPN, XYZ, XYP],
+    [XYP, XZN, YZN, N, ZPN, Z, P, YZP, Y, YPN, XZP, X, XPN, XYZ, XYZPN, XYN],
+    [XYZ, XPN, YPN, ZPN, N, P, 1, Y, YZP, YZN, X, XZP, XZN, XYP, XYN, XYZPN],
+];
+
+const COMPONENTS_ODD_EVEN: ComponentLUT = COMPONENTS_EVEN_ODD;
+
+fn get_component_table(left: &Parity, right: &Parity) -> ComponentLUT {
+    match (left, right) {
+        (Parity::Even, Parity::Even) => COMPONENTS_EVEN_EVEN,
+        (Parity::Even, Parity::Odd) => COMPONENTS_EVEN_ODD,
+        (Parity::Odd, Parity::Even) => COMPONENTS_ODD_EVEN,
+        (Parity::Odd, Parity::Odd) => COMPONENTS_ODD_ODD,
+    }
+}
+
+type SignLUT = [[i8; 16]; 16];
+
+const SIGNS_EVEN_EVEN: SignLUT = [
     [1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1],
     [1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1, 1],
     [1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1, 1],
@@ -98,6 +148,72 @@ const SIGNS_EVEN_EVEN: [[i8; 16]; 16] = [
     [1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1, 1],
     [1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1, 1],
 ];
+
+const SIGNS_ODD_ODD: SignLUT = [
+    [-1,  1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1,  1,  1, -1],
+    [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+    [-1, -1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1],
+    [ 1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1,  1],
+    [-1, -1, -1, -1,  1,  1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [ 1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1,  1],
+    [-1, -1,  1,  1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1, -1],
+    [ 1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1,  1],
+    [ 1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1,  1],
+    [ 1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1,  1],
+    [-1,  1,  1, -1, -1, -1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+    [-1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1, -1, -1,  1,  1, -1],
+    [ 1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1,  1],
+    [ 1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1,  1],
+    [-1,  1, -1,  1,  1,  1,  1, -1, -1, -1,  1,  1,  1, -1, -1, -1],
+];
+
+const SIGNS_EVEN_ODD: SignLUT = [
+    [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+    [-1,  1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1,  1,  1, -1],
+    [ 1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1,  1],
+    [-1, -1,  1,  1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1, -1],
+    [ 1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1,  1],
+    [ 1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1,  1],
+    [-1, -1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1],
+    [ 1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1,  1],
+    [-1, -1, -1, -1,  1,  1, -1, -1,  1,  1, -1,  1,  1,  1,  1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1,  1, -1,  1,  1,  1,  1, -1, -1, -1,  1,  1,  1, -1, -1, -1],
+    [ 1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1,  1],
+    [ 1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1,  1],
+    [-1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1, -1, -1,  1,  1, -1],
+    [-1,  1,  1, -1, -1, -1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+    [ 1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1,  1],
+];
+
+const SIGNS_ODD_EVEN: SignLUT = [
+    [1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1, 1],
+    [1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1],
+    [1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1, 1],
+    [1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1, 1],
+    [1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1, 1],
+    [1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1],
+    [1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1, 1],
+    [1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1, 1],
+    [1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, 1],
+    [1, -1,  1, -1,  1,  1, -1,  1, -1, -1, -1,  1,  1, -1, -1, 1],
+    [1,  1,  1,  1, -1, -1,  1,  1, -1, -1,  1, -1, -1, -1, -1, 1],
+    [1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1, -1, -1,  1,  1, 1],
+    [1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1,  1, -1, -1, 1],
+    [1,  1, -1, -1, -1, -1, -1, -1, -1, -1,  1,  1,  1,  1,  1, 1],
+    [1,  1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1, -1, 1],
+    [1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, 1],
+];
+
+fn get_sign_table(left: &Parity, right: &Parity) -> SignLUT {
+    match (left, right) {
+        (Parity::Even, Parity::Even) => SIGNS_EVEN_EVEN,
+        (Parity::Even, Parity::Odd) => SIGNS_EVEN_ODD,
+        (Parity::Odd, Parity::Even) => SIGNS_ODD_EVEN,
+        (Parity::Odd, Parity::Odd) => SIGNS_ODD_ODD,
+    }
+}
 
 #[derive(Clone)]
 pub struct HalfMultivector {
@@ -251,11 +367,36 @@ impl HalfMultivector {
     }
 
     pub fn geometric_product(&self, other: &Self) -> Self {
-        todo!();
+        let sign_table = get_sign_table(&self.parity, &other.parity);
+        let component_table = get_component_table(&self.parity, &other.parity);
+        let parity = get_product_parity(&self.parity, &other.parity);
+        let mut result = [0.0; 16];
+        let mut start = BIVECTOR_END;
+        let mut end = SCALAR_START;
+        for i in self.start_index..self.end_index {
+            let a = self.components[i];
+            for j in other.start_index..other.end_index {
+                let b = other.components[j];
+                let index = component_table[i][j];
+                let sign = sign_table[i][j] as f64;
+                result[index] = sign * a * b;
+
+                start = start.min(index);
+                end = end.max(index);
+            }
+        }
+
+        Self {
+            components: result,
+            parity,
+            start_index: start,
+            end_index: end + 1
+        }
     }
 
     pub fn sandwich_product(&self, other: &Self) -> Self {
-        todo!();
+        let reverse = self.reverse();
+        self.geometric_product(&other).geometric_product(&reverse)
     }
 
     // for points only
