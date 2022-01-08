@@ -445,6 +445,37 @@ impl HalfMultivector {
         result
     }
 
+    /*
+    pub fn length_squared(&self) -> f64 {
+        let p = self.components[P];
+        let n = self.components[N];
+        n + p
+    }
+    */
+
+    pub fn homogenize(&mut self) {
+        if self.parity != Parity::Odd {
+            panic!("homogenize: Vectors must have odd parity!");
+        }
+
+        // In the positive/negative basis, the scale factor is split across
+        // the positive and negative directions. In the infinity/origin basis
+        // this is equivalent to the coeficient of the origin vector.
+        let p = self.components[P];
+        let n = self.components[N];
+        let scale_factor = n - p;
+
+        if scale_factor == 0.0 {
+            panic!("null vectors cannot be homogenized!");
+        }
+
+        self.components[X] /= scale_factor;
+        self.components[Y] /= scale_factor;
+        self.components[Z] /= scale_factor;
+        self.components[P] /= scale_factor;
+        self.components[N] /= scale_factor;
+    } 
+
     pub fn from_vec3(position: &Vec3) -> Self {
         Self::point(
             *position.x() as f64,
@@ -453,16 +484,48 @@ impl HalfMultivector {
         )
     }
 
-    // for points only
     pub fn to_vec3(&self) -> Vec3 {
         if self.parity != Parity::Odd {
-            panic!("not a vector!");
+            panic!("to_vec3: Vectors must have odd parity!");
         }
 
-        let x = self.components[X];
-        let y = self.components[Y];
-        let z = self.components[Z];
+        // streamlined homogenize()
+        let p = self.components[P];
+        let n = self.components[N];
+        let scale_factor = n - p;
+
+        //println!("{:?} -- {}", self, scale_factor);
+
+        if scale_factor == 0.0 {
+            panic!("null vectors cannot be homogenized!");
+        }
+
+        let x = self.components[X] / scale_factor;
+        let y = self.components[Y] / scale_factor;
+        let z = self.components[Z] / scale_factor;
         Vec3::new(x as f32, y as f32, z as f32)
+    }
+
+    pub fn almost_equal(&self, other: &Self, epsilon: f64) -> bool {
+        if self.parity != other.parity {
+            return false;
+        }
+
+        if self.start_index != other.start_index {
+            return false;
+        }
+
+        if self.end_index != other.end_index {
+            return false;
+        }
+
+        for i in SCALAR_START..BIVECTOR_END {
+            if !((self.components[i] - other.components[i]).abs() < epsilon) {
+                return false;
+            }
+        }
+
+        true
     }
 
     pub fn lerp(a: &Self, b: &Self, t: f64) -> Self {
@@ -531,6 +594,24 @@ mod tests {
             15
         );
         assert_eq!(HalfMultivector::translation(2.0, 4.0, 6.0), expected);
+    }
+
+    #[test]
+    fn test_scale() {
+        let half_log_scale = (2.0f64).ln() / 2.0;
+        let c = half_log_scale.cosh();
+        let s = half_log_scale.sinh();
+
+        let expected = HalfMultivector::even(
+            [
+                c, 
+                0.0, 0.0, 0.0, 0.0, 0.0, 
+                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -s,
+            ],
+            0,
+            16
+        );
+        assert_eq!(HalfMultivector::scale(2.0), expected);
     }
 
     #[test]
@@ -615,5 +696,16 @@ mod tests {
         let point = HalfMultivector::point(1.0, 1.0, 1.0);
         let expected = HalfMultivector::point(2.0, 3.0, 4.0);
         assert_eq!(xform.sandwich_product(&point), expected);
+    }
+
+    #[test]
+    fn test_scale_xform() {
+        let xform = HalfMultivector::scale(2.0);
+        let point = HalfMultivector::point(1.0, 1.0, 1.0);
+        let expected = HalfMultivector::point(2.0, 2.0, 2.0);
+
+        let mut result = xform.sandwich_product(&point);
+        result.homogenize();
+        assert!(result.almost_equal(&expected, 1e-9));
     }
 }

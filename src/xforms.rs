@@ -107,10 +107,9 @@ fn get_versor(versor_desc: &JsonValue) -> HalfMultivector {
 }
 
 fn from_chain(xform_chain: &JsonValue) -> Xform {
-    let length = xform_chain.len();
     let mut chain = Xform::identity();
-    for i in 1..length {
-        let xform = from_json(&xform_chain[i]);
+    for xform_json in xform_chain[1].members() {
+        let xform = from_json(&xform_json);
         chain = chain.followed_by(&xform);
     }
     chain

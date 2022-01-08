@@ -97,6 +97,7 @@ impl OctNode {
             &mut self, point: Vec3, color: Vec3, max_depth: u8) {
         // Discard points outside the grid
         if !self.bounds.contains(&point) {
+            //println!("{} outside grid", point);
             return;
         } 
 

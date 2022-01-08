@@ -50,7 +50,7 @@ impl<T: Display> Debug for Vector3<T> {
 /// `xe1 + ye2 + ze3`
 impl<T: Display> Display for Vector3<T> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}e1 + {}e2 + {}e3", self.x(), self.y(), self.z())
+        write!(f, "{}X + {}Y + {}Z", self.x(), self.y(), self.z())
     }
 }
 
