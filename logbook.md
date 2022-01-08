@@ -234,3 +234,14 @@ Next Steps:
     optimizations that can be made by making use of the 
     commutivity/anticommutivity of various blades, but still working through
     the math on paper.
+
+## 2022-01-08 Started Unit Testing
+
+Today I started testing some of the `HalfMultivector` functionality with unit
+tests and with running some of the fractals. 
+
+The random walk (only translations) seems to be working well.
+
+The Sierpinski tetrahedron seems to be producing the right shape, though many
+points are being marked as out-of-bounds which seems peculiar. Perhaps the
+handling of the homogeneous coordinate is off somehow? I'll have to investigate.
