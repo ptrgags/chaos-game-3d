@@ -80,3 +80,13 @@ this requires refactoring things a bit. I pulled out a `TilesetWriter` struct
 and I stubbed out a `GlbWriter` class to parallel the older `PntsWriter`. I
 will likely keep both around for a while since the 3D Tiles Next extensions
 are still experimental and may change.
+
+## 2022-01-09 Continue working on GLB output
+
+Today I continued to work on GLB output. Along the way, I noticed I was passing
+a lot of variables for each point, so I refactored out a `Point` class to store
+the position, color, and metadata for each point. Overall, it works nicely,
+though there are some parts where I end up copying data a lot. I'll have to
+revisit this again in the future.
+
+At this point I can compile things, but it's not yet producing valid glTF files.
