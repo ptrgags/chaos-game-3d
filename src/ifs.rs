@@ -66,7 +66,7 @@ impl IFS {
             &mut self, points: &Vec<Multivector>) -> Vec<Multivector> {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
-
+        self.last_xform = index;
         points.iter().map(|point| xform.transform(point)).collect()
     }
 }

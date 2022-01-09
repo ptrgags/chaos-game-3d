@@ -19,6 +19,7 @@ mod plotters;
 mod multivector;
 mod tileset_writer;
 mod glb_writer;
+mod point;
 
 use std::env;
 

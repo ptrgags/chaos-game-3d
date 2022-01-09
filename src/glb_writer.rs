@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use crate::buffers::OutputBuffer;
 use crate::vector::Vec3;
+use crate::point::OutputPoint;
 
 /// glTF version number. 2.0 is the latest as of this writing.
 const GLTF_VERSION: u32 = 2;
@@ -106,6 +106,7 @@ pub struct GlbWriter {
     buffer_view_iterations: BufferView,
     buffer_view_point_id: BufferView,
     buffer_view_last_xforms: BufferView,
+    buffer_view_last_color_xforms: BufferView,
     json: String,
     buffer: Vec<u8>,
 }
@@ -127,12 +128,13 @@ impl GlbWriter {
             buffer_view_iterations: BufferView::new(),
             buffer_view_point_id: BufferView::new(),
             buffer_view_last_xforms: BufferView::new(),
+            buffer_view_last_color_xforms: BufferView::new(),
             json: String::new(),
             buffer: vec![],
         }
     }
 
-    pub fn write(&mut self, fname: &str, buffer: &OutputBuffer) {
+    pub fn write(&mut self, fname: &str, buffer: &Vec<OutputPoint>) {
         self.compute_layout(&buffer);
         self.make_json();
 
@@ -143,7 +145,7 @@ impl GlbWriter {
         self.write_binary_chunk(&mut file, buffer);
     }
 
-    fn compute_layout(&mut self, buffer: &OutputBuffer) {
+    fn compute_layout(&mut self, buffer: &Vec<OutputPoint>) {
         let point_count = buffer.len() as u32;
         self.point_count = point_count;
 
@@ -158,7 +160,7 @@ impl GlbWriter {
         self.accessor_position.component_type = GLTF_FLOAT;
 
         // min/max is required for positions
-        let (min, max) = compute_min_max(buffer.get_points());
+        let (min, max) = compute_min_max(buffer);
         self.accessor_position.min = Some(min);
         self.accessor_position.max = Some(max);
 
@@ -241,6 +243,10 @@ impl GlbWriter {
                                     "last_xform" => object!{
                                         "componentType" => "UINT8",
                                         "required" => true,
+                                    },
+                                    "last_color_xform" => object!{
+                                        "componentType" => "UINT8",
+                                        "required" => true
                                     }
                                 }
                             }
@@ -366,6 +372,12 @@ impl GlbWriter {
                     "buffer" => 0,
                     "byteLength" => self.buffer_view_last_xforms.byte_length,
                     "byteOffset" => self.buffer_view_last_xforms.byte_offset,
+                },
+                object!{
+                    "name" => "Last color xform ID",
+                    "buffer" => 0,
+                    "byteLength" => self.buffer_view_last_color_xforms.byte_length,
+                    "byteOffset" => self.buffer_view_last_color_xforms.byte_offset,
                 }
             ],
             "buffers" => array![
@@ -398,69 +410,71 @@ impl GlbWriter {
         file.write_all(&padding).expect(error_msg);
     }
 
-    fn write_binary_chunk(&self, file: &mut File, buffer: &OutputBuffer) {
+    fn write_binary_chunk(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let error_msg = "could not write binary chunk";
         file.write_all(&self.binary_chunk.chunk_length.to_le_bytes()).expect(error_msg);
         file.write_all(b"BIN\0").expect(error_msg);
         self.write_buffer(file, buffer);
     }
 
-    fn write_buffer(&self, file: &mut File, buffer: &OutputBuffer) {
-        let mut buffer_view: Vec<u8> = Vec::new();
+    fn write_buffer(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
+        let mut positions: Vec<u8> = Vec::new();
+        let mut colors: Vec<u8> = Vec::new();
+        let mut feature_ids: Vec<u8> = Vec::new();
+        let mut iterations: Vec<u8> = Vec::new();
+        let mut last_xforms: Vec<u8> = Vec::new();
+        let mut last_color_xforms: Vec<u8> = Vec::new();
         let mut padding;
 
-        // Positions
-        for point in buffer.get_points() {
-            buffer_view.extend_from_slice(&point.pack());
+        for point in buffer {
+            positions.extend_from_slice(&point.position.pack());
+            colors.extend_from_slice(&point.color.to_color().pack());
+            feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
+            iterations.extend_from_slice(&point.iteration.to_le_bytes());
+            last_xforms.push(point.last_xform);
+            last_color_xforms.push(point.last_color_xform);
         }
+
+        // Positions
         padding = make_padding(
             self.buffer_view_position.padding_length, PADDING_BINARY);
         
-        file.write_all(&buffer_view).expect("Could not write positions");
+        file.write_all(&positions).expect("Could not write positions");
         file.write_all(&padding).expect("Could not write position padding");
 
         // Colors
-        buffer_view.clear();
-        for color in buffer.get_colors() {
-            buffer_view.extend_from_slice(&color.to_color().pack());
-        }
         padding = make_padding(
             self.buffer_view_color.padding_length, PADDING_BINARY);
 
-        file.write_all(&buffer_view).expect("Could not write colors");
+        file.write_all(&colors).expect("Could not write colors");
         file.write_all(&padding).expect("Could not write color padding");
         
         // Feature IDs
-        buffer_view.clear();
-        for feature_id in buffer.get_feature_ids() {
-            buffer_view.extend_from_slice(&feature_id.to_le_bytes());
-        }
         padding = make_padding(
             self.buffer_view_feature_ids.padding_length, PADDING_BINARY);
 
-        file.write_all(&buffer_view).expect("Could not write feature IDs");
+        file.write_all(&feature_ids).expect("Could not write feature IDs");
         file.write_all(&padding).expect("Could not write feature ID padding");
 
         // Iteration numbers
-        buffer_view.clear();
-        for iteration in buffer.get_iterations() {
-            buffer_view.extend_from_slice(&iteration.to_le_bytes());
-        }
         padding = make_padding(
             self.buffer_view_iterations.padding_length, PADDING_BINARY);
 
-        file.write_all(&buffer_view).expect("Could not write iterations");
+        file.write_all(&iterations).expect("Could not write iterations");
         file.write_all(&padding).expect("Could not write iterations padding");
 
-        // Transformation numbers
-        buffer_view.clear();
-        for xform_index in buffer.get_last_xforms() {
-            buffer_view.push(*xform_index);
-        }
+        // Transformation indices for position IFS
         padding = make_padding(
             self.buffer_view_last_xforms.padding_length, PADDING_BINARY);
 
-        file.write_all(&buffer_view).expect("Could not write last xforms");
+        file.write_all(&last_xforms).expect("Could not write last xforms");
+        file.write_all(&padding).expect("Could not write last xform padding");
+
+        // Transformation indices for color IFS
+        padding = make_padding(
+            self.buffer_view_last_color_xforms.padding_length, PADDING_BINARY);
+
+        file.write_all(&last_color_xforms).expect("Could not write last xforms");
         file.write_all(&padding).expect("Could not write last xform padding");
     }
 }
@@ -481,10 +495,11 @@ fn make_padding(byte_len: u32, pad_char: u8) -> Vec<u8> {
     (0..byte_len).map(|_| pad_char).collect()
 }
 
-fn compute_min_max(positions: &Vec<Vec3>) -> (Vec<f32>, Vec<f32>) {
+fn compute_min_max(points: &Vec<OutputPoint>) -> (Vec<f32>, Vec<f32>) {
     let mut min = [f32::MAX; 3];
     let mut max = [f32::MIN; 3];
-    for position in positions.iter() {
+    for point in points.iter() {
+        let position = point.position;
         let x = *position.x();
         let y = *position.y();
         let z = *position.z();

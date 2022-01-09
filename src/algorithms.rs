@@ -3,9 +3,9 @@ use json::JsonValue;
 use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
 use crate::plotters::{self, Plotter};
-use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
 use crate::multivector::Multivector;
+use crate::point::{InternalPoint, OutputPoint};
 
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
@@ -89,14 +89,17 @@ impl Algorithm for ChaosGame {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.output.plot_point(
-                    pos.to_vec3(), 
-                    color_vec.to_vec3(),
-                    FEATURE_ID,
-                    i as u64,
-                    POINT_ID,
-                    self.position_ifs.get_last_xform()
-                )
+                let point = OutputPoint {
+                    position: pos.to_vec3(),
+                    color: color_vec.to_vec3(),
+                    feature_id: FEATURE_ID,
+                    iteration: i as u64,
+                    point_id: POINT_ID,
+                    last_xform: self.position_ifs.get_last_xform(),
+                    last_color_xform: self.color_ifs.get_last_xform()
+                };
+
+                self.output.plot_point(point);
             }
 
             pos = self.position_ifs.transform(&pos);
@@ -163,12 +166,27 @@ impl ChaosSets {
 
     /// Apply the position/color IFS to a buffer, and produce a new buffer
     pub fn transform_buffer(
-            &mut self, buffer: InternalBuffer) -> InternalBuffer {
-        let new_positions = 
-            self.position_ifs.transform_points(buffer.get_points());
-        let new_colors = self.color_ifs.transform_points(buffer.get_colors());
+            &mut self, points: Vec<InternalPoint>, iteration: u64
+            ) -> Vec<InternalPoint> {
 
-        InternalBuffer::from_vectors(new_positions, new_colors)
+        let old_positions = points.iter().map(|x| x.position.clone()).collect();
+        let old_colors = points.iter().map(|x| x.color.clone()).collect();
+        let new_positions = 
+            self.position_ifs.transform_points(&old_positions);
+        let new_colors = self.color_ifs.transform_points(&old_colors);
+
+        let last_xform = self.position_ifs.get_last_xform();
+        let last_color_xform = self.color_ifs.get_last_xform();
+
+        points.iter().enumerate().map(|(i, point)| InternalPoint {
+            position: new_positions[i].clone(),
+            color: new_colors[i].clone(),
+            feature_id: point.feature_id,
+            iteration,
+            point_id: point.point_id,
+            last_xform,
+            last_color_xform
+        }).collect()
     }
 
     /// Parse a Chaos Sets instance from JSON of the form:
@@ -207,24 +225,23 @@ impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
         // Generate a number of initial sets. They will be transformed
         // independently. This helps to view more of the search space
-        let mut buffers: Vec<InternalBuffer> = 
+        let mut buffers: Vec<Vec<InternalPoint>> = 
             (0..self.initial_copies)
-                .map(|_| { self.initial_set.generate() })
+                .map(|i| { self.initial_set.generate(i as u16) })
                 .collect();
 
         // Only write the first copy to the output, since they are all in
         // the same location
-        self.output.plot_buffer(&buffers[0]);
+        self.output.plot_points(&buffers[0]);
 
         // Every iteration, transform each buffer using the IFS, 
         // and plot the results in the output buffer.
-        // TODO: This could totally be done in parallel. Try Rust threads!
-        for _ in 0..self.num_iters {
-            let mut new_buffers: Vec<InternalBuffer> = Vec::new();
-            for buf in buffers.into_iter() {
-                let new_buf = self.transform_buffer(buf);
-                self.output.plot_buffer(&new_buf);
-                new_buffers.push(new_buf);
+        for i in 0..self.num_iters {
+            let mut new_buffers: Vec<Vec<InternalPoint>> = Vec::new();
+            for point_buffer in buffers.into_iter() {
+                let new_buffer = self.transform_buffer(point_buffer, i as u64);
+                self.output.plot_points(&new_buffer);
+                new_buffers.push(new_buffer);
             }
             buffers = new_buffers;
         }
