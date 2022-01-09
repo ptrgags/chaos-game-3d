@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use crate::vector::Vec3;
 use crate::point::OutputPoint;
 
 /// glTF version number. 2.0 is the latest as of this writing.
@@ -108,7 +107,6 @@ pub struct GlbWriter {
     buffer_view_last_xforms: BufferView,
     buffer_view_last_color_xforms: BufferView,
     json: String,
-    buffer: Vec<u8>,
 }
 
 impl GlbWriter {
@@ -130,7 +128,6 @@ impl GlbWriter {
             buffer_view_last_xforms: BufferView::new(),
             buffer_view_last_color_xforms: BufferView::new(),
             json: String::new(),
-            buffer: vec![],
         }
     }
 

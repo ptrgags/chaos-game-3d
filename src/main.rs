@@ -11,7 +11,6 @@ mod initial_set;
 mod choosers;
 mod parameters;
 mod algorithms;
-mod buffers;
 mod pnts_writer;
 mod bbox;
 mod octrees;
