@@ -25,11 +25,13 @@ pub struct IFS {
     /// randomly. Often this is a uniform distribution, but it could also
     /// be a Markov chain or weighted probability distribution.
     chooser: XformSelector,
+    /// The index of the last transform applied
+    last_xform: usize,
 }
 
 impl IFS {
     pub fn new(xforms: Vec<Xform>, chooser: XformSelector) -> Self {
-        Self { xforms, chooser }
+        Self { xforms, chooser, last_xform: 0}
     }
 
     /// Create the simplest possible IFS: the identity transformation
@@ -38,8 +40,15 @@ impl IFS {
         let identity_xform = Box::new(TranslatedSandwich::identity());
         Self {
             xforms: vec![identity_xform],
-            chooser: Box::new(UniformChooser::new(1))
+            chooser: Box::new(UniformChooser::new(1)),
+            last_xform: 0,
         }
+    }
+
+    /// Get the index of the last transformation applied. This is metadata
+    /// that will be included in the point cloud (glTF only)
+    pub fn get_last_xform(&self) -> u8 {
+        self.last_xform as u8
     }
 
     /// Transform an individual point using a randomly-selected transformation
@@ -47,6 +56,7 @@ impl IFS {
     pub fn transform(&mut self, vector: &Multivector) -> Multivector {
         let index = self.chooser.choose();
         let xform = &self.xforms[index];
+        self.last_xform = index;
         xform.transform(vector)
     }
 

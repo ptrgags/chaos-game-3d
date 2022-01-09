@@ -9,13 +9,29 @@ use crate::tileset_writer::{TilesetWriter, TileType};
 /// scatter plots and density plots
 pub trait Plotter {
     /// Plot a single point
-    fn plot_point(&mut self, point: Vec3, color: Vec3);
+    fn plot_point(
+        &mut self,
+        point: Vec3,
+        color: Vec3,
+        feature_id: u16,
+        iteration: u64,
+        point_id: u16,
+        last_xform: u8,
+    );
 
     /// Plot many points from a buffer. This is just an iteration of
     /// plot_point().
     fn plot_buffer(&mut self, buffer: &InternalBuffer) {
-        for (point, color) in buffer.points_iter() {
-            self.plot_point(point.to_vec3(), color.to_vec3());
+        for (point, color, feature_id, iteration, point_id, last_xform) 
+                in buffer.points_iter() {
+            self.plot_point(
+                point.to_vec3(),
+                color.to_vec3(),
+                *feature_id,
+                *iteration,
+                *point_id,
+                *last_xform
+            );
         }
     }
 
@@ -82,7 +98,14 @@ impl ScatterPlot {
 }
 
 impl Plotter for ScatterPlot {
-    fn plot_point(&mut self, point: Vec3, color: Vec3) {
+    fn plot_point(
+            &mut self,
+            point: Vec3,
+            color: Vec3,
+            feature_id: u16,
+            iteration: u64,
+            point_id: u16,
+            last_xform: u8) {
         self.root.add_point(point, color, self.max_depth);
     }
 

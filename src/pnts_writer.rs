@@ -165,7 +165,7 @@ impl PntsWriter {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
 
-        for (point, color) in buffer.points_iter() {
+        for (point, color, ..) in buffer.points_iter() {
             let point_bytes: [u8; 12] = point.pack();
             positions.extend_from_slice(&point_bytes);
 

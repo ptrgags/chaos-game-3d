@@ -1,32 +1,60 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use json::JsonValue;
-
 use crate::buffers::OutputBuffer;
 use crate::vector::Vec3;
 
+/// glTF version number. 2.0 is the latest as of this writing.
 const GLTF_VERSION: u32 = 2;
+/// glTF mode for point clouds
 const GLTF_POINTS: u32 = 0;
+/// glTF constant for FLOAT component type
 const GLTF_FLOAT: u32 = 5126;
+/// glTF constant for UNSIGNED_BYTE component type
+const GLTF_UNSIGNED_BYTE: u32 = 5121;
+
+/// Size of a vec3
+const SIZE_VEC3: u32 = 3 * 4;
+/// Size of an RGB color encoded as unsigned bytes.
+const SIZE_COLOR_RGB: u32 = 3;
+// Size of an unsigned 64-bit integer in bytes
+const SIZE_U64: u32 = 8;
+// Size of an unsigned 16-bit integer in bytes
+const SIZE_U16: u32 = 2;
+// Size of an unsigned 8-bit integer in bytes
+const SIZE_U8: u32 = 1;
+
+/// Alignment for each buffer view. I'm setting them all to 8
+/// as this is the simplest way to satisfy both glTF and EXT_mesh_features
+/// requirements without making the code complex
+const ALIGNMENT: u32 = 8;
+
+const PADDING_BINARY: u8 = 0x00;
+const PADDING_JSON: u8 = ' ' as u8;
 
 struct BufferView {
     byte_offset: u32,
-    byte_length: u32
+    byte_length: u32,
+    padding_length: u32,
 }
 
 impl BufferView {
     pub fn new() -> Self {
         Self {
             byte_offset: 0,
-            byte_length: 0
+            byte_length: 0,
+            padding_length: 0
         }
+    }
+
+    // Compute the offset after this buffer view and after the pad
+    pub fn after_offset(&self) -> u32 {
+        self.byte_offset + self.byte_length + self.padding_length
     }
 }
 
-struct Accessor<'a> {
+struct Accessor {
     buffer_view: u32,
-    accessor_type: &'a str,
     component_type: u32,
     /// minimum value of each component of the accessor. Only required for
     /// position
@@ -36,90 +64,156 @@ struct Accessor<'a> {
     max: Option<Vec<f32>>,
 }
 
-impl<'a> Accessor<'a> {
+impl Accessor {
     pub fn new() -> Self {
         Self {
             buffer_view: 0,
             component_type: 0,
-            accessor_type: "unknown",
             min: None,
             max: None
         }
     }
 }
 
-const SIZE_VEC3: u32 = 3 * 4;
+struct Chunk {
+    chunk_length: u32,
+    padding_length: u32
+}
 
-pub struct GlbWriter<'a> {
+impl Chunk {
+    pub fn new() -> Self {
+        Self {
+            chunk_length: 0,
+            padding_length: 0,
+        }
+    }
+}
+
+pub struct GlbWriter {
     /// Number of points in this glTF point cloud
     point_count: u32,
     /// Total length of binary glTF, including header and all chunks
     total_length: u32,
-    json_chunk_length: u32,
-    json_padding_length: u32,
-    binary_chunk_length: u32,
-    binary_padding_length: u32,
+    json_chunk: Chunk,
+    binary_chunk: Chunk,
     buffer_length: u32,
-    accessor_position: Accessor<'a>,
-    accessor_color: Accessor<'a>,
+    accessor_position: Accessor,
+    accessor_color: Accessor,
+    accessor_feature_ids: Accessor,
     buffer_view_position: BufferView,
     buffer_view_color: BufferView,
+    buffer_view_feature_ids: BufferView,
     buffer_view_iterations: BufferView,
     buffer_view_point_id: BufferView,
     buffer_view_last_xforms: BufferView,
+    json: String,
     buffer: Vec<u8>,
 }
 
-impl<'a> GlbWriter<'a> {
+impl GlbWriter {
     pub fn new() -> Self {
         Self {
             point_count: 0,
             total_length: 0,
-            json_chunk_length: 0,
-            json_padding_length: 0,
-            binary_chunk_length: 0,
-            binary_padding_length: 0,
+            json_chunk: Chunk::new(),
+            binary_chunk: Chunk::new(),
             buffer_length: 0,
             accessor_position: Accessor::new(),
             accessor_color: Accessor::new(),
+            accessor_feature_ids: Accessor::new(),
             buffer_view_position: BufferView::new(),
             buffer_view_color: BufferView::new(),
+            buffer_view_feature_ids: BufferView::new(),
             buffer_view_iterations: BufferView::new(),
             buffer_view_point_id: BufferView::new(),
             buffer_view_last_xforms: BufferView::new(),
-            buffer: vec![]
+            json: String::new(),
+            buffer: vec![],
         }
     }
 
     pub fn write(&mut self, fname: &str, buffer: &OutputBuffer) {
         self.compute_layout(&buffer);
-        let json = json::stringify(self.make_json());
+        self.make_json();
 
         let error_msg = format!("Cannot open {}", fname);
         let mut file = File::create(fname).expect(&error_msg);
         self.write_header(&mut file);
-        self.write_json_chunk(&mut file, &json);
-        self.write_binary_chunk(&mut file, &self.buffer)
+        self.write_json_chunk(&mut file, &self.json);
+        self.write_binary_chunk(&mut file, buffer);
     }
 
     fn compute_layout(&mut self, buffer: &OutputBuffer) {
         let point_count = buffer.len() as u32;
         self.point_count = point_count;
 
+        // vec3 position
         let position_length = point_count * SIZE_VEC3;
         self.buffer_view_position.byte_offset = 0;
         self.buffer_view_position.byte_length = position_length;
+        self.buffer_view_position.padding_length = compute_padding_length(
+            position_length, ALIGNMENT);
+
         self.accessor_position.buffer_view = 0;
-        self.accessor_position.accessor_type = "VEC3";
         self.accessor_position.component_type = GLTF_FLOAT;
 
+        // min/max is required for positions
         let (min, max) = compute_min_max(buffer.get_points());
         self.accessor_position.min = Some(min);
         self.accessor_position.max = Some(max);
+
+        // vec3 color stored as 3 x UNSIGNED_BYTE
+        let color_length = point_count * SIZE_COLOR_RGB;
+        self.buffer_view_color.byte_offset = self.buffer_view_position.after_offset();
+        self.buffer_view_color.byte_length = color_length;
+        self.buffer_view_color.padding_length = compute_padding_length(
+            color_length, ALIGNMENT);
+
+        self.accessor_color.buffer_view = 1;
+        self.accessor_position.component_type = GLTF_UNSIGNED_BYTE;
+        
+        // u16 feature ID
+        let feature_id_length = point_count * SIZE_COLOR_RGB;
+        self.buffer_view_feature_ids.byte_offset = self.buffer_view_color.after_offset();
+        self.buffer_view_feature_ids.byte_length = feature_id_length;
+        self.buffer_view_feature_ids.padding_length = compute_padding_length(
+            feature_id_length, ALIGNMENT);
+
+        self.accessor_color.buffer_view = 1;
+        self.accessor_position.component_type = GLTF_UNSIGNED_BYTE;
+
+        // metadata buffer views
+        // u64 iteration count
+        let iterations_length = point_count * SIZE_U64;
+        self.buffer_view_iterations.byte_offset = self.buffer_view_feature_ids.after_offset();
+        self.buffer_view_iterations.byte_length = iterations_length;
+        // 8-byte values will always be aligned so padding = default of 0
+
+        // u16 point ID
+        let ids_length = point_count * SIZE_U16;
+        self.buffer_view_point_id.byte_offset = self.buffer_view_iterations.after_offset();
+        self.buffer_view_point_id.byte_length = ids_length;
+        self.buffer_view_point_id.padding_length = compute_padding_length(
+            ids_length, ALIGNMENT);
+
+        // u8 ID of the last transform applied
+        let last_xforms_length = point_count * SIZE_U8;
+        self.buffer_view_last_xforms.byte_offset = self.buffer_view_point_id.after_offset();
+        self.buffer_view_last_xforms.byte_length = last_xforms_length;
+        self.buffer_view_last_xforms.padding_length = compute_padding_length(
+            last_xforms_length, ALIGNMENT);
+
+        
+        // The offset after the last buffer view is equal to the length of
+        // the entire buffer.
+        let buffer_length = self.buffer_view_last_xforms.after_offset();
+        self.binary_chunk.chunk_length = buffer_length;
+        // Since the buffer views are already padded, no extra padding is needed
+        self.binary_chunk.padding_length = 0;
     }
 
-    fn make_json(&self) -> JsonValue {
-        object!{
+    fn make_json(&mut self) {
+        let json = object!{
             "asset" => object!{
                 "version" => "2.0"
             },
@@ -135,10 +229,12 @@ impl<'a> GlbWriter<'a> {
                                 "description" => "Details about the fractal",
                                 "properties" => object!{
                                     "iterations" => object!{
+                                        "description" => "Iteration number when this point is plotted. Note that the first few iterations are not plotted, so iterations 0-9 will not appear.",
                                         "componentType" => "UINT64",
                                         "required" => true,
                                     },
                                     "point_id" => object!{
+                                        "description" => "ID for the point within the initial set. If the basic scatterplot is used, this will always be 0. When algorithm chaos_sets is used, this will be the ID within the initial set, while FEATURE_ID_0 will contain the id of the initial set copy",
                                         "componentType" => "UINT16",
                                         "required" => true,
                                     },
@@ -157,13 +253,13 @@ impl<'a> GlbWriter<'a> {
                             "count" => self.point_count,
                             "properties" => object!{
                                 "iterations" => object!{
-                                    "bufferView" => 2
-                                },
-                                "point_id" => object!{
                                     "bufferView" => 3
                                 },
-                                "last_xform" => object!{
+                                "point_id" => object!{
                                     "bufferView" => 4
+                                },
+                                "last_xform" => object!{
+                                    "bufferView" => 5
                                 },
                             }
                         }
@@ -187,7 +283,8 @@ impl<'a> GlbWriter<'a> {
                         object!{
                             "attributes" => object!{
                                 "POSITION" => 0,
-                                "COLOR" => 1
+                                "COLOR_0" => 1,
+                                "FEATURE_ID_0" => 2
                             },
                             "mode" => GLTF_POINTS,
                             "extensions" => object!{
@@ -197,6 +294,9 @@ impl<'a> GlbWriter<'a> {
                                         object!{
                                             "offset" => 0,
                                             "repeat" => 1
+                                        },
+                                        object!{
+                                            "attribute" => 0
                                         }
                                     ]
                                 }
@@ -212,15 +312,22 @@ impl<'a> GlbWriter<'a> {
                     "bufferView" => self.accessor_position.buffer_view,
                     "min" => self.accessor_position.min.as_ref().unwrap().clone(),
                     "max" => self.accessor_position.max.as_ref().unwrap().clone(),
-                    "type" => self.accessor_position.accessor_type,
-                    "component_type" => self.accessor_position.component_type
+                    "type" => "VEC3",
+                    "componentType" => self.accessor_position.component_type
                 },
                 object!{
                     "name" => "Colors",
                     "count" => self.point_count,
                     "bufferView" => self.accessor_color.buffer_view,
-                    "type" => self.accessor_color.accessor_type,
-                    "component_type" => self.accessor_color.component_type
+                    "type" => "VEC3",
+                    "componentType" => self.accessor_color.component_type
+                },
+                object!{
+                    "name" => "Feature IDs",
+                    "count" => self.point_count,
+                    "bufferView" => self.accessor_feature_ids.buffer_view,
+                    "type" => "SCALAR",
+                    "componentType" => self.accessor_feature_ids.component_type
                 }
             ],
             "bufferViews" => array![
@@ -235,6 +342,12 @@ impl<'a> GlbWriter<'a> {
                     "buffer" => 0,
                     "byteLength" => self.buffer_view_color.byte_length,
                     "byteOffset" => self.buffer_view_color.byte_offset,
+                },
+                object!{
+                    "name" => "Feature IDs",
+                    "buffer" => 0,
+                    "byteLength" => self.buffer_view_feature_ids.byte_length,
+                    "byteOffset" => self.buffer_view_feature_ids.byte_offset,
                 },
                 object!{
                     "name" => "Iteration Count",
@@ -260,7 +373,13 @@ impl<'a> GlbWriter<'a> {
                     "byteLength" => self.buffer_length
                 }
             ]
-        }
+        };
+
+        let json_str = json::stringify(json);
+        let length = json_str.as_bytes().len() as u32;
+        self.json = json_str;
+        self.json_chunk.chunk_length = length;
+        self.json_chunk.padding_length = compute_padding_length(length, ALIGNMENT);
     }
 
     fn write_header(&self, file: &mut File) {
@@ -270,29 +389,96 @@ impl<'a> GlbWriter<'a> {
         file.write_all(&self.total_length.to_le_bytes()).expect(error_msg);
     }
 
-    fn write_json_chunk(&self, file: &mut File, json: &String) {
+    fn write_json_chunk(&self, file: &mut File, json: &str) {
         let error_msg = "could not write JSON chunk";
-        file.write_all(&self.json_chunk_length.to_le_bytes());
+        file.write_all(&self.json_chunk.chunk_length.to_le_bytes()).expect(error_msg);
         file.write_all(b"BIN\0").expect(error_msg);
         file.write_all(&json.as_bytes()).expect(error_msg);
-        let padding = Self::make_padding(self.json_padding_length, 0x00);
+        let padding = make_padding(self.json_chunk.padding_length, PADDING_JSON);
         file.write_all(&padding).expect(error_msg);
     }
 
-    fn write_binary_chunk(&self, file: &mut File, buffer: &Vec<u8>) {
+    fn write_binary_chunk(&self, file: &mut File, buffer: &OutputBuffer) {
         let error_msg = "could not write binary chunk";
-        file.write_all(&self.binary_chunk_length.to_le_bytes());
+        file.write_all(&self.binary_chunk.chunk_length.to_le_bytes()).expect(error_msg);
         file.write_all(b"BIN\0").expect(error_msg);
-        file.write_all(&buffer).expect(error_msg);
-        let padding = Self::make_padding(self.binary_padding_length, 0x00);
-        file.write_all(&padding).expect(error_msg);
+        self.write_buffer(file, buffer);
     }
 
-    /// Create a padding of space charcters of a given length
-    fn make_padding(byte_len: u32, pad_char: u8) -> Vec<u8> {
-        // 0x20 is the space character
-        (0..byte_len).map(|_| pad_char).collect()
+    fn write_buffer(&self, file: &mut File, buffer: &OutputBuffer) {
+        let mut buffer_view: Vec<u8> = Vec::new();
+        let mut padding;
+
+        // Positions
+        for point in buffer.get_points() {
+            buffer_view.extend_from_slice(&point.pack());
+        }
+        padding = make_padding(
+            self.buffer_view_position.padding_length, PADDING_BINARY);
+        
+        file.write_all(&buffer_view).expect("Could not write positions");
+        file.write_all(&padding).expect("Could not write position padding");
+
+        // Colors
+        buffer_view.clear();
+        for color in buffer.get_colors() {
+            buffer_view.extend_from_slice(&color.to_color().pack());
+        }
+        padding = make_padding(
+            self.buffer_view_color.padding_length, PADDING_BINARY);
+
+        file.write_all(&buffer_view).expect("Could not write colors");
+        file.write_all(&padding).expect("Could not write color padding");
+        
+        // Feature IDs
+        buffer_view.clear();
+        for feature_id in buffer.get_feature_ids() {
+            buffer_view.extend_from_slice(&feature_id.to_le_bytes());
+        }
+        padding = make_padding(
+            self.buffer_view_feature_ids.padding_length, PADDING_BINARY);
+
+        file.write_all(&buffer_view).expect("Could not write feature IDs");
+        file.write_all(&padding).expect("Could not write feature ID padding");
+
+        // Iteration numbers
+        buffer_view.clear();
+        for iteration in buffer.get_iterations() {
+            buffer_view.extend_from_slice(&iteration.to_le_bytes());
+        }
+        padding = make_padding(
+            self.buffer_view_iterations.padding_length, PADDING_BINARY);
+
+        file.write_all(&buffer_view).expect("Could not write iterations");
+        file.write_all(&padding).expect("Could not write iterations padding");
+
+        // Transformation numbers
+        buffer_view.clear();
+        for xform_index in buffer.get_last_xforms() {
+            buffer_view.push(*xform_index);
+        }
+        padding = make_padding(
+            self.buffer_view_last_xforms.padding_length, PADDING_BINARY);
+
+        file.write_all(&buffer_view).expect("Could not write last xforms");
+        file.write_all(&padding).expect("Could not write last xform padding");
     }
+}
+
+fn compute_padding_length(byte_length: u32, alignment_bytes: u32) -> u32 {
+    let remainder = byte_length % alignment_bytes;
+    if remainder == 0 {
+        // if already aligned, don't add padding
+        0
+    } else {
+        alignment_bytes - remainder
+    }
+}
+
+/// Create a padding of space charcters of a given length
+fn make_padding(byte_len: u32, pad_char: u8) -> Vec<u8> {
+    // 0x20 is the space character
+    (0..byte_len).map(|_| pad_char).collect()
 }
 
 fn compute_min_max(positions: &Vec<Vec3>) -> (Vec<f32>, Vec<f32>) {

@@ -81,11 +81,22 @@ impl Algorithm for ChaosGame {
         const UPDATE_FREQ: usize = 100000;
         let complexity = self.complexity() / UPDATE_FREQ;
 
+        // For the basic chaos game, everything is the same feature
+        const FEATURE_ID: u16 = 0;
+        const POINT_ID: u16 = 0;
+
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.output.plot_point(pos.to_vec3(), color_vec.to_vec3())
+                self.output.plot_point(
+                    pos.to_vec3(), 
+                    color_vec.to_vec3(),
+                    FEATURE_ID,
+                    i as u64,
+                    POINT_ID,
+                    self.position_ifs.get_last_xform()
+                )
             }
 
             pos = self.position_ifs.transform(&pos);

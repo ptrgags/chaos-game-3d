@@ -10,6 +10,10 @@ use crate::multivector::Multivector;
 pub struct Buffer<T: Clone> {
     points: Vec<T>,
     colors: Vec<T>,
+    feature_ids: Vec<u16>,
+    iterations: Vec<u64>,
+    point_ids: Vec<u16>,
+    last_xforms: Vec<u8>
 }
 
 /// Since transformations (see xforms.rs) are maps of 
@@ -25,6 +29,10 @@ impl<T: Clone> Buffer<T> {
         Self {
             points: Vec::new(),
             colors: Vec::new(),
+            feature_ids: Vec::new(),
+            iterations: Vec::new(),
+            point_ids: Vec::new(),
+            last_xforms: Vec::new(),
         }
     }
 
@@ -36,7 +44,11 @@ impl<T: Clone> Buffer<T> {
 
         Self {
             points,
-            colors
+            colors,
+            feature_ids: Vec::new(),
+            iterations: Vec::new(),
+            point_ids: Vec::new(),
+            last_xforms: Vec::new(),
         }
     }
 
@@ -55,10 +67,33 @@ impl<T: Clone> Buffer<T> {
         return &self.colors;
     }
 
+    /// Return the list of feature IDs
+    pub fn get_feature_ids(&self) -> &Vec<u16> {
+        return &self.feature_ids;
+    }
+
+    /// Return the list of iteration IDs
+    pub fn get_iterations(&self) -> &Vec<u64> {
+        return &self.iterations;
+    }
+
+    /// Return the list of last transformation indexes
+    pub fn get_last_xforms(&self) -> &Vec<u8> {
+        return &self.last_xforms;
+    }
+
     /// Add a new point to the buffer
     pub fn add(&mut self, point: T, color: T) {
+        //feature_id: u16, iteration: u64, point_id: u16, last_xform: u8) {
         self.points.push(point);
         self.colors.push(color);
+        // TODO: this is getting ridiculous...
+        /*
+        self.feature_ids.push(feature_id);
+        self.iterations.push(iteration);
+        self.point_ids.push(point_id);
+        self.last_xforms.push(last_xform);
+        */
     }
 
     /// How many points are in this buffer?
@@ -71,6 +106,10 @@ impl<T: Clone> Buffer<T> {
         BufferIterator {
             points: &self.points,
             colors: &self.colors,
+            feature_ids: &self.feature_ids,
+            iterations: &self.iterations,
+            point_ids: &self.point_ids,
+            last_xforms: &self.last_xforms,
             index: 0
         }
     }
@@ -80,11 +119,15 @@ impl<T: Clone> Buffer<T> {
 pub struct BufferIterator<'a, T: Clone> {
     points: &'a Vec<T>,
     colors: &'a Vec<T>,
+    feature_ids: &'a Vec<u16>,
+    iterations: &'a Vec<u64>,
+    point_ids: &'a Vec<u16>,
+    last_xforms: &'a Vec<u8>,
     index: usize
 }
 
 impl<'a, T: Clone> Iterator for BufferIterator<'a, T> {
-    type Item = (&'a T, &'a T);
+    type Item = (&'a T, &'a T, &'a u16, &'a u64, &'a u16, &'a u8);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.points.len() {
@@ -93,8 +136,12 @@ impl<'a, T: Clone> Iterator for BufferIterator<'a, T> {
 
         let pos = &self.points[self.index];
         let color = &self.colors[self.index];
+        let feature_id = &self.feature_ids[self.index];
+        let iterations = &self.iterations[self.index];
+        let point_id = &self.point_ids[self.index];
+        let last_xform = &self.last_xforms[self.index];
         self.index += 1;
         
-        Some((pos, color))
+        Some((pos, color, feature_id, iterations, point_id, last_xform))
     }
 }
