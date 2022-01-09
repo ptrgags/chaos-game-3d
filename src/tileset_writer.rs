@@ -13,6 +13,15 @@ pub enum TileType {
     Glb,
 }
 
+impl TileType {
+    pub fn get_extension(&self) -> &str {
+        match self {
+            Self::Pnts => "pnts",
+            Self::Glb => "glb"
+        }
+    }
+}
+
 pub struct TilesetWriter {
     tile_type: TileType
 }
@@ -38,7 +47,7 @@ impl TilesetWriter {
     /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tileset
     fn make_tileset_json(&self, dirname: &str, root: &OctNode) {
         let prefix = "0";
-        let root_tile = Self::make_tileset_json_recursive(root, &prefix);
+        let root_tile = self.make_tileset_json_recursive(root, &prefix);
         let tileset = object!{
             "asset" => object!{
                 "version" => "1.0",
@@ -57,11 +66,11 @@ impl TilesetWriter {
     /// Generate the tree of tiles including URIs to each .pnts file
     ///
     /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tile
-    fn make_tileset_json_recursive(tree: &OctNode, prefix: &str) -> JsonValue {
+    fn make_tileset_json_recursive(&self, tree: &OctNode, prefix: &str) -> JsonValue {
         if tree.is_leaf() && tree.is_empty() {
             JsonValue::Null
         } else if tree.is_leaf() { 
-            let fname = format!("{}.pnts", prefix);
+            let fname = format!("{}.{}", prefix, self.tile_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => 0.0,
@@ -75,7 +84,7 @@ impl TilesetWriter {
             for (quadrant, child) in tree.labeled_children().iter() {
                 let new_prefix = format!("{}/{}", prefix, quadrant);
                 let child_json = 
-                    Self::make_tileset_json_recursive(child, &new_prefix);
+                    self.make_tileset_json_recursive(child, &new_prefix);
                 if child_json.is_object() {
                     children.push(child_json);
                 }

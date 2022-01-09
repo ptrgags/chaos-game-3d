@@ -3,6 +3,7 @@
     "iters": 1000000,
     "plotter": {
         "type": "scatter",
+        "format": "glb",
         "node_capacity": 1000,
         "max_depth": 4,
         "radius": 1
