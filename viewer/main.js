@@ -8,6 +8,8 @@ const Cartesian3 = Cesium.Cartesian3;
 // public-facing code
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZTVjMjExYy0wYWVlLTRmNzktODM4Ni0zNzRlMjdjZDIxZmMiLCJpZCI6MTg5MTksInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzQ2ODg1MzJ9.aeY06JtwkvYi5MylE_cJd8QveIxvjUIb-E4HtGJ6gbg';
 
+Cesium.ExperimentalFeatures.enableModelExperimental = true;
+
 // Create the viewer. Hide the globe, I'm using Cesium for the 3D tiles
 // rendering, not geospatial data.
 const viewer = new Cesium.Viewer('cesiumContainer', {

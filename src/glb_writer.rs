@@ -11,6 +11,10 @@ const GLTF_POINTS: u32 = 0;
 const GLTF_FLOAT: u32 = 5126;
 /// glTF constant for UNSIGNED_BYTE component type
 const GLTF_UNSIGNED_BYTE: u32 = 5121;
+/// Length of the glTF header
+const GLTF_HEADER_LENGTH: u32 = 12;
+/// Length of a chunk header (length + type)
+const GLTF_CHUNK_HEADER_LENGTH: u32 = 8;
 
 /// Size of a vec3
 const SIZE_VEC3: u32 = 3 * 4;
@@ -86,6 +90,10 @@ impl Chunk {
             padding_length: 0,
         }
     }
+
+    pub fn total_length(&self) -> u32 {
+        GLTF_CHUNK_HEADER_LENGTH + self.chunk_length + self.padding_length
+    }
 }
 
 pub struct GlbWriter {
@@ -135,6 +143,12 @@ impl GlbWriter {
         self.compute_layout(&buffer);
         self.make_json();
 
+        // Now that we have both chunks, update the total length
+        self.total_length = 
+            GLTF_HEADER_LENGTH + 
+            self.json_chunk.total_length() + 
+            self.binary_chunk.total_length();
+
         let error_msg = format!("Cannot open {}", fname);
         let mut file = File::create(fname).expect(&error_msg);
         self.write_header(&mut file);
@@ -169,17 +183,17 @@ impl GlbWriter {
             color_length, ALIGNMENT);
 
         self.accessor_color.buffer_view = 1;
-        self.accessor_position.component_type = GLTF_UNSIGNED_BYTE;
+        self.accessor_color.component_type = GLTF_UNSIGNED_BYTE;
         
         // u16 feature ID
-        let feature_id_length = point_count * SIZE_COLOR_RGB;
+        let feature_id_length = point_count * SIZE_U16;
         self.buffer_view_feature_ids.byte_offset = self.buffer_view_color.after_offset();
         self.buffer_view_feature_ids.byte_length = feature_id_length;
         self.buffer_view_feature_ids.padding_length = compute_padding_length(
             feature_id_length, ALIGNMENT);
 
-        self.accessor_color.buffer_view = 1;
-        self.accessor_position.component_type = GLTF_UNSIGNED_BYTE;
+        self.accessor_feature_ids.buffer_view = 2;
+        self.accessor_feature_ids.component_type = GLTF_UNSIGNED_BYTE;
 
         // metadata buffer views
         // u64 iteration count
@@ -202,13 +216,21 @@ impl GlbWriter {
         self.buffer_view_last_xforms.padding_length = compute_padding_length(
             last_xforms_length, ALIGNMENT);
 
+        // u8 ID of the last color transform applied
+        let last_color_xforms_length = point_count * SIZE_U8;
+        self.buffer_view_last_color_xforms.byte_offset = self.buffer_view_last_xforms.after_offset();
+        self.buffer_view_last_color_xforms.byte_length = last_color_xforms_length;
+        self.buffer_view_last_color_xforms.padding_length = compute_padding_length(
+            last_color_xforms_length, ALIGNMENT);
         
         // The offset after the last buffer view is equal to the length of
         // the entire buffer.
-        let buffer_length = self.buffer_view_last_xforms.after_offset();
+        let buffer_length = self.buffer_view_last_color_xforms.after_offset();
         self.binary_chunk.chunk_length = buffer_length;
         // Since the buffer views are already padded, no extra padding is needed
         self.binary_chunk.padding_length = 0;
+
+        self.buffer_length = buffer_length;
     }
 
     fn make_json(&mut self) {
@@ -264,6 +286,9 @@ impl GlbWriter {
                                 "last_xform" => object!{
                                     "bufferView" => 5
                                 },
+                                "last_color_xform" => object!{
+                                    "bufferView" => 6
+                                }
                             }
                         }
                     ]
@@ -401,7 +426,7 @@ impl GlbWriter {
     fn write_json_chunk(&self, file: &mut File, json: &str) {
         let error_msg = "could not write JSON chunk";
         file.write_all(&self.json_chunk.chunk_length.to_le_bytes()).expect(error_msg);
-        file.write_all(b"BIN\0").expect(error_msg);
+        file.write_all(b"JSON").expect(error_msg);
         file.write_all(&json.as_bytes()).expect(error_msg);
         let padding = make_padding(self.json_chunk.padding_length, PADDING_JSON);
         file.write_all(&padding).expect(error_msg);
@@ -419,6 +444,7 @@ impl GlbWriter {
         let mut colors: Vec<u8> = Vec::new();
         let mut feature_ids: Vec<u8> = Vec::new();
         let mut iterations: Vec<u8> = Vec::new();
+        let mut point_ids: Vec<u8> = Vec::new();
         let mut last_xforms: Vec<u8> = Vec::new();
         let mut last_color_xforms: Vec<u8> = Vec::new();
         let mut padding;
@@ -428,6 +454,7 @@ impl GlbWriter {
             colors.extend_from_slice(&point.color.to_color().pack());
             feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
             iterations.extend_from_slice(&point.iteration.to_le_bytes());
+            point_ids.extend_from_slice(&point.point_id.to_le_bytes());
             last_xforms.push(point.last_xform);
             last_color_xforms.push(point.last_color_xform);
         }
@@ -459,6 +486,13 @@ impl GlbWriter {
 
         file.write_all(&iterations).expect("Could not write iterations");
         file.write_all(&padding).expect("Could not write iterations padding");
+
+        // Point IDs within an initial set
+        padding = make_padding(
+            self.buffer_view_point_id.padding_length, PADDING_BINARY);
+
+        file.write_all(&point_ids).expect("Could not write point IDs");
+        file.write_all(&padding).expect("Could not write point ID padding");
 
         // Transformation indices for position IFS
         padding = make_padding(
