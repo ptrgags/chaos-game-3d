@@ -90,3 +90,12 @@ though there are some parts where I end up copying data a lot. I'll have to
 revisit this again in the future.
 
 At this point I can compile things, but it's not yet producing valid glTF files.
+
+## 2022-01-10 Debug GLB output
+
+Today I started working on debugging my GLB output. I had quite a few incorrect
+offsets/byte lengths to fix.
+
+I'm still having trouble loading the results in CesiumJS. The latest error
+seems to have something to do with the resource cache not being able to find
+the buffer. I'll keep digging around
