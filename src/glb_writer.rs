@@ -91,6 +91,10 @@ impl Chunk {
         }
     }
 
+    pub fn data_length(&self) -> u32 {
+        self.chunk_length + self.padding_length
+    }
+
     pub fn total_length(&self) -> u32 {
         GLTF_CHUNK_HEADER_LENGTH + self.chunk_length + self.padding_length
     }
@@ -348,6 +352,7 @@ impl GlbWriter {
                     "count" => self.point_count,
                     "bufferView" => self.accessor_color.buffer_view,
                     "type" => "VEC3",
+                    "normalized" => true,
                     "componentType" => self.accessor_color.component_type
                 },
                 object!{
@@ -425,7 +430,7 @@ impl GlbWriter {
 
     fn write_json_chunk(&self, file: &mut File, json: &str) {
         let error_msg = "could not write JSON chunk";
-        file.write_all(&self.json_chunk.chunk_length.to_le_bytes()).expect(error_msg);
+        file.write_all(&self.json_chunk.data_length().to_le_bytes()).expect(error_msg);
         file.write_all(b"JSON").expect(error_msg);
         file.write_all(&json.as_bytes()).expect(error_msg);
         let padding = make_padding(self.json_chunk.padding_length, PADDING_JSON);
@@ -434,7 +439,7 @@ impl GlbWriter {
 
     fn write_binary_chunk(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let error_msg = "could not write binary chunk";
-        file.write_all(&self.binary_chunk.chunk_length.to_le_bytes()).expect(error_msg);
+        file.write_all(&self.binary_chunk.data_length().to_le_bytes()).expect(error_msg);
         file.write_all(b"BIN\0").expect(error_msg);
         self.write_buffer(file, buffer);
     }

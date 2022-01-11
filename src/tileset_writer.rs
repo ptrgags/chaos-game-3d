@@ -1,5 +1,6 @@
-use std::fs::{File, create_dir_all};
+use std::fs::{File, create_dir_all, remove_dir_all};
 use std::io::prelude::*;
+use std::path::Path;
 
 use json::JsonValue;
 
@@ -34,6 +35,9 @@ impl TilesetWriter {
     }
 
     pub fn save(&self, dirname: &str, root: &OctNode) {
+        if Path::new(dirname).exists() {
+            remove_dir_all(dirname).expect("could not remove old tileset directory");
+        }
         create_dir_all(dirname).expect("could not create tileset directory");
         println!("Generating tileset JSON...");
         self.make_tileset_json(dirname, root);
