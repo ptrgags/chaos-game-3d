@@ -18,7 +18,7 @@ const GLTF_CHUNK_HEADER_LENGTH: u32 = 8;
 
 /// Size of a vec3
 const SIZE_VEC3: u32 = 3 * 4;
-/// Size of an RGB color encoded as unsigned bytes.
+/// Size of an RGB color encoded as unsigned bytes
 const SIZE_COLOR_RGB: u32 = 3;
 // Size of an unsigned 64-bit integer in bytes
 const SIZE_U64: u32 = 8;
@@ -179,8 +179,8 @@ impl GlbWriter {
         self.accessor_position.min = Some(min);
         self.accessor_position.max = Some(max);
 
-        // vec3 color stored as 3 x UNSIGNED_BYTE
-        let color_length = point_count * SIZE_COLOR_RGB;
+        // vec3 color stored as 3 x UNSIGNED_BYTE + 1 byte padding
+        let color_length = point_count * (SIZE_COLOR_RGB + 1);
         self.buffer_view_color.byte_offset = self.buffer_view_position.after_offset();
         self.buffer_view_color.byte_length = color_length;
         self.buffer_view_color.padding_length = compute_padding_length(
@@ -189,8 +189,8 @@ impl GlbWriter {
         self.accessor_color.buffer_view = 1;
         self.accessor_color.component_type = GLTF_UNSIGNED_BYTE;
         
-        // u16 feature ID
-        let feature_id_length = point_count * SIZE_U16;
+        // u16 feature ID + 2 byte padding
+        let feature_id_length = point_count * (SIZE_U16 + 2);
         self.buffer_view_feature_ids.byte_offset = self.buffer_view_color.after_offset();
         self.buffer_view_feature_ids.byte_length = feature_id_length;
         self.buffer_view_feature_ids.padding_length = compute_padding_length(
@@ -353,7 +353,7 @@ impl GlbWriter {
                     "bufferView" => self.accessor_color.buffer_view,
                     "type" => "VEC3",
                     "normalized" => true,
-                    "componentType" => self.accessor_color.component_type
+                    "componentType" => self.accessor_color.component_type,
                 },
                 object!{
                     "name" => "Feature IDs",
@@ -375,12 +375,14 @@ impl GlbWriter {
                     "buffer" => 0,
                     "byteLength" => self.buffer_view_color.byte_length,
                     "byteOffset" => self.buffer_view_color.byte_offset,
+                    "byteStride" => 4
                 },
                 object!{
                     "name" => "Feature IDs",
                     "buffer" => 0,
                     "byteLength" => self.buffer_view_feature_ids.byte_length,
                     "byteOffset" => self.buffer_view_feature_ids.byte_offset,
+                    "byteStride" => 4
                 },
                 object!{
                     "name" => "Iteration Count",
@@ -456,8 +458,16 @@ impl GlbWriter {
 
         for point in buffer {
             positions.extend_from_slice(&point.position.pack());
+
+            // align to 4-byte-boundaries
             colors.extend_from_slice(&point.color.to_color().pack());
+            colors.push(0x00);
+
+            // align to 4-byte boundaries
             feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
+            feature_ids.push(0x00);
+            feature_ids.push(0x00);
+
             iterations.extend_from_slice(&point.iteration.to_le_bytes());
             point_ids.extend_from_slice(&point.point_id.to_le_bytes());
             last_xforms.push(point.last_xform);

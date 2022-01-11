@@ -99,3 +99,10 @@ offsets/byte lengths to fix.
 I'm still having trouble loading the results in CesiumJS. The latest error
 seems to have something to do with the resource cache not being able to find
 the buffer. I'll keep digging around
+
+## 2022-01-11 glTF Validator to the Rescue
+
+This morning I tried running the GLB output through the official
+[glTF validator](https://github.khronos.org/glTF-Validator/), which revealed
+some issues with alignment. I also forgot that vertex attributes need to be
+aligned to 4-byte offsets. Now I'm able to load things in CesiumJS!

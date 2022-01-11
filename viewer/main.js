@@ -23,6 +23,20 @@ let tileset;
 let attenuation = true;
 let show_bboxes = false;
 
+const customShader = new Cesium.CustomShader({
+    LightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = vec3(1.0);
+    }
+    `
+})
+
 // Switch to a new model
 function set_model(model_id) {
     viewer.scene.primitives.remove(tileset);
@@ -44,7 +58,8 @@ function set_model(model_id) {
     tileset = new Cesium.Cesium3DTileset({
         url,
         debugShowBoundingVolume: show_bboxes,
-        modelMatrix: scale
+        modelMatrix: scale,
+        customShader: customShader
     });
 
     // Sparse point clouds look better with this on, but it's toggleable
