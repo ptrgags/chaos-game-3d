@@ -172,5 +172,18 @@ impl OctNode {
         }
         self.points.clear();
     }
-}
 
+    pub fn decimate(&mut self) -> Vec<(&Vec3, &Vec3)> {
+        for child in &mut self.children {
+            for (point, color) in child.decimate() {
+                self.points.add(*point, *color);
+            }
+        }
+
+        return self.points.points_iter()
+            .enumerate()
+            .filter(|(i, _)| i % 4 == 0)
+            .map(|(_, point)| point)
+            .collect();
+    }
+}
