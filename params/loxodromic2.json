@@ -10,7 +10,7 @@
     "plotter": {
         "type": "scatter",
         "node_capacity": 10000,
-        "max_depth": 5,
+        "max_depth": 7,
         "radius": 4
     },
     "initial_set_copies": 5,
