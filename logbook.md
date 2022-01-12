@@ -71,3 +71,13 @@ Some ideas for metadata:
     first?) or even an array of the latest N transformations. Coloring by this
     could be useful
 * Color Transformation IDs. (similar to the previous point)
+
+## 2022-01-12 Decimation
+
+Today I implemented basic decimation to create levels of detail. I simply
+take 1/4th of the points in each child tile and add them to the parent. This
+is done just before the tileset is saved to disk.
+
+Something seems a little weird with the bounding volumes, the largest ones
+don't seem to be showing up. I should check the bounding volumes and recursive
+logic.
