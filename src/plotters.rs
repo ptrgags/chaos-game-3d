@@ -99,7 +99,7 @@ impl ScatterPlot {
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => 0.0,
-                "refine" => "ADD",
+                "refine" => "REPLACE",
                 "content" => object!{
                     "uri" => fname
                 }
@@ -115,11 +115,15 @@ impl ScatterPlot {
                 }
             }
 
+            let fname = format!("{}.pnts", prefix);
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => tree.geometric_error(),
-                "refine" => "ADD",
-                "children" => JsonValue::Array(children)
+                "refine" => "REPLACE",
+                "children" => JsonValue::Array(children),
+                "content" => object!{
+                    "uri" => fname
+                }
             }
         }
     }
@@ -133,18 +137,22 @@ impl ScatterPlot {
     /// Traverse the tree, generating .pnts files at leaves and directories
     /// at interior nodes.
     fn make_pnts_files_recursive(tree: &OctNode, prefix: &str) {
-        if tree.is_leaf() && tree.is_empty() {
-            // If the leaf is empty, no need to generate a file
-            return;
-        } else if tree.is_leaf() { 
-            let fname = format!("{}.pnts", prefix);
-            tree.write_pnts(&fname)
+        if tree.is_leaf(){
+            if !tree.is_empty() {
+                let fname = format!("{}.pnts", prefix);
+                tree.write_pnts(&fname);
+            }
         } else {
             let error_msg = format!("could not create directory {}", prefix);
             create_dir_all(prefix).expect(&error_msg);
             for (quadrant, child) in tree.labeled_children().iter() {
                 let new_prefix = format!("{}/{}", prefix, quadrant);
                 Self::make_pnts_files_recursive(child, &new_prefix);
+            }
+
+            if !tree.is_empty() {
+                let fname = format!("{}.pnts", prefix);
+                tree.write_pnts(&fname);
             }
         }
     }
@@ -158,6 +166,9 @@ impl Plotter for ScatterPlot {
     /// Save the tileset into a directory of the given name. This creates
     /// the directory if it does not already exist
     fn save(&mut self, dirname: &str) {
+        // Decimate the mesh recursively to generate LODs
+        self.root.decimate();
+
         create_dir_all(dirname).expect("could not create tileset directory");
         println!("Generating tileset JSON...");
         self.make_tileset_json(dirname);
