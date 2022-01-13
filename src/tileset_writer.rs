@@ -42,7 +42,7 @@ impl TilesetWriter {
         create_dir_all(dirname).expect("could not create tileset directory");
         println!("Generating tileset JSON...");
         self.make_tileset_json(dirname, root);
-        println!("Generating .pnts files...");
+        println!("Generating point cloud files...");
         self.make_contents(dirname, root);
     }
 

@@ -306,7 +306,13 @@ impl GlbWriter {
             ],
             "nodes" => array![
                 object!{
-                    "mesh" => 0
+                    "mesh" => 0,
+                    "matrix" => array![
+                        1, 0, 0, 0,
+                        0, 0, -1, 0,
+                        0, 1, 0, 0,
+                        0, 0, 0, 1
+                    ]
                 }
             ],
             "meshes" => array![
