@@ -106,3 +106,13 @@ This morning I tried running the GLB output through the official
 [glTF validator](https://github.khronos.org/glTF-Validator/), which revealed
 some issues with alignment. I also forgot that vertex attributes need to be
 aligned to 4-byte offsets. Now I'm able to load things in CesiumJS!
+
+## 2022-01-12 Decimation
+
+Today I implemented basic decimation to create levels of detail. I simply
+take 1/4th of the points in each child tile and add them to the parent. This
+is done just before the tileset is saved to disk.
+
+Something seems a little weird with the bounding volumes, the largest ones
+don't seem to be showing up. I should check the bounding volumes and recursive
+logic.

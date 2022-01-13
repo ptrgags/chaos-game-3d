@@ -88,6 +88,8 @@ impl Plotter for ScatterPlot {
     /// Save the tileset into a directory of the given name. This creates
     /// the directory if it does not already exist
     fn save(&mut self, dirname: &str) {
+        // Decimate the mesh recursively to generate LODs
+        self.root.decimate();
         let writer = TilesetWriter::new(self.tile_type.clone());
         writer.save(dirname, &self.root);
     }

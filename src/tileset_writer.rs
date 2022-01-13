@@ -36,7 +36,8 @@ impl TilesetWriter {
 
     pub fn save(&self, dirname: &str, root: &OctNode) {
         if Path::new(dirname).exists() {
-            remove_dir_all(dirname).expect("could not remove old tileset directory");
+            remove_dir_all(dirname)
+                .expect("could not remove old tileset directory");
         }
         create_dir_all(dirname).expect("could not create tileset directory");
         println!("Generating tileset JSON...");
@@ -70,15 +71,17 @@ impl TilesetWriter {
     /// Generate the tree of tiles including URIs to each .pnts file
     ///
     /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tile
-    fn make_tileset_json_recursive(&self, tree: &OctNode, prefix: &str) -> JsonValue {
+    fn make_tileset_json_recursive(&self, tree: &OctNode, prefix: &str)
+            -> JsonValue {
         if tree.is_leaf() && tree.is_empty() {
             JsonValue::Null
         } else if tree.is_leaf() { 
-            let fname = format!("{}.{}", prefix, self.tile_type.get_extension());
+            let fname = format!(
+                "{}.{}", prefix, self.tile_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => 0.0,
-                "refine" => "ADD",
+                "refine" => "REPLACE",
                 "content" => object!{
                     "uri" => fname
                 }
@@ -94,11 +97,16 @@ impl TilesetWriter {
                 }
             }
 
+            let fname = format!(
+                "{}.{}",prefix, self.tile_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => tree.geometric_error(),
-                "refine" => "ADD",
-                "children" => JsonValue::Array(children)
+                "refine" => "REPLACE",
+                "children" => JsonValue::Array(children),
+                "content" => object!{
+                    "uri" => fname
+                }
             }
         }
     }
@@ -112,10 +120,7 @@ impl TilesetWriter {
     /// Traverse the tree, generating content files at leaves and directories
     /// at interior nodes.
     fn make_contents_recursive(&self, tree: &OctNode, prefix: &str) {
-        if tree.is_leaf() && tree.is_empty() {
-            // If the leaf is empty, no need to generate a file
-            return;
-        } else if tree.is_leaf() { 
+        if tree.is_leaf() {
             self.make_content(tree, prefix);
         } else {
             let error_msg = format!("could not create directory {}", prefix);
@@ -124,10 +129,18 @@ impl TilesetWriter {
                 let new_prefix = format!("{}/{}", prefix, quadrant);
                 self.make_contents_recursive(child, &new_prefix);
             }
+
+            self.make_content(tree, prefix);
         }
     }
 
+    // Generate a 3D model for a tile content.
     fn make_content(&self, tree: &OctNode, prefix: &str) {
+        // No need to create an empty point cloud
+        if tree.is_empty() {
+            return;
+        }
+
         let points = tree.get_points();
         match self.tile_type {
             TileType::Pnts => {

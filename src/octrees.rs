@@ -169,5 +169,17 @@ impl OctNode {
         }
         self.points.clear();
     }
-}
 
+    pub fn decimate(&mut self) -> Vec<OutputPoint> {
+        for child in &mut self.children {
+            let child_points = child.decimate();
+            self.points.extend(child_points);
+        }
+
+        self.points.iter()
+            .enumerate()
+            .filter(|(i, _)| i % 4 == 0)
+            .map(|(_, point)| point.clone())
+            .collect()
+    }
+}
