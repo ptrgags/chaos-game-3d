@@ -116,3 +116,13 @@ is done just before the tileset is saved to disk.
 Something seems a little weird with the bounding volumes, the largest ones
 don't seem to be showing up. I should check the bounding volumes and recursive
 logic.
+
+## 2022-01-13 Fix y-up issue
+
+Today I merged in `main` to pull in the decimation features. I then added
+the z-up to y-up transform in the root node of each GLB so it renders properly
+in CesiumJS.
+
+I also reviewed [the PR](https://github.com/ptrgags/chaos-game-3d/pull/7) to
+point out several things I think could be better and use more of 3D Tiles Next.
+I think adding the `3DTILES_metadata` extension will be helpful here.
