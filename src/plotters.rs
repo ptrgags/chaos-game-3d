@@ -1,8 +1,10 @@
 use json::JsonValue;
 
+use crate::fractal_metadata::FractalMetadata;
 use crate::octrees::OctNode;
 use crate::tileset_writer::{TilesetWriter, TileType};
 use crate::point::{InternalPoint, OutputPoint};
+
 
 /// Octree-based point cloud plotter. There are different types for raw
 /// scatter plots and density plots
@@ -19,7 +21,7 @@ pub trait Plotter {
     }
 
     /// Save the plot to a tileset with the given directory name
-    fn save(&mut self, dirname: &str);
+    fn save(&mut self, dirname: &str, metadata: &FractalMetadata);
 }
 
 /// Scatter plots follow the usual scheme of octrees: add points to the node.
@@ -87,10 +89,11 @@ impl Plotter for ScatterPlot {
 
     /// Save the tileset into a directory of the given name. This creates
     /// the directory if it does not already exist
-    fn save(&mut self, dirname: &str) {
+    fn save(&mut self, dirname: &str, metadata: &FractalMetadata) {
         // Decimate the mesh recursively to generate LODs
         self.root.decimate();
-        let writer = TilesetWriter::new(self.tile_type.clone());
+        let writer = TilesetWriter::new(
+            self.tile_type.clone(), metadata.clone());
         writer.save(dirname, &self.root);
     }
 }

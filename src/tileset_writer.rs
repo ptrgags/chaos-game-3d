@@ -4,6 +4,7 @@ use std::path::Path;
 
 use json::JsonValue;
 
+use crate::fractal_metadata::FractalMetadata;
 use crate::octrees::OctNode;
 use crate::pnts_writer::PntsWriter;
 use crate::glb_writer::GlbWriter;
@@ -24,13 +25,15 @@ impl TileType {
 }
 
 pub struct TilesetWriter {
-    tile_type: TileType
+    tile_type: TileType,
+    metadata: FractalMetadata
 }
 
 impl TilesetWriter {
-    pub fn new(tile_type: TileType) -> Self {
+    pub fn new(tile_type: TileType, metadata: FractalMetadata) -> Self {
         Self {
-            tile_type
+            tile_type,
+            metadata
         }
     }
 
@@ -53,13 +56,28 @@ impl TilesetWriter {
     fn make_tileset_json(&self, dirname: &str, root: &OctNode) {
         let prefix = "0";
         let root_tile = self.make_tileset_json_recursive(root, &prefix);
-        let tileset = object!{
+        let mut tileset = object!{
             "asset" => object!{
                 "version" => "1.0",
             },
             "geometricError" => 1e7,
             "root" => root_tile
         };
+
+        // in 3D Tiles Next mode, a few extensions need to be declared
+        if self.tile_type == TileType::Glb {
+            tileset["extensionsRequired"] = array!["3DTILES_content_gltf"];
+            tileset["extensionsUsed"] = array![
+                "3DTILES_content_gltf", 
+                "3DTILES_metadata"
+            ];
+            tileset["extensions"] = object!{
+                "3DTILES_content_gltf" => object!{
+                    "extensionsUsed" => array!["EXT_mesh_features"],
+                },
+                "3DTILES_metadata" => self.metadata.make_extension_json()
+            };
+        }
 
         let fname = format!("{}/tileset.json", dirname);
         let mut file = File::create(fname)
