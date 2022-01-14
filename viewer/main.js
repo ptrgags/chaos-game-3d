@@ -24,6 +24,12 @@ let attenuation = true;
 let show_bboxes = false;
 
 const customShader = new Cesium.CustomShader({
+    uniforms: {
+        u_initial_set_copies: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
     LightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -32,7 +38,9 @@ const customShader = new Cesium.CustomShader({
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        material.diffuse = vec3(1.0);
+        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
+        vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
     }
     `
 })
@@ -65,6 +73,13 @@ function set_model(model_id) {
     // Sparse point clouds look better with this on, but it's toggleable
     // because sometimes the fractal structure is clearer with smaller points.
     tileset.pointCloudShading.attenuation = attenuation;
+
+    tileset.readyPromise.then(() => {
+        const metadata = tileset.metadata.tileset;
+        const initial_set_copies = metadata.getProperty("initial_set_copies");
+        console.log(initial_set_copies);
+        customShader.setUniform("u_initial_set_copies", initial_set_copies);
+    });
 
     /*
      * Experiment: Color by distance from center
