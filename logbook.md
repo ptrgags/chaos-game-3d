@@ -195,6 +195,14 @@ However, I'm still not done:
     get away with only computing the terms that contribute to a vector,
     but trying to implement that without branching might get tricky.
 
+## 2022-01-02 Refactoring 3D Tiles Output
+
+Today I started working on the 3D Tiles Next output, but I soon realized that
+this requires refactoring things a bit. I pulled out a `TilesetWriter` struct
+(since I will likely have variations on this in the future for implicit tiling)
+and I stubbed out a `GlbWriter` class to parallel the older `PntsWriter`. I
+will likely keep both around for a while since the 3D Tiles Next extensions
+are still experimental and may change.
 
 ## 2022-01-06 Chip away at CGA multiplication
 
@@ -245,3 +253,57 @@ The random walk (only translations) seems to be working well.
 The Sierpinski tetrahedron seems to be producing the right shape, though many
 points are being marked as out-of-bounds which seems peculiar. Perhaps the
 handling of the homogeneous coordinate is off somehow? I'll have to investigate.
+
+
+
+## 2022-01-09 Continue working on GLB output
+
+Today I continued to work on GLB output. Along the way, I noticed I was passing
+a lot of variables for each point, so I refactored out a `Point` class to store
+the position, color, and metadata for each point. Overall, it works nicely,
+though there are some parts where I end up copying data a lot. I'll have to
+revisit this again in the future.
+
+At this point I can compile things, but it's not yet producing valid glTF files.
+
+## 2022-01-10 Debug GLB output
+
+Today I started working on debugging my GLB output. I had quite a few incorrect
+offsets/byte lengths to fix.
+
+I'm still having trouble loading the results in CesiumJS. The latest error
+seems to have something to do with the resource cache not being able to find
+the buffer. I'll keep digging around
+
+## 2022-01-11 glTF Validator to the Rescue
+
+This morning I tried running the GLB output through the official
+[glTF validator](https://github.khronos.org/glTF-Validator/), which revealed
+some issues with alignment. I also forgot that vertex attributes need to be
+aligned to 4-byte offsets. Now I'm able to load things in CesiumJS!
+
+## 2022-01-12 Decimation
+
+Today I implemented basic decimation to create levels of detail. I simply
+take 1/4th of the points in each child tile and add them to the parent. This
+is done just before the tileset is saved to disk.
+
+Something seems a little weird with the bounding volumes, the largest ones
+don't seem to be showing up. I should check the bounding volumes and recursive
+logic.
+
+## 2022-01-13 Fix y-up issue
+
+Today I merged in `main` to pull in the decimation features. I then added
+the z-up to y-up transform in the root node of each GLB so it renders properly
+in CesiumJS.
+
+I also reviewed [the PR](https://github.com/ptrgags/chaos-game-3d/pull/7) to
+point out several things I think could be better and use more of 3D Tiles Next.
+I think adding the `3DTILES_metadata` extension will be helpful here.
+
+## 2022-01-16 Add tileset metadata, update parameters
+
+The past couple days I wrapped up the 3D Tiles Next stuff and updated most of
+the parameter files to include an id and name. There's a few I didn't get to,
+but I'll handle those later when I go to make a script to index the files.

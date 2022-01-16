@@ -1,11 +1,21 @@
 {
+    "id": "grid_3d",
+    "name": "3D Grid",
+    "description": "a 3D grid, created by taking many cubes and moving them via a random walk in all 6 directions",
     "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 25
+    },
     "initial_set": {
         "type": "box",
         "center": [0, 0, 0],
         "dims": [1, 1, 1],
         "color": [0, 1, 1],
-        "num_points": 500
+        "num_points": 50
     },
     "initial_set_copies": 20,
     "iters": 100,

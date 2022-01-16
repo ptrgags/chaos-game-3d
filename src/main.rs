@@ -4,20 +4,24 @@ extern crate rand;
 
 #[macro_use]
 mod macros;
-mod xforms;
-mod vector;
-mod ifs;
-mod initial_set;
-mod choosers;
-mod parameters;
+
 mod algorithms;
-mod buffers;
-mod pnts_writer;
 mod bbox;
-mod octrees;
-mod plotters;
-//mod multivector;
+mod choosers;
+mod fractal_metadata;
+mod glb_writer;
+mod ifs;
 mod half_multivector;
+mod initial_set;
+//mod multivector;
+mod octrees;
+mod parameters;
+mod plotters;
+mod pnts_writer;
+mod point;
+mod tileset_writer;
+mod vector;
+mod xforms;
 
 use std::env;
 

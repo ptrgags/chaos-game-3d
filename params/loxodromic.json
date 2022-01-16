@@ -1,4 +1,6 @@
 {
+    "id": "loxodromic",
+    "name": "3D Loxodromic Transformation",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
@@ -9,12 +11,13 @@
     },
     "plotter": {
         "type": "scatter",
-        "node_capacity": 10000,
-        "max_depth": 5,
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
         "radius": 4
     },
     "initial_set_copies": 5,
-    "iters": 10000,
+    "iters": 1000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [

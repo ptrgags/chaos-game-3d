@@ -1,10 +1,12 @@
-use crate::buffers::InternalBuffer;
-use crate::vector::Vec3;
-use crate::half_multivector::HalfMultivector;
+
 
 use rand::Rng;
 use rand::prelude::ThreadRng;
 use json::JsonValue;
+
+use crate::vector::Vec3;
+use crate::half_multivector::HalfMultivector;
+use crate::point::InternalPoint;
 
 /// This trait is used to arrange a set of points to represent an initial
 /// set that will be sent through a Chaos Game algorithm. Typically, this is
@@ -12,9 +14,8 @@ use json::JsonValue;
 /// box or line.
 pub trait InitialSet {
     /// Generate a set of points. This may be called several times, and each
-    /// time it must produce a new buffer. This uses a mutable reference since
-    /// it must be 
-    fn generate(&mut self) -> InternalBuffer; 
+    /// time it must produce a new set of points.
+    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint>; 
     /// Get the number of points in the initial set for measuring complexity.
     fn len(&self) -> usize;
 }
@@ -74,8 +75,8 @@ impl RandomBox {
 }
 
 impl InitialSet for RandomBox {
-    fn generate(&mut self) -> InternalBuffer {
-        let mut buf = InternalBuffer::new();
+    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+        let mut points = Vec::new();
 
         // Find the bounding box for generating points
         let half_dims = self.dimensions.scale(0.5);
@@ -84,16 +85,27 @@ impl InitialSet for RandomBox {
         let color = HalfMultivector::from_vec3(&self.color);
 
         // Generate N random points, uniformly distributed over the box.
-        for _ in 0..self.num_points {
+        for i in 0..self.num_points {
             let x = self.rng.gen_range(min.x(), max.x());
             let y = self.rng.gen_range(min.y(), max.y());
             let z = self.rng.gen_range(min.z(), max.z());
-        
-            let point = HalfMultivector::point(x as f64, y as f64, z as f64);
-            buf.add(point, color.clone());
+            
+            let position = HalfMultivector::point(x as f64, y as f64, z as f64);
+
+            let point = InternalPoint {
+                position,
+                color: color.clone(),
+                feature_id: set_id,
+                iteration: 0,
+                point_id: i as u16,
+                last_xform: 0,
+                last_color_xform: 0
+            };
+
+            points.push(point);
         }
 
-        buf
+        points
     }
 
     fn len(&self) -> usize {
@@ -155,21 +167,32 @@ impl RandomLine {
 }
 
 impl InitialSet for RandomLine {
-    fn generate(&mut self) -> InternalBuffer {
-        let mut buf = InternalBuffer::new();
+    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+        let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
         let start = HalfMultivector::from_vec3(&self.start);
         let end = HalfMultivector::from_vec3(&self.end);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
-        for _ in 0..self.num_points {
+        for i in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
-            let point = HalfMultivector::lerp(&start, &end, t);
-            buf.add(point, color.clone());
+            let position = HalfMultivector::lerp(&start, &end, t);
+
+            let point = InternalPoint {
+                position,
+                color: color.clone(),
+                feature_id: set_id,
+                iteration: 0,
+                point_id: i as u16,
+                last_xform: 0,
+                last_color_xform: 0
+            };
+
+            points.push(point);
         }
 
-        buf
+        points
     }
 
     fn len(&self) -> usize {

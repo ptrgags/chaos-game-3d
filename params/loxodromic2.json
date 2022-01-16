@@ -9,8 +9,9 @@
     },
     "plotter": {
         "type": "scatter",
-        "node_capacity": 10000,
-        "max_depth": 5,
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 9,
         "radius": 4
     },
     "initial_set_copies": 5,
