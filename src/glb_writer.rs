@@ -32,16 +32,24 @@ const SIZE_U8: u32 = 1;
 /// requirements without making the code complex
 const ALIGNMENT: u32 = 8;
 
+/// Padding character for the BIN chunk
 const PADDING_BINARY: u8 = 0x00;
+/// Padding character for the JSON chunk
 const PADDING_JSON: u8 = ' ' as u8;
 
+/// A struct for keeping track of the size of a buffer view within the buffer 
 struct BufferView {
+    /// The offset within the buffer that marks the start of the buffer view
     byte_offset: u32,
+    /// The length of the buffer view
     byte_length: u32,
+    /// How many additional bytes of padding are needed to meet alignment
+    /// requirements
     padding_length: u32,
 }
 
 impl BufferView {
+    /// Create an empty buffer view
     pub fn new() -> Self {
         Self {
             byte_offset: 0,
@@ -56,8 +64,12 @@ impl BufferView {
     }
 }
 
+/// A struct for keeping track of glTF accessor settings
 struct Accessor {
+    /// The index of the buffer view that stores this accessor. This program
+    /// uses one buffer view per accessor. 
     buffer_view: u32,
+    /// The type of this glTF accessor (e.g. )
     component_type: u32,
     /// minimum value of each component of the accessor. Only required for
     /// position
@@ -68,6 +80,7 @@ struct Accessor {
 }
 
 impl Accessor {
+    /// Create an empty accessor
     pub fn new() -> Self {
         Self {
             buffer_view: 0,
@@ -78,8 +91,11 @@ impl Accessor {
     }
 }
 
+/// One of the two chunks in the GLB file (JSON and BIN)
 struct Chunk {
+    /// The length of the chunk data, not including header or padding
     chunk_length: u32,
+    /// How many bytes of padding are needed to meet alignment requirements
     padding_length: u32
 }
 
@@ -91,33 +107,50 @@ impl Chunk {
         }
     }
 
+    /// Get the length of data + padding
     pub fn data_length(&self) -> u32 {
         self.chunk_length + self.padding_length
     }
 
+    /// Get the length of header, data and padding
     pub fn total_length(&self) -> u32 {
         GLTF_CHUNK_HEADER_LENGTH + self.chunk_length + self.padding_length
     }
 }
 
+/// An object that can write a point cloud as a binary GLTF (GLB) file.
 pub struct GlbWriter {
     /// Number of points in this glTF point cloud
     point_count: u32,
     /// Total length of binary glTF, including header and all chunks
     total_length: u32,
+    /// The layout of the JSON chunk
     json_chunk: Chunk,
+    /// The layout of the BIN chunk
     binary_chunk: Chunk,
+    /// The total length of the buffer in the BIN chunk
     buffer_length: u32,
+    /// The POSITION accessor
     accessor_position: Accessor,
+    /// The COLOR accessor
     accessor_color: Accessor,
+    /// The FEATURE_ID_0 accessor
     accessor_feature_ids: Accessor,
+    /// The bufferView layout for the POSITION attribute
     buffer_view_position: BufferView,
+    /// The bufferView layout for the COLOR attribute
     buffer_view_color: BufferView,
+    /// The bufferView layout for the FEATURE_ID_0 attribute
     buffer_view_feature_ids: BufferView,
+    /// The bufferView layout for the "iterations" metadata property
     buffer_view_iterations: BufferView,
+    /// The bufferView layout for the "point_id" metadata property
     buffer_view_point_id: BufferView,
+    /// The bufferView layout for the "last_xforms" metadata property
     buffer_view_last_xforms: BufferView,
+    /// The bufferView layout for the "color_xforms" metadata property
     buffer_view_last_color_xforms: BufferView,
+    /// The glTF JSON that goes into the JSON chunk
     json: String,
 }
 
@@ -143,6 +176,7 @@ impl GlbWriter {
         }
     }
 
+    /// Write a list of points to disk in GLB format
     pub fn write(&mut self, fname: &str, buffer: &Vec<OutputPoint>) {
         self.compute_layout(&buffer);
         self.make_json();
@@ -160,6 +194,7 @@ impl GlbWriter {
         self.write_binary_chunk(&mut file, buffer);
     }
 
+    /// Compute the layout of the .glb file (byte offsets and lengths)
     fn compute_layout(&mut self, buffer: &Vec<OutputPoint>) {
         let point_count = buffer.len() as u32;
         self.point_count = point_count;
@@ -237,6 +272,7 @@ impl GlbWriter {
         self.buffer_length = buffer_length;
     }
 
+    /// Create the glTF JSON for the JSON chunk
     fn make_json(&mut self) {
         let json = object!{
             "asset" => object!{
@@ -429,6 +465,7 @@ impl GlbWriter {
         self.json_chunk.padding_length = compute_padding_length(length, ALIGNMENT);
     }
 
+    /// Write the GLB header to the file
     fn write_header(&self, file: &mut File) {
         let error_msg = "could not write glb header";
         file.write_all(b"glTF").expect(error_msg);
@@ -436,6 +473,7 @@ impl GlbWriter {
         file.write_all(&self.total_length.to_le_bytes()).expect(error_msg);
     }
 
+    /// Write the JSON chunk to the file
     fn write_json_chunk(&self, file: &mut File, json: &str) {
         let error_msg = "could not write JSON chunk";
         file.write_all(&self.json_chunk.data_length().to_le_bytes()).expect(error_msg);
@@ -445,6 +483,7 @@ impl GlbWriter {
         file.write_all(&padding).expect(error_msg);
     }
 
+    /// Write the binary chunk to the file
     fn write_binary_chunk(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let error_msg = "could not write binary chunk";
         file.write_all(&self.binary_chunk.data_length().to_le_bytes()).expect(error_msg);
@@ -452,6 +491,7 @@ impl GlbWriter {
         self.write_buffer(file, buffer);
     }
 
+    /// Write the binary buffer from a list of points
     fn write_buffer(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
@@ -531,6 +571,7 @@ impl GlbWriter {
     }
 }
 
+/// Compute the number of padding bytes needed to meet an alignment requirement
 fn compute_padding_length(byte_length: u32, alignment_bytes: u32) -> u32 {
     let remainder = byte_length % alignment_bytes;
     if remainder == 0 {
@@ -547,6 +588,7 @@ fn make_padding(byte_len: u32, pad_char: u8) -> Vec<u8> {
     (0..byte_len).map(|_| pad_char).collect()
 }
 
+/// Iterate over a list of points and compute the min/max position
 fn compute_min_max(points: &Vec<OutputPoint>) -> (Vec<f32>, Vec<f32>) {
     let mut min = [f32::MAX; 3];
     let mut max = [f32::MIN; 3];
