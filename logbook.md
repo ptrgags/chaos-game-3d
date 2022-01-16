@@ -126,3 +126,9 @@ in CesiumJS.
 I also reviewed [the PR](https://github.com/ptrgags/chaos-game-3d/pull/7) to
 point out several things I think could be better and use more of 3D Tiles Next.
 I think adding the `3DTILES_metadata` extension will be helpful here.
+
+## 2022-01-16 Add tileset metadata, update parameters
+
+The past couple days I wrapped up the 3D Tiles Next stuff and updated most of
+the parameter files to include an id and name. There's a few I didn't get to,
+but I'll handle those later when I go to make a script to index the files.
