@@ -1,5 +1,14 @@
 {
+    "id": "double_rotation",
+    "name": "Double Rotation",
     "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 10
+    },
     "initial_set": {
         "type": "box",
         "dims": [0.01, 10, 10],

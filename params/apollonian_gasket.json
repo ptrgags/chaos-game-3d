@@ -1,16 +1,24 @@
 {
-    "algorithm": "chaos",
+    "id": "apollonian_gasket",
+    "name": "Apollonian Gasket 3D",
+    "description": "Apollonian Gasket fractal generalized to 3D",
+    "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 7,
+        "radius": 3
+    },
     "initial_set": {
         "type": "box",
-        "start": [-10, 0, 0],
-        "end": [10, 0, 0],
-        "center": [0.4, 0, 0],
+        "center": [0, 0, 0.5],
         "dims": [0.1, 0.001, 0.1],
         "color": [0.8, 0.1, 0.1],
-        "num_points": 1000
+        "num_points": 10
     },
-    "initial_set_copies": 1,
-    "iters": 1000000,
+    "initial_set_copies": 4,
+    "iters": 10000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [

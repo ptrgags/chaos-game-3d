@@ -1,4 +1,4 @@
-## Chaos Game 3D (2019-2020, 2021)
+## Chaos Game 3D (2019-2020, 2021-2022)
 
 ![Sierpinski Tetrahedron fractal](figures/sierpinski.png)
 

@@ -1,19 +1,29 @@
 {
+    "id": "spiky_ball",
+    "name": "Spiky Ball",
+    "description": "Totating in two directions at once often leads to covering the whole sphere",
     "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 2
+    },
     "initial_set": {
         "type": "line",
-        "start": [1, 0, 0],
+        "start": [0.8, 0.1, 0],
         "end": [0.5, 1, 0.5],
         "color": [1, 0.5, 0.2],
         "num_points": 200
     },
-    "initial_set_copies": 2,
-    "iters": 500,
+    "initial_set_copies": 4,
+    "iters": 250,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
-            ["rotate", 0, 0, 1, 0.25],
-            ["rotate", 1, 0, 0, 0.25]
+            ["rotate", 0, 0, 1, 0.125],
+            ["rotate", 1, 0, 0, 0.125]
         ]
     },
     "color_ifs": {

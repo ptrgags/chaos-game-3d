@@ -4,3 +4,4 @@
 *.json
 !params/*.json
 *.pnts
+*.glb

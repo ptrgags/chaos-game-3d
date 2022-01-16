@@ -1,9 +1,9 @@
 use json::JsonValue;
 
 use crate::bbox::BBox;
-use crate::buffers::{OutputBuffer};
 use crate::vector::Vec3;
-use crate::pnts_writer::PntsWriter;
+use crate::point::OutputPoint;
+
 
 /// Octree node
 pub struct OctNode {
@@ -13,7 +13,7 @@ pub struct OctNode {
     bounds: BBox,
     /// Store points in this node. They are stored as Vec3 to be more compact
     /// and because this matches the 3D Tiles spec
-    points: OutputBuffer,
+    points: Vec<OutputPoint>,
     /// How many points can fit in this node
     capacity: usize,
     /// How many fits currently are in this node
@@ -34,7 +34,7 @@ impl OctNode {
                 -radius, radius, 
                 -radius, radius, 
                 -radius, radius),
-            points: OutputBuffer::new(),
+            points: Vec::new(),
             capacity,
             count: 0,
             color_sum: Vec3::zero(),
@@ -46,7 +46,7 @@ impl OctNode {
         Self {
             children: Vec::new(),
             bounds,
-            points: OutputBuffer::new(),
+            points: Vec::new(),
             capacity,
             count: 0,
             color_sum: Vec3::zero(),
@@ -84,23 +84,20 @@ impl OctNode {
         self.children.iter().enumerate().collect()
     }
 
-    /// Write the points in this node's buffer to a Cesium 3D tiles
-    /// .pnts file.
-    pub fn write_pnts(&self, fname: &str) {
-        let mut writer = PntsWriter::new(); 
-        writer.write(fname, &self.points);
+    /// Borrow the points. This is used when writing data to disk
+    pub fn get_points(&self) -> &Vec<OutputPoint> {
+        &self.points
     }
 
     /// Add a point from the top of the tree down. If this overfills the node,
     /// subdivide it as necessary, up to the given max depth.
-    pub fn add_point(
-            &mut self, point: Vec3, color: Vec3, max_depth: u8) {
+    pub fn add_point(&mut self, point: OutputPoint, max_depth: u8) {
         // Discard points outside the grid
-        if !self.bounds.contains(&point) {
+        if !self.bounds.contains(&point.position) {
             return;
         } 
 
-        self.add_point_recursive(point, color, 0, max_depth);
+        self.add_point_recursive(point, 0, max_depth);
     }
 
     /// Add a point to the octree recursively. If there are already many points
@@ -110,24 +107,23 @@ impl OctNode {
     /// discarded because it didn't fit.
     fn add_point_recursive(
             &mut self, 
-            point: Vec3, 
-            color: Vec3, 
+            point: OutputPoint,
             depth: u8, 
             max_depth: u8) -> bool {
         let is_leaf = self.is_leaf();
         let is_full = self.is_full();
         if is_leaf && !is_full {
             // Base case 1: We're at a leaf with some space. just add the point. 
-            self.points.add(point, color);
             self.count += 1;
-            self.color_sum = self.color_sum + color;
+            self.color_sum = self.color_sum + point.color;
+            self.points.push(point);
             return true;
         } else if is_leaf && is_full && depth < max_depth {
             // Base case 2: We're at a full leaf. Subdivide this node and
             // retry the add operation on this node which is now an internal
             // node. Note that this always produces 8 children
             self.subdivide();
-            return self.add_point_recursive(point, color, depth, max_depth);
+            return self.add_point_recursive(point, depth, max_depth);
         } else if is_leaf && is_full && depth == max_depth {
             // Base case 3: We're at a full leaf but we've hit the depth
             // limit. Just discard the point to prevent infinite loops
@@ -135,10 +131,11 @@ impl OctNode {
         } else if !is_leaf {
             // Recursive case: Find the octant which the point is in, and
             // insert into the child node
-            let quadrant = self.bounds.find_quadrant(&point);
+            let quadrant = self.bounds.find_quadrant(&point.position);
             let child = &mut self.children[quadrant];
+            let color = point.color;
             let result = child.add_point_recursive(
-                point, color, depth + 1, max_depth);
+                point, depth + 1, max_depth);
             if result {
                 self.count += 1;
                 self.color_sum = self.color_sum + color;
@@ -165,25 +162,24 @@ impl OctNode {
         }
 
         // Move all the points in the current buffer to the children
-        for (point, color) in self.points.points_iter() {
-            let quadrant = self.bounds.find_quadrant(&point);
+        for point in self.points.iter() {
+            let quadrant = self.bounds.find_quadrant(&point.position);
             let child = &mut self.children[quadrant]; 
-            child.points.add(*point, *color);
+            child.points.push(point.clone());
         }
         self.points.clear();
     }
 
-    pub fn decimate(&mut self) -> Vec<(&Vec3, &Vec3)> {
+    pub fn decimate(&mut self) -> Vec<OutputPoint> {
         for child in &mut self.children {
-            for (point, color) in child.decimate() {
-                self.points.add(*point, *color);
-            }
+            let child_points = child.decimate();
+            self.points.extend(child_points);
         }
 
-        return self.points.points_iter()
+        self.points.iter()
             .enumerate()
             .filter(|(i, _)| i % 4 == 0)
-            .map(|(_, point)| point)
-            .collect();
+            .map(|(_, point)| point.clone())
+            .collect()
     }
 }

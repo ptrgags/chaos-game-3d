@@ -8,6 +8,8 @@ const Cartesian3 = Cesium.Cartesian3;
 // public-facing code
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZTVjMjExYy0wYWVlLTRmNzktODM4Ni0zNzRlMjdjZDIxZmMiLCJpZCI6MTg5MTksInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzQ2ODg1MzJ9.aeY06JtwkvYi5MylE_cJd8QveIxvjUIb-E4HtGJ6gbg';
 
+Cesium.ExperimentalFeatures.enableModelExperimental = true;
+
 // Create the viewer. Hide the globe, I'm using Cesium for the 3D tiles
 // rendering, not geospatial data.
 const viewer = new Cesium.Viewer('cesiumContainer', {
@@ -20,6 +22,31 @@ let tileset;
 // flags that are toggleable by checkboxes.
 let attenuation = true;
 let show_bboxes = false;
+
+const customShader = new Cesium.CustomShader({
+    uniforms: {
+        u_initial_set_copies: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    LightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        //Sometimes it's helpful to visualize depth
+        //float dist_from_center = length(fsInput.attributes.positionMC);
+        //float wave = 0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * dist_from_center);
+        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
+        vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+})
 
 // Switch to a new model
 function set_model(model_id) {
@@ -42,23 +69,19 @@ function set_model(model_id) {
     tileset = new Cesium.Cesium3DTileset({
         url,
         debugShowBoundingVolume: show_bboxes,
-        modelMatrix: scale
+        modelMatrix: scale,
+        customShader: customShader
     });
 
     // Sparse point clouds look better with this on, but it's toggleable
     // because sometimes the fractal structure is clearer with smaller points.
     tileset.pointCloudShading.attenuation = attenuation;
 
-    /*
-     * Experiment: Color by distance from center
-    tileset.style = new Cesium.Cesium3DTileStyle({
-        defines: {
-            wave: '(0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * length(${POSITION})))',
-            color3: 'vec3(${COLOR}.x, ${COLOR}.y, ${COLOR}.z)',
-        },
-        color: 'vec4(${wave} * vec3(${COLOR}), 1.0)'
+    tileset.readyPromise.then(() => {
+        const metadata = tileset.metadata.tileset;
+        const initial_set_copies = metadata.getProperty("initial_set_copies");
+        customShader.setUniform("u_initial_set_copies", initial_set_copies);
     });
-    */
 
     // Force all tiles to load. This is a bit dangerous for large tilesets,
     // but until I fix some camera issues, this is the only way to render

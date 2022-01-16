@@ -1,6 +1,7 @@
-use crate::buffers::OutputBuffer;
 use std::fs::File;
 use std::io::prelude::*;
+
+use crate::point::OutputPoint;
 
 /// Cesium Point Cloud format version 1.0
 const PNTS_VERSION: u32 = 1;
@@ -63,7 +64,7 @@ impl PntsWriter {
     }
 
     /// Write all the points in a buffer to a .pnts file of the given filename
-    pub fn write(&mut self, fname: &str, buffer: &OutputBuffer) {
+    pub fn write(&mut self, fname: &str, buffer: &Vec<OutputPoint>) {
         let error_msg = format!("Cannot open {}", fname);
         let mut file = File::create(fname).expect(&error_msg);
         self.prepare_header(buffer);
@@ -73,7 +74,7 @@ impl PntsWriter {
 
     /// Create the feature table JSON and compute lengths of parts of the
     /// binary file. This updates the lengths stored in the struct for later
-    fn prepare_header(&mut self, buffer: &OutputBuffer) {
+    fn prepare_header(&mut self, buffer: &Vec<OutputPoint>) {
         // The .pnts format stores  each feature contiguously. If the
         // the positions go first, we need to compute where the colors go
         let num_positions = buffer.len() as u32;
@@ -160,15 +161,15 @@ impl PntsWriter {
     }
 
     /// Write the body portion of the .pnts file, a packed list of points.
-    fn write_body(&self, file: &mut File, buffer: &OutputBuffer) {
+    fn write_body(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
 
-        for (point, color) in buffer.points_iter() {
-            let point_bytes: [u8; 12] = point.pack();
+        for point in buffer {
+            let point_bytes: [u8; 12] = point.position.pack();
             positions.extend_from_slice(&point_bytes);
 
-            let color_bytes: [u8; 3] = color.to_color().pack();
+            let color_bytes: [u8; 3] = point.color.to_color().pack();
             colors.extend_from_slice(&color_bytes);
         }
 

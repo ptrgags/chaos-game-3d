@@ -1,8 +1,12 @@
 {
+    "id": "sierpinski",
+    "name": "Sierpinski Tetrahedron",
+    "description": "The 3D generalization of the Sierpinski triangle",
     "algorithm": "chaos",
     "iters": 1000000,
     "plotter": {
         "type": "scatter",
+        "format": "glb",
         "node_capacity": 1000,
         "max_depth": 7,
         "radius": 1

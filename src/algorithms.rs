@@ -3,9 +3,10 @@ use json::JsonValue;
 use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
 use crate::plotters::{self, Plotter};
-use crate::buffers::InternalBuffer;
 use crate::vector::Vec3;
 use crate::multivector::Multivector;
+use crate::point::{InternalPoint, OutputPoint};
+use crate::fractal_metadata::FractalMetadata;
 
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
 /// related algorithms
@@ -24,6 +25,8 @@ const STARTUP_ITERS: usize = 10;
 /// The basic Chaos Game algorithm (see Fractals Everywhere by Michael F. 
 /// Barnsley)
 pub struct ChaosGame {
+    /// Metadata about the fractal. Used for 3D Tiles Next output
+    metadata: FractalMetadata,
     /// IFS for transforming the points
     position_ifs: IFS,
     /// IFS for transforming the colors
@@ -35,19 +38,6 @@ pub struct ChaosGame {
 }
 
 impl ChaosGame {
-    pub fn new(
-            position_ifs: IFS, 
-            color_ifs: IFS, 
-            output: Box<dyn Plotter>,
-            num_iters: usize) -> Self {
-        Self {
-            position_ifs,
-            color_ifs,
-            output,
-            num_iters
-        }
-    }
-
     /// Parse from a JSON object of the form
     ///
     /// ```text
@@ -63,11 +53,18 @@ impl ChaosGame {
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let plotter = plotters::from_json(&json["plotter"]);
-        let iters = json["iters"]
+        let num_iters = json["iters"]
             .as_usize()
             .expect("iters must be a positive integer");
+        let metadata = FractalMetadata::from_json(&json);
 
-        Self::new(position_ifs, color_ifs, plotter, iters)
+        Self {
+            metadata,
+            position_ifs,
+            color_ifs,
+            output: plotter,
+            num_iters,
+        }
     }
 
     to_box!(Algorithm);
@@ -81,11 +78,25 @@ impl Algorithm for ChaosGame {
         const UPDATE_FREQ: usize = 100000;
         let complexity = self.complexity() / UPDATE_FREQ;
 
+        // For the basic chaos game, everything is the same feature
+        const FEATURE_ID: u16 = 0;
+        const POINT_ID: u16 = 0;
+
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                self.output.plot_point(pos.to_vec3(), color_vec.to_vec3())
+                let point = OutputPoint {
+                    position: pos.to_vec3(),
+                    color: color_vec.to_vec3(),
+                    feature_id: FEATURE_ID,
+                    iteration: i as u64,
+                    point_id: POINT_ID,
+                    last_xform: self.position_ifs.get_last_xform(),
+                    last_color_xform: self.color_ifs.get_last_xform()
+                };
+
+                self.output.plot_point(point);
             }
 
             pos = self.position_ifs.transform(&pos);
@@ -102,7 +113,7 @@ impl Algorithm for ChaosGame {
     }
 
     fn save(&mut self, fname: &str) {
-        self.output.save(fname);
+        self.output.save(fname, &self.metadata);
     }
 
     /// The complexity of the basic chaos game is O(n) where n is the number
@@ -116,7 +127,9 @@ impl Algorithm for ChaosGame {
 /// this allows "condensation sets" (using Michael F. Barnsley's terminology),
 /// which is a set of input points that gets transformed as a single unit
 /// at each iteration.
-pub struct ChaosSets { 
+pub struct ChaosSets {
+    /// Metadata about the fractal. Used for 3D Tiles Next output
+    metadata: FractalMetadata, 
     /// IFS for transforming the points
     position_ifs: IFS,
     /// IFS for transforming colors
@@ -133,31 +146,30 @@ pub struct ChaosSets {
 }
 
 impl ChaosSets {
-    pub fn new(
-            position_ifs: IFS, 
-            color_ifs: IFS, 
-            initial_set: Box<dyn InitialSet>, 
-            initial_copies: usize, 
-            output: Box<dyn Plotter>,
-            num_iters: usize) -> Self {
-        Self {
-            position_ifs,
-            color_ifs,
-            initial_set,
-            initial_copies,
-            output,
-            num_iters,
-        }
-    }
 
     /// Apply the position/color IFS to a buffer, and produce a new buffer
     pub fn transform_buffer(
-            &mut self, buffer: InternalBuffer) -> InternalBuffer {
-        let new_positions = 
-            self.position_ifs.transform_points(buffer.get_points());
-        let new_colors = self.color_ifs.transform_points(buffer.get_colors());
+            &mut self, points: Vec<InternalPoint>, iteration: u64
+            ) -> Vec<InternalPoint> {
 
-        InternalBuffer::from_vectors(new_positions, new_colors)
+        let old_positions = points.iter().map(|x| x.position.clone()).collect();
+        let old_colors = points.iter().map(|x| x.color.clone()).collect();
+        let new_positions = 
+            self.position_ifs.transform_points(&old_positions);
+        let new_colors = self.color_ifs.transform_points(&old_colors);
+
+        let last_xform = self.position_ifs.get_last_xform();
+        let last_color_xform = self.color_ifs.get_last_xform();
+
+        points.iter().enumerate().map(|(i, point)| InternalPoint {
+            position: new_positions[i].clone(),
+            color: new_colors[i].clone(),
+            feature_id: point.feature_id,
+            iteration,
+            point_id: point.point_id,
+            last_xform,
+            last_color_xform
+        }).collect()
     }
 
     /// Parse a Chaos Sets instance from JSON of the form:
@@ -174,6 +186,7 @@ impl ChaosSets {
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
+        let metadata = FractalMetadata::from_json(json);
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let arranger = initial_set::from_json(&json["initial_set"]);
@@ -181,12 +194,19 @@ impl ChaosSets {
         let initial_copies: usize = json["initial_set_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
-        let iters = json["iters"]
+        let num_iters = json["iters"]
             .as_usize()
             .expect("iters must be a positive integer");
 
-        Self::new(
-            position_ifs, color_ifs, arranger, initial_copies, plotter, iters)
+        Self {
+            metadata,
+            position_ifs,
+            color_ifs,
+            initial_set: arranger,
+            initial_copies,
+            output: plotter,
+            num_iters,
+        }
     }
 
     to_box!(Algorithm);
@@ -196,31 +216,30 @@ impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
         // Generate a number of initial sets. They will be transformed
         // independently. This helps to view more of the search space
-        let mut buffers: Vec<InternalBuffer> = 
+        let mut buffers: Vec<Vec<InternalPoint>> = 
             (0..self.initial_copies)
-                .map(|_| { self.initial_set.generate() })
+                .map(|i| { self.initial_set.generate(i as u16) })
                 .collect();
 
         // Only write the first copy to the output, since they are all in
         // the same location
-        self.output.plot_buffer(&buffers[0]);
+        self.output.plot_points(&buffers[0]);
 
         // Every iteration, transform each buffer using the IFS, 
         // and plot the results in the output buffer.
-        // TODO: This could totally be done in parallel. Try Rust threads!
-        for _ in 0..self.num_iters {
-            let mut new_buffers: Vec<InternalBuffer> = Vec::new();
-            for buf in buffers.into_iter() {
-                let new_buf = self.transform_buffer(buf);
-                self.output.plot_buffer(&new_buf);
-                new_buffers.push(new_buf);
+        for i in 0..self.num_iters {
+            let mut new_buffers: Vec<Vec<InternalPoint>> = Vec::new();
+            for point_buffer in buffers.into_iter() {
+                let new_buffer = self.transform_buffer(point_buffer, i as u64);
+                self.output.plot_points(&new_buffer);
+                new_buffers.push(new_buffer);
             }
             buffers = new_buffers;
         }
     }
 
     fn save(&mut self, fname: &str) {
-        self.output.save(fname);
+        self.output.save(fname, &self.metadata);
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 

@@ -1,13 +1,22 @@
 {
+    "id": "aa_loxodromic",
+    "name": "Axis-aligned Loxodromic",
     "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 10
+    },
     "initial_set": {
         "type": "box",
         "dims": [10, 10, 10],
         "center": [0, 0, 0],
         "color": [0.0, 0.4, 0.8],
-        "num_points": 1000
+        "num_points": 100
     },
-    "initial_set_copies": 1,
+    "initial_set_copies": 3,
     "iters": 1000,
     "ifs": {
         "chooser": "uniform",
