@@ -2,7 +2,7 @@ use json::JsonValue;
 
 use crate::fractal_metadata::FractalMetadata;
 use crate::octrees::OctNode;
-use crate::tileset_writer::{TilesetWriter, TileType};
+use crate::tileset_writer::{TilesetWriter, ContentType};
 use crate::point::{InternalPoint, OutputPoint};
 
 
@@ -32,7 +32,7 @@ pub trait Plotter {
 pub struct ScatterPlot {
     root: OctNode,
     max_depth: u8,
-    tile_type: TileType
+    tile_type: ContentType
 }
 
 impl ScatterPlot {
@@ -40,7 +40,7 @@ impl ScatterPlot {
             radius: f32,
             node_capacity: usize,
             max_depth: u8,
-            tile_type: TileType) -> Self {
+            tile_type: ContentType) -> Self {
         Self {
             root: OctNode::root_node(radius, node_capacity),
             max_depth,
@@ -61,8 +61,8 @@ impl ScatterPlot {
             .as_str()
             .expect("format must be a string");
         let tile_type = match format {
-            "pnts" => TileType::Pnts,
-            "glb" => TileType::Glb,
+            "pnts" => ContentType::Pnts,
+            "glb" => ContentType::Glb,
             _ => panic!("format must be either pnts or glb")
         };
 

@@ -9,13 +9,17 @@ use crate::octrees::OctNode;
 use crate::pnts_writer::PntsWriter;
 use crate::glb_writer::GlbWriter;
 
+/// Type of 3D Tiles content
 #[derive(Clone, PartialEq)]
-pub enum TileType {
+pub enum ContentType {
+    /// .pnts: 3D Tiles 1.0 Point Cloud
     Pnts,
+    /// .glb: Binary glTF. For 3D Tiles, this requires 3DTILES_content_gltf
     Glb,
 }
 
-impl TileType {
+impl ContentType {
+    // Get the file extension for this content
     pub fn get_extension(&self) -> &str {
         match self {
             Self::Pnts => "pnts",
@@ -24,19 +28,25 @@ impl TileType {
     }
 }
 
+/// An object that can generate a 3D Tileset
 pub struct TilesetWriter {
-    tile_type: TileType,
+    /// The type of content to store in each tile
+    content_type: ContentType,
+    /// Metadata to include in the tileset when using 3D Tiles Next 
+    /// (.glb content)
     metadata: FractalMetadata
 }
 
 impl TilesetWriter {
-    pub fn new(tile_type: TileType, metadata: FractalMetadata) -> Self {
+    pub fn new(content_type: ContentType, metadata: FractalMetadata) -> Self {
         Self {
-            tile_type,
+            content_type,
             metadata
         }
     }
 
+    /// Save the tileset to disk in the specified directory. The directory will
+    /// be removed first if it exists, so use with care!
     pub fn save(&self, dirname: &str, root: &OctNode) {
         if Path::new(dirname).exists() {
             remove_dir_all(dirname)
@@ -65,7 +75,7 @@ impl TilesetWriter {
         };
 
         // in 3D Tiles Next mode, a few extensions need to be declared
-        if self.tile_type == TileType::Glb {
+        if self.content_type == ContentType::Glb {
             tileset["extensionsRequired"] = array!["3DTILES_content_gltf"];
             tileset["extensionsUsed"] = array![
                 "3DTILES_content_gltf", 
@@ -95,7 +105,7 @@ impl TilesetWriter {
             JsonValue::Null
         } else if tree.is_leaf() { 
             let fname = format!(
-                "{}.{}", prefix, self.tile_type.get_extension());
+                "{}.{}", prefix, self.content_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => 0.0,
@@ -116,7 +126,7 @@ impl TilesetWriter {
             }
 
             let fname = format!(
-                "{}.{}",prefix, self.tile_type.get_extension());
+                "{}.{}",prefix, self.content_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => tree.geometric_error(),
@@ -160,13 +170,13 @@ impl TilesetWriter {
         }
 
         let points = tree.get_points();
-        match self.tile_type {
-            TileType::Pnts => {
+        match self.content_type {
+            ContentType::Pnts => {
                 let mut writer = PntsWriter::new();
                 let fname = format!("{}.pnts", prefix);
                 writer.write(&fname, points);
             },
-            TileType::Glb => {
+            ContentType::Glb => {
                 let mut writer = GlbWriter::new();
                 let fname = format!("{}.glb", prefix);
                 writer.write(&fname, points);
