@@ -38,6 +38,9 @@ const customShader = new Cesium.CustomShader({
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        //Sometimes it's helpful to visualize depth
+        //float dist_from_center = length(fsInput.attributes.positionMC);
+        //float wave = 0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * dist_from_center);
         float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
         vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
         material.diffuse = rgb;
@@ -77,20 +80,8 @@ function set_model(model_id) {
     tileset.readyPromise.then(() => {
         const metadata = tileset.metadata.tileset;
         const initial_set_copies = metadata.getProperty("initial_set_copies");
-        console.log(initial_set_copies);
         customShader.setUniform("u_initial_set_copies", initial_set_copies);
     });
-
-    /*
-     * Experiment: Color by distance from center
-    tileset.style = new Cesium.Cesium3DTileStyle({
-        defines: {
-            wave: '(0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * length(${POSITION})))',
-            color3: 'vec3(${COLOR}.x, ${COLOR}.y, ${COLOR}.z)',
-        },
-        color: 'vec4(${wave} * vec3(${COLOR}), 1.0)'
-    });
-    */
 
     // Force all tiles to load. This is a bit dangerous for large tilesets,
     // but until I fix some camera issues, this is the only way to render

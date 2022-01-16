@@ -1,4 +1,7 @@
 {
+    "id": "sierpinski",
+    "name": "Sierpinski Tetrahedron",
+    "description": "The 3D generalization of the Sierpinski triangle",
     "algorithm": "chaos",
     "iters": 1000000,
     "plotter": {

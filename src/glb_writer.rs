@@ -132,13 +132,13 @@ pub struct GlbWriter {
     buffer_length: u32,
     /// The POSITION accessor
     accessor_position: Accessor,
-    /// The COLOR accessor
+    /// The COLOR_0 accessor
     accessor_color: Accessor,
     /// The FEATURE_ID_0 accessor
     accessor_feature_ids: Accessor,
     /// The bufferView layout for the POSITION attribute
     buffer_view_position: BufferView,
-    /// The bufferView layout for the COLOR attribute
+    /// The bufferView layout for the COLOR_0 attribute
     buffer_view_color: BufferView,
     /// The bufferView layout for the FEATURE_ID_0 attribute
     buffer_view_feature_ids: BufferView,

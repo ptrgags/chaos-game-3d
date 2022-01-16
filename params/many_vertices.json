@@ -1,10 +1,14 @@
 {
+    "id": "many_vertices",
+    "name": "Many Vertices",
+    "description": "Similar to the sierpinski tetrahedron, but with 10 vertices. If you look closely you'll find the sierpinski triangle everywhere.",
     "algorithm": "chaos",
-    "iters": 1000000,
+    "iters": 400000,
     "plotter": {
         "type": "scatter",
-        "node_capacity": 10000,
-        "max_depth": 4,
+        "format": "glb",
+        "node_capacity": 5000,
+        "max_depth": 8,
         "radius": 1
     },
     "ifs": {

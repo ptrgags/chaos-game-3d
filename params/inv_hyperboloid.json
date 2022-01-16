@@ -1,5 +1,15 @@
 {
+    "id": "inv_hyperboloid",
+    "name": "Inverse Hyperboloid",
+    "description": "A hyperboloid of one sheet inverted in the unit sphere",
     "algorithm": "chaos_sets",
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 10
+    },
     "initial_set": {
         "color": [0.8, 0.4, 0.2],
         "type": "line",
@@ -7,7 +17,7 @@
         "end": [1.1, 50, -50],
         "num_points": 500
     },
-    "initial_set_copies": 20,
+    "initial_set_copies": 10,
     "iters": 100,
     "ifs": {
         "chooser": "uniform",

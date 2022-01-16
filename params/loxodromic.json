@@ -1,4 +1,6 @@
 {
+    "id": "loxodromic",
+    "name": "3D Loxodromic Transformation",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
@@ -15,7 +17,7 @@
         "radius": 4
     },
     "initial_set_copies": 5,
-    "iters": 10000,
+    "iters": 1000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
