@@ -453,6 +453,11 @@ impl HalfMultivector {
     }
     */
 
+    pub fn expect_vector(&mut self) {
+        self.start_index = VECTOR_START;
+        self.end_index = VECTOR_END;
+    }
+
     pub fn homogenize(&mut self) {
         if self.parity != Parity::Odd {
             panic!("homogenize: Vectors must have odd parity!");
@@ -465,15 +470,19 @@ impl HalfMultivector {
         let n = self.components[N];
         let scale_factor = n - p;
 
+        //println!("{:?}", self);
+
         if scale_factor == 0.0 {
             panic!("null vectors cannot be homogenized!");
         }
 
-        self.components[X] /= scale_factor;
-        self.components[Y] /= scale_factor;
-        self.components[Z] /= scale_factor;
-        self.components[P] /= scale_factor;
-        self.components[N] /= scale_factor;
+
+        let inv_scale_factor = 1.0 / scale_factor;
+        self.components[X] *= inv_scale_factor;
+        self.components[Y] *= inv_scale_factor;
+        self.components[Z] *= inv_scale_factor;
+        self.components[P] *= inv_scale_factor;
+        self.components[N] *= inv_scale_factor;
     } 
 
     pub fn from_vec3(position: &Vec3) -> Self {
@@ -506,6 +515,7 @@ impl HalfMultivector {
         Vec3::new(x as f32, y as f32, z as f32)
     }
 
+    #[allow(dead_code)]
     pub fn almost_equal(&self, other: &Self, epsilon: f64) -> bool {
         if self.parity != other.parity {
             return false;
@@ -708,4 +718,15 @@ mod tests {
         result.homogenize();
         assert!(result.almost_equal(&expected, 1e-9));
     }
+
+    /*
+
+    #[test]
+    fn test_scale_translate() {
+        let scale = HalfMultivector::scale(0.5);
+        let translate = HalfMultivector::translation(1.0, 0.0, 0.0);
+        let xform = translate.geometric_product(scale);
+        let point = 
+
+    }*/
 }

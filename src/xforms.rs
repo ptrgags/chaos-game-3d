@@ -38,7 +38,10 @@ impl Xform {
     }
 
     pub fn transform(&self, point: &HalfMultivector) -> HalfMultivector {
-        self.versor.sandwich_product(point)
+        let mut product = self.versor.sandwich_product(point);
+        product.expect_vector();
+        product.homogenize();
+        product
     }
 
     pub fn inverse(&self) -> Self {
