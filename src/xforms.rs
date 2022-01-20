@@ -139,6 +139,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Xform {
         "identity" | 
         "translate" | 
         "rotate" | 
+        "reflect" |
         "scale" => Xform::new(get_versor(xform_desc)),
         _ => panic!("xforms: xform type must be one of {:?}", valid_names)
     }

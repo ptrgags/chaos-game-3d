@@ -23,8 +23,8 @@
         "chooser": "uniform",
         "xforms": [
             ["invert"],
-            ["rotate", 0, 0, 1, 0.0625],
-            ["rotate", 0, 0, -1, 0.0625]
+            ["rotate", 0, 0, 1, 22.5],
+            ["rotate", 0, 0, -1, 22.5]
         ]
     },
     "color_ifs": {

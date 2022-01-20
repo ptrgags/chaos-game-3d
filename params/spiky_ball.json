@@ -22,16 +22,16 @@
     "ifs": {
         "chooser": "uniform",
         "xforms": [
-            ["rotate", 0, 0, 1, 0.125],
-            ["rotate", 1, 0, 0, 0.125]
+            ["rotate", 0, 0, 1, 90],
+            ["rotate", 1, 0, 0, 0]
         ]
     },
     "color_ifs": {
         "chooser": "uniform",
         "xforms": [
             ["chain", [
-                ["reflect_vec", 1, 0, 0],
-                ["translate", 1, 0, 0]
+                ["reflect", 0, 0, 1],
+                ["translate", 0, 0, 1]
             ]]
         ]
     }

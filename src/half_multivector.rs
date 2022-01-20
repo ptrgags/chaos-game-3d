@@ -1,5 +1,6 @@
 use std::cmp::Eq;
 use std::fmt::{Debug, Formatter, Result};
+use std::f64::consts::PI;
 
 use crate::vector::Vec3;
 
@@ -279,7 +280,7 @@ impl HalfMultivector {
     }
 
     pub fn rotation(nx: f64, ny: f64, nz: f64, angle_rad: f64) -> Self {
-        let half_angle = angle_rad / 2.0;
+        let half_angle = 0.5 * angle_rad;
         let c = half_angle.cos();
         let s = half_angle.sin();
         // cos(theta/2) + sin(theta/2)B
@@ -625,6 +626,25 @@ mod tests {
     }
 
     #[test]
+    fn test_rotation() {
+        let rotation = HalfMultivector::rotation(0.0, 0.0, 1.0, PI);
+
+        let half_angle = 0.5 * PI;
+        let c = half_angle.cos();
+        let s = half_angle.sin();
+        let expected = HalfMultivector::even(
+            [
+                c, 
+                0.0, 0.0, 0.0, 0.0, 0.0, 
+                s, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            ],
+            0,
+            11
+        );
+        assert_eq!(rotation, expected);
+    }
+
+    #[test]
     fn test_product_even_even() {
         let left = HalfMultivector::even(
             [
@@ -717,6 +737,16 @@ mod tests {
         let mut result = xform.sandwich_product(&point);
         result.homogenize();
         assert!(result.almost_equal(&expected, 1e-9));
+    }
+
+    #[test]
+    fn test_rotation_xform() {
+        let xform = HalfMultivector::rotation(0.0, 0.0, 0.0, 0.5 * PI);
+        println!("{:?}", xform);
+        let point = HalfMultivector::point(1.0, 0.0, 0.0);
+        let expected = HalfMultivector::point(0.0, 1.0, 0.0);
+
+        assert_eq!(xform.sandwich_product(&point), expected);
     }
 
     /*
