@@ -57,20 +57,45 @@ Vx = inversion() * reflection(e1)
 
 # print some intermediate calculations to check my work on paper
 print("Tx:", Tx)
+print("S2:", S2)
 print("Vx:", Vx)
-print("Tx * S2", Tx * S2, abs(Tx * S2))
+print("Tx * S2:", Tx * S2, abs(Tx * S2))
 print("Vx * Tx:", Vx * Tx, abs(Vx * Tx))
 
 poloidal_x = Tx * S2 * Vx * Tx
 print("poloidal_x:", poloidal_x)
 print("poloidal_x ** 4 = identity?:", sandwich(poloidal_x ** 4, e1), 1)
 
+# check that the unit sphere is transformed correctly
+print("Check poloidal_x properties -------------------")
+print("x -> 0:", sandwich(poloidal_x, e1))
+print("0 -> -x:", sandwich(poloidal_x, 0*e1))
+# this line should print a warning
+print("-x -> inf:", sandwich(poloidal_x, -e1))
+# using the inverse should send x to infinity, thus another set of warnings
+print("inf -> x:", sandwich(~poloidal_x, e1))
+print("fixes y:", sandwich(poloidal_x, e2))
+print("fixes z:", sandwich(poloidal_x, e3))
+
 # Conjecture: this easily generalizes to other directions
 def poloidal4(direction):
     Td = translation(direction)
     S2 = dilation(2)
     Vd = inversion() * reflection(direction)
-    return Td * S2 * Vd * Vd
+    return Td * S2 * Vd * Td
+
+poloidal_y = poloidal4(e2)
+# check that the unit sphere is transformed correctly
+print("Check poloidal_y properties -------------------")
+print("y -> 0:", sandwich(poloidal_y, e2))
+print("0 -> -y:", sandwich(poloidal_y, 0*e2))
+# this line should print a warning
+print("-y -> inf:", sandwich(poloidal_y, -e2))
+# using the inverse should send x to infinity, thus another set of warnings
+print("inf -> y:", sandwich(~poloidal_y, e2))
+print("fixes x:", sandwich(poloidal_y, e1))
+print("fixes z:", sandwich(poloidal_y, e3))
+print("poloidal_y ** 4 = identity?:", sandwich(poloidal_y ** 4, e2), 1)
 
 # Conjecture: the versor looks like a rotor in the XP plane. Can I generate
 # it directly with the exponential map?
