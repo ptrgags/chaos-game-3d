@@ -279,16 +279,41 @@ impl HalfMultivector {
         }
     }
 
+    /// Rotate counterclockwise around the axis (nx, ny, nz) by the given
+    /// angle in radians.
+    /// 
+    /// R = cos(-theta / 2) + sin(-theta/2)B
+    /// where B is the plane dual to the axis:
+    /// nx * YZ + ny * ZX + nz * XY
     pub fn rotation(nx: f64, ny: f64, nz: f64, angle_rad: f64) -> Self {
-        let half_angle = 0.5 * angle_rad;
+        // compute cos(-theta/2) and sin(-theta/2)
+        // The angle is halved since rotations are applied in 
+        // a sandwich: R * v * ~R
+        // The angle is negated to make the rotation the typical
+        // counter-clockwise convention.
+        let half_angle = -0.5 * angle_rad;
         let c = half_angle.cos();
         let s = half_angle.sin();
-        // cos(theta/2) + sin(theta/2)B
+
+        // Normalize the axis vector so we don't introduce any
+        // scaling.
+        let magnitude = (nx * nx + ny * ny + nz * nz).sqrt();
+        if magnitude == 0.0 {
+            panic!("can't rotate around null vector");
+        }
+        let normalization_factor = 1.0 / magnitude;
+
         let mut components = [0.0; 16];
         components[SCALAR] = c;
-        components[YZ] = -s * nx;
-        components[XZ] = s * ny;
-        components[XY] = -s * nz;
+        // Rotation around the y axis corresponds to 
+        // rotation in the zx plane = -xz plane, hence
+        // the one negated component
+        // Note: in the components array, the bivector
+        // components are laid out like this:
+        // xy, xz, _, _, yz, _, _, _, _, _
+        components[YZ] = s * nx * normalization_factor;
+        components[XZ] = -s * ny * normalization_factor;
+        components[XY] = s * nz * normalization_factor;
         Self {
             components,
             parity: Parity::Even,
@@ -413,12 +438,10 @@ impl HalfMultivector {
                 let b = other.components[j];
                 let index = component_table[i][j];
                 let sign = sign_table[i][j] as f64;
-                /*
                 // helpful for debugging
                 if a != 0.0 && b != 0.0 {
                     println!("result[{}] = {}*{}*{} = {}, [{}][{}]", index, sign, a, b, sign * a * b, i, j);
                 }
-                */
                 result[index] += sign * a * b;
             }
         }
@@ -441,9 +464,7 @@ impl HalfMultivector {
 
     pub fn sandwich_product(&self, other: &Self) -> Self {
         let reverse = self.reverse();
-        let mut result = self.geometric_product(&other).geometric_product(&reverse);
-        result.tighten();
-        result
+        self.geometric_product(&other).geometric_product(&reverse)
     }
 
     /*
@@ -516,22 +537,38 @@ impl HalfMultivector {
         Vec3::new(x as f32, y as f32, z as f32)
     }
 
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn almost_equal(&self, other: &Self, epsilon: f64) -> bool {
         if self.parity != other.parity {
+            println!("parity doesn't match!");
             return false;
         }
 
         if self.start_index != other.start_index {
+            println!(
+                "start index doesn't match! {}, {}",
+                self.start_index,
+                other.start_index
+            );
             return false;
         }
 
         if self.end_index != other.end_index {
+            println!(
+                "end index doesn't match! {}, {}",
+                self.end_index,
+                other.end_index
+            );
             return false;
         }
 
         for i in SCALAR_START..BIVECTOR_END {
             if !((self.components[i] - other.components[i]).abs() < epsilon) {
+                println!(
+                    "components don't match! {:?}, {:?}",
+                    self.components,
+                    other.components
+                );
                 return false;
             }
         }
@@ -627,14 +664,14 @@ mod tests {
 
     #[test]
     fn test_rotation() {
-        let rotation = HalfMultivector::rotation(0.0, 0.0, 1.0, PI);
-
-        let half_angle = 0.5 * PI;
+        // clockwise rotation about the z axis
+        let rotation = HalfMultivector::rotation(0.0, 0.0, 1.0, PI/2.0);
+        let half_angle = -0.25 * PI;
         let c = half_angle.cos();
         let s = half_angle.sin();
         let expected = HalfMultivector::even(
             [
-                c, 
+                c,
                 0.0, 0.0, 0.0, 0.0, 0.0, 
                 s, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
@@ -645,33 +682,149 @@ mod tests {
     }
 
     #[test]
-    fn test_product_even_even() {
-        let left = HalfMultivector::even(
+    fn test_cycle_axes() {
+        // rotate 120 degrees CCW along the x+y+z direction.
+        // This will cycle the axes x -> y -> z -> x
+        let rotation = HalfMultivector::rotation(1.0, 1.0, 1.0, 2.0 * PI / 3.0);
+
+        let c = 0.5; // cos(-2pi/3) = 1/2
+        let s = -0.5; // sin(-2pi/3)/sqrt(3) = sqrt(3)/2/sqrt(3) = -1/2
+        let expected = HalfMultivector::even(
             [
-                1.0, 
-                0.0, 0.0, 0.0, 0.0, 1.0, 
-                0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                c,
+                0.0, 0.0, 0.0, 0.0, 0.0, 
+                s, -s, 0.0, 0.0, s, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
             0,
             11
         );
-        let right = HalfMultivector::even(
+        assert!(rotation.almost_equal(&expected, 1e-9));
+    }
+
+    #[test]
+    fn test_product_even_even() {
+        let left = HalfMultivector::even(
             [
-                2.0,
-                0.0, 0.0, 2.0, 0.0, 0.0,
-                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
             ],
             0,
-            7
+            16
+        );
+        let right = HalfMultivector::even(
+            [
+                1.0,
+                2.0, 3.0, 4.0, 5.0, 6.0,
+                7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            ],
+            0,
+            16
         );
         let expected = HalfMultivector::even(
             [
-                2.0, 
-                0.0, -2.0, 2.0, 0.0, 2.0, 
-                1.0, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, -1.0, -2.0, 0.0,
+                -14.0,
+                30.0, 30.0, 26.0, 30.0, 30.0, 
+                26.0, 30.0, -22.0, -14.0, 30.0, 26.0, 26.0, 30.0, 30.0, -22.0,
             ],
             0,
-            15
+            16
+        );
+        assert_eq!(left.geometric_product(&right), expected);
+    }
+
+    #[test]
+    fn test_product_even_odd() {
+        let left = HalfMultivector::even(
+            [
+                1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ],
+            0,
+            16
+        );
+        let right = HalfMultivector::odd(
+            [
+                1.0,
+                2.0, 3.0, 4.0, 5.0, 6.0,
+                7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            ],
+            0,
+            16
+        );
+        let expected = HalfMultivector::odd(
+            [
+                30.0,
+                14.0, 26.0, -30.0, -22.0, -14.0, 
+                -30.0, 26.0, -30.0, -30.0, 22.0, 30.0, 30.0, -26.0, -26.0, 30.0,
+            ],
+            0,
+            16
+        );
+        assert_eq!(left.geometric_product(&right), expected);
+    }
+
+    #[test]
+    fn test_product_odd_odd() {
+        let left = HalfMultivector::odd(
+            [
+                1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ],
+            0,
+            16
+        );
+        let right = HalfMultivector::odd(
+            [
+                1.0,
+                2.0, 3.0, 4.0, 5.0, 6.0,
+                7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            ],
+            0,
+            16
+        );
+        let expected = HalfMultivector::even(
+            [
+                14.0,
+                -30.0, -30.0, 26.0, -30.0, 30.0, 
+                26.0, -30.0, -22.0, -14.0, 30.0, -26.0, -26.0, 30.0, 30.0, 22.0,
+            ],
+            0,
+            16
+        );
+        assert_eq!(left.geometric_product(&right), expected);
+    }
+
+    #[test]
+    fn test_product_odd_even() {
+        let left = HalfMultivector::odd(
+            [
+                1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ],
+            0,
+            16
+        );
+        let right = HalfMultivector::even(
+            [
+                1.0,
+                2.0, 3.0, 4.0, 5.0, 6.0,
+                7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            ],
+            0,
+            16
+        );
+        let expected = HalfMultivector::odd(
+            [
+                30.0,
+                -14.0, 26.0, 30.0, -22.0, -14.0, 
+                30.0, 26.0, 30.0, 30.0, -22.0, 30.0, 30.0, 26.0, 26.0, 30.0,
+            ],
+            0,
+            16
         );
         assert_eq!(left.geometric_product(&right), expected);
     }
@@ -741,22 +894,46 @@ mod tests {
 
     #[test]
     fn test_rotation_xform() {
-        let xform = HalfMultivector::rotation(0.0, 0.0, 0.0, 0.5 * PI);
-        println!("{:?}", xform);
+        let xform = HalfMultivector::rotation(0.0, 0.0, 1.0, 0.5 * PI);
         let point = HalfMultivector::point(1.0, 0.0, 0.0);
         let expected = HalfMultivector::point(0.0, 1.0, 0.0);
 
-        assert_eq!(xform.sandwich_product(&point), expected);
+        let result = xform.sandwich_product(&point);
+        assert!(result.almost_equal(&expected, 1e-9));
     }
 
-    /*
-
     #[test]
-    fn test_scale_translate() {
-        let scale = HalfMultivector::scale(0.5);
-        let translate = HalfMultivector::translation(1.0, 0.0, 0.0);
-        let xform = translate.geometric_product(scale);
-        let point = 
+    fn test_cycle_axes_xform() {
+        // rotate 120 degrees CCW along the x+y+z direction.
+        // This will cycle the axes x -> y -> z -> x
+        let xform = HalfMultivector::rotation(1.0, 1.0, 1.0, 2.0 * PI / 3.0);
+        let x = HalfMultivector::point(1.0, 0.0, 0.0);
+        let y = HalfMultivector::point(0.0, 1.0, 0.0);
+        let z = HalfMultivector::point(0.0, 0.0, 1.0);
+        let zero = HalfMultivector::point(0.0, 0.0, 0.0);
 
-    }*/
+        let mut rot_x = xform.sandwich_product(&x);
+        rot_x.expect_vector();
+        let mut rot_y = xform.sandwich_product(&y);
+        rot_y.expect_vector();
+        let mut rot_z = xform.sandwich_product(&z);
+        rot_z.expect_vector();
+        let mut rot_zero = xform.sandwich_product(&zero);
+        rot_zero.expect_vector();
+
+        // homogenize the rotation results
+        //rot_x.homogenize();
+        //rot_y.homogenize();
+        //rot_z.homogenize();
+        //rot_zero.homogenize();
+
+        println!("R(x): {:?}\ny: {:?}", rot_x, y);
+        println!("R(y): {:?}\nz: {:?}", rot_y, z);
+        println!("R(z): {:?}\nx: {:?}", rot_z, x);
+
+        assert!(rot_x.almost_equal(&y, 1e-9));
+        assert!(rot_y.almost_equal(&z, 1e-9));
+        assert!(rot_z.almost_equal(&x, 1e-9));
+        assert!(rot_zero.almost_equal(&zero, 1e-9));
+    }
 }
