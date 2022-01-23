@@ -440,7 +440,7 @@ impl HalfMultivector {
                 let sign = sign_table[i][j] as f64;
                 // helpful for debugging
                 if a != 0.0 && b != 0.0 {
-                    println!("result[{}] = {}*{}*{} = {}, [{}][{}]", index, sign, a, b, sign * a * b, i, j);
+                    println!("result[{}] = {}*{}*{} = {}, a[{}] b[{}]", index, sign, a, b, sign * a * b, i, j);
                 }
                 result[index] += sign * a * b;
             }
@@ -788,7 +788,7 @@ mod tests {
         let expected = HalfMultivector::even(
             [
                 14.0,
-                -30.0, -30.0, 26.0, -30.0, 30.0, 
+                30.0, -30.0, 26.0, -30.0, -30.0, 
                 26.0, -30.0, -22.0, -14.0, 30.0, -26.0, -26.0, 30.0, 30.0, 22.0,
             ],
             0,

@@ -12,16 +12,18 @@ EVEN_COMPONENTS = [
     e12, e13, e14, e15, e23, e24, e25, e34, e35, e45
 ]
 
-right_even = sum((i + 1) * x for (i, x) in enumerate(EVEN_COMPONENTS))
-right_odd = sum((i + 1) * x for (i, x) in enumerate(ODD_COMPONENTS))
+right_even = [(i + 1) * x for (i, x) in enumerate(EVEN_COMPONENTS)]
+right_odd = [(i + 1) * x for (i, x) in enumerate(ODD_COMPONENTS)]
 
-def test_product(left_components, right):
-    # to see all 256 terms, apply the multiplication component by component
-    for x in left_components:
-        print(x, "   ", x * right)
+def test_product(left_components, right_components):
+    # Do the product component-wise and format the output in a similar manner to
+    # the println!() output to make it easier to spot-check
+    for (i, a) in enumerate(left_components):
+        for (j, b) in enumerate(right_components):
+            print(f"result = {a} * {b} = {a * b}, a[{i}] b[{j}]")
     
     # also print the product
-    print("product", sum(left_components) * right)
+    print("product", sum(left_components) * sum(right_components))
 
 print("\ntesting odd * even ===================")
 test_product(ODD_COMPONENTS, right_even)

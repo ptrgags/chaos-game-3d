@@ -1,2 +1,3 @@
 __pycache__
-product.txt
+# stdout of geometric product testing for easier comparison
+product*.txt
