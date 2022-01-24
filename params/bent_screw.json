@@ -1,0 +1,35 @@
+{
+    "id": "bent_screw",
+    "name": "Bent Screw",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "xstart": [1.1, 0.0, 0.0],
+        "xend": [2, 0, 0],
+        "dims": [1, 5, 0.01],
+        "center": [-1, 0, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 10
+    },
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 10
+    },
+    "initial_set_copies": 10,
+    "iters": 1000,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+                ["poloidal", 1, 0, 0, 90],
+                ["rotate", 0, 0, 1, 30],
+                ["translate", 0, 0, 0.3],
+                ["poloidal", -1, 0, 0, 90]
+            ]],
+            ["+inverse"]
+        ]
+    }
+}

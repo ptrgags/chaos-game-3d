@@ -24,7 +24,7 @@
             ["chain", [
                 ["translate", -1, 0, 0],
                 ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
+                ["reflect", 1, 0, 0],
                 ["invert"],
                 ["translate", -1, 0, 0],
 
@@ -33,14 +33,14 @@
 
                 ["translate", 1, 0, 0],
                 ["invert"],
-                ["reflect_vec", 1, 0, 0],
+                ["reflect", 1, 0, 0],
                 ["scale", 2],
                 ["translate", 1, 0, 0]
             ]],
             ["chain", [
                 ["translate", -1, 0, 0],
                 ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
+                ["reflect", 1, 0, 0],
                 ["invert"],
                 ["translate", -1, 0, 0],
 
@@ -49,7 +49,7 @@
 
                 ["translate", 1, 0, 0],
                 ["invert"],
-                ["reflect_vec", 1, 0, 0],
+                ["reflect", 1, 0, 0],
                 ["scale", 2],
                 ["translate", 1, 0, 0]
             ]]

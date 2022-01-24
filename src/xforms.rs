@@ -91,6 +91,14 @@ fn get_versor(versor_desc: &JsonValue) -> HalfMultivector {
                 panic!("should be [\"rotate\", axis_x, axis_y, axis_z, theta_deg]")
             }
         },
+        "poloidal" => {
+            if let [x, y, z, theta_deg] = &parameters[..] {
+                let angle = *theta_deg * PI / 180.0;
+                HalfMultivector::poloidal(*x, *y, *z, angle)
+            } else {
+                panic!("should be [\"poloidal\", axis_x, axis_y, axis_z, theta_deg]")
+            }
+        },
         "scale" => {
             if let [k] = &parameters[..] {
                 HalfMultivector::scale(*k)
@@ -129,6 +137,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Xform {
         "identity",
         "translate",
         "rotate",
+        "poloidal",
         "scale",
         "reflect",
     ];
@@ -139,6 +148,7 @@ pub fn from_json(xform_desc: &JsonValue) -> Xform {
         "identity" | 
         "translate" | 
         "rotate" | 
+        "poloidal" |
         "reflect" |
         "scale" => Xform::new(get_versor(xform_desc)),
         _ => panic!("xforms: xform type must be one of {:?}", valid_names)

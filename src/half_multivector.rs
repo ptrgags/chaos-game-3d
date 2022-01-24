@@ -322,6 +322,42 @@ impl HalfMultivector {
         }
     }
 
+    /// Perform a high-dimensional toroidal rotation by rotating in
+    /// a plane formed by the wedge of a real vector and the plus vector.
+    /// this moves points around a fixed ring in the poloidal direction of
+    /// a torus, similar to a vortex ring. The axis represents the direction
+    /// of the line through the center of the fixed ring.
+    pub fn poloidal(x: f64, y: f64, z: f64, angle_rad: f64) -> Self {
+        // compute cos(-theta/2) and sin(-theta/2)
+        // The angle is halved since rotations are applied in 
+        // a sandwich: R * v * ~R
+        // The angle is negated to make the rotation the typical
+        // counter-clockwise convention.
+        let half_angle = -0.5 * angle_rad;
+        let c = half_angle.cos();
+        let s = half_angle.sin();
+
+        // Normalize the axis vector so we don't introduce any
+        // scaling.
+        let magnitude = (x * x + y * y + z * z).sqrt();
+        if magnitude == 0.0 {
+            panic!("can't rotate around null vector");
+        }
+        let normalization_factor = 1.0 / magnitude;
+
+        let mut components = [0.0; 16];
+        components[SCALAR] = c;
+        components[XP] = s * x * normalization_factor;
+        components[YP] = s * y * normalization_factor;
+        components[ZP] = s * z * normalization_factor;
+        Self {
+            components,
+            parity: Parity::Even,
+            start_index: SCALAR_START,
+            end_index: ZP + 1
+        }
+    }
+
     pub fn scale(scale_factor: f64) -> Self {
         let half_log_scale = scale_factor.ln() / 2.0;
         let c = half_log_scale.cosh();

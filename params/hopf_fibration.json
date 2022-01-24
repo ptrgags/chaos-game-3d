@@ -1,0 +1,32 @@
+{
+    "id": "hopf_fibration",
+    "name": "Hopf Fibration",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "xstart": [1.1, 0.0, 0.0],
+        "xend": [2, 0, 0],
+        "dims": [0.8, 0.8, 0.01],
+        "center": [0, 0, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 1
+    },
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 8
+    },
+    "initial_set_copies": 100,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+                ["poloidal", 0, 0, 1, 5],
+                ["rotate", 0, 0, 1, 5]
+            ]]
+        ]
+    }
+}
