@@ -149,7 +149,22 @@ reload_button.addEventListener('click', () => {
     set_model(model_id);
 });
 
-set_model('sierpinski');
+function make_dropdown_option(fractal) {
+    const option = document.createElement("option");
+    option.textContent = fractal.name;
+    option.value = fractal.id;
+    model_select.appendChild(option);
+}
+
+fetch("./fractals.json")
+    .then((response) => response.json())
+    .then((json) => {
+        for (const fractal of json.fractals) {
+            make_dropdown_option(fractal);
+        }
+        model_select.dispatchEvent(new Event("change"));
+    });
+
 configure_camera();
 init_reference_geometry();
 
