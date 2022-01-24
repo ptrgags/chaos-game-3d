@@ -307,3 +307,10 @@ I think adding the `3DTILES_metadata` extension will be helpful here.
 The past couple days I wrapped up the 3D Tiles Next stuff and updated most of
 the parameter files to include an id and name. There's a few I didn't get to,
 but I'll handle those later when I go to make a script to index the files.
+
+## 2022-01-24 Automatically populate the UI
+
+This morning I added a script, `viewer/make_index.py` that looks through the
+tileset directories and puts together an index file, `fractals.json`. This
+is now used by the viewer to populate the dropdown. This way, I don't have
+to edit `index.html` every time I add a new fractal.
