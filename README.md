@@ -27,9 +27,9 @@ Where:
 Viewer:
 
 * Generate fractals in `viewer/<fractal_id>`
-* Run  `python make_index.py` to generate `fractals.json`. This will populate
-  a list of fractals from the tileset JSON files in
-  `viewer/<fractal_id>/tileset.json`. This uses tileset metadata, so only the
-  newer GLB tilesets are supported
+* From the `viewer/` directory, run  `python make_index.py` to generate 
+    `fractals.json`. This is a list of fractal names, IDs and descriptions
+    pulled from the tileset JSON files (`viewer/<fractal_id>/tileset.json`).
+    This only works for newer GLB fractals.
 * Run the `viewer` directory as a static site (e.g. via `http-server` (Node.js)
     or `python -m http.server`)
