@@ -1,6 +1,6 @@
 {
-    "id": "loxodromic",
-    "name": "3D Loxodromic Transformation",
+    "id": "loxodromic_poloidal",
+    "name": "3D Loxodromic Transformation (Poloidal)",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
@@ -27,7 +27,7 @@
                 ["rotate", 0, 0, 1, 15],
                 ["scale", 1.05],
 
-                ["poloidal", 1, 0, 0, -90]
+                ["poloidal", -1, 0, 0, 90]
             ]],
             ["+inverse"]
         ]

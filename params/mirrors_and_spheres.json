@@ -1,0 +1,42 @@
+{
+    "id": "mirrors_and_spheres",
+    "name": "Mirrors and Spheres Tiling",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.3, 0.3, 0.3],
+        "center": [0.1, 0.1, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 1
+    },
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 8
+    },
+    "initial_set_copies": 100,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["reflect", 0, 1, 0],
+            ["chain", [
+                ["rotate", 0, 0, 1, -45],
+                ["reflect", 0, 1, 0],
+                ["rotate", 0, 0, 1, 45]
+            ]],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["reflect", 1, 0, 0],
+                ["translate", 2, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["invert"],
+                ["translate", 2, 0, 0]
+            ]]
+        ]
+    }
+}
