@@ -13,7 +13,6 @@ mod glb_writer;
 mod ifs;
 mod half_multivector;
 mod initial_set;
-//mod multivector;
 mod octrees;
 mod parameters;
 mod plotters;

@@ -1,6 +1,6 @@
 use std::cmp::Eq;
 use std::fmt::{Debug, Formatter, Result};
-use std::f64::consts::PI;
+
 
 use crate::vector::Vec3;
 
@@ -494,23 +494,10 @@ impl HalfMultivector {
         }
     }
 
-    pub fn tighten(&mut self) {
-        self.start_index = find_start(&self.components);
-        self.end_index = find_end(&self.components);
-    }
-
     pub fn sandwich_product(&self, other: &Self) -> Self {
         let reverse = self.reverse();
         self.geometric_product(&other).geometric_product(&reverse)
     }
-
-    /*
-    pub fn length_squared(&self) -> f64 {
-        let p = self.components[P];
-        let n = self.components[N];
-        n + p
-    }
-    */
 
     pub fn expect_vector(&mut self) {
         self.start_index = VECTOR_START;
@@ -527,9 +514,9 @@ impl HalfMultivector {
         // this is equivalent to the coeficient of the origin vector.
         let p = self.components[P];
         let n = self.components[N];
+        // n - p is the coeficient of the origin vector (the scale factor)
+        // n + p is length squared for future reference
         let scale_factor = n - p;
-
-        //println!("{:?}", self);
 
         if scale_factor == 0.0 {
             panic!("null vectors cannot be homogenized!");
@@ -561,8 +548,6 @@ impl HalfMultivector {
         let p = self.components[P];
         let n = self.components[N];
         let scale_factor = n - p;
-
-        //println!("{:?} -- {}", self, scale_factor);
 
         if scale_factor == 0.0 {
             panic!("null vectors cannot be homogenized!");
@@ -648,6 +633,7 @@ impl Debug for HalfMultivector {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::PI;
 
     #[test]
     fn test_identity() {
@@ -957,12 +943,6 @@ mod tests {
         rot_z.expect_vector();
         let mut rot_zero = xform.sandwich_product(&zero);
         rot_zero.expect_vector();
-
-        // homogenize the rotation results
-        //rot_x.homogenize();
-        //rot_y.homogenize();
-        //rot_z.homogenize();
-        //rot_zero.homogenize();
 
         println!("R(x): {:?}\ny: {:?}", rot_x, y);
         println!("R(y): {:?}\nz: {:?}", rot_y, z);
