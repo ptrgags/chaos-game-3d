@@ -4,7 +4,7 @@
     "algorithm": "chaos_sets",
     "plotter": {
         "type": "scatter",
-        "format": "glb",
+        "format": "pnts",
         "node_capacity": 1000,
         "max_depth": 10,
         "radius": 10
@@ -22,37 +22,12 @@
         "chooser": "uniform",
         "xforms": [
             ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
-
-                ["rotate", 1, 0, 0, 0.01],
+                ["poloidal", -1, 0, 0, 90],
+                ["rotate", 1, 0, 0, 3.6],
                 ["scale", 1.01],
-
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
+                ["poloidal", 1, 0, 0, 90]
             ]],
-            ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
-
-                ["scale", 0.99009900990099],
-                ["rotate", -1, 0, 0, 0.01],
-
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
-            ]]
+            ["+inverse"]
         ]
     }
 }
