@@ -68,6 +68,7 @@ fn get_versor(versor_desc: &JsonValue) -> HalfMultivector {
         "identity",
         "translate",
         "rotate",
+        "poloidal",
         "scale",
         "invert",
         "reflect",

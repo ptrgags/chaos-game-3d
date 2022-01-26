@@ -35,8 +35,16 @@ impl Debug for UniformChooser {
 }
 
 
+/// Parse a transformation chooser from the IFS JSON
+/// 
+/// ```text
+/// {
+///     "chooser": "uniform" (default "uniform"),
+///     ...params
+/// }
+/// ```
 pub fn from_json(json: &JsonValue, n: usize) -> Box<dyn Chooser> {
-    let chooser_type = json.as_str().expect("invalid chooser type");
+    let chooser_type = json.as_str().unwrap_or("uniform");
 
     match &chooser_type[..] {
         "uniform" => Box::new(UniformChooser::new(n)),
