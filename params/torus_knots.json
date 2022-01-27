@@ -1,0 +1,30 @@
+{
+    "id": "torus_knots",
+    "name": "Torus Knots",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.5, 0.5, 0.01],
+        "center": [0.0, 0, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 1
+    },
+    "plotter": {
+        "type": "scatter",
+        "format": "glb",
+        "node_capacity": 1000,
+        "max_depth": 10,
+        "radius": 8
+    },
+    "initial_set_copies": 100,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+                ["poloidal", 0, 0, 1, 5],
+                ["rotate", 0, 0, 1, 15]
+            ]]
+        ]
+    }
+}

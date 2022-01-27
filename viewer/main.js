@@ -34,8 +34,8 @@ const customShader = new Cesium.CustomShader({
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
         float id = vsInput.attributes.featureId_0;
-        //vsOutput.pointSize = mix(4.0, 8.0, float(id == 0.0));
-        vsOutput.pointSize = 4.0;
+        vsOutput.pointSize = mix(4.0, 8.0, float(id == 0.0));
+        //vsOutput.pointSize = 4.0;
     }
     `,
     fragmentShaderText: `
