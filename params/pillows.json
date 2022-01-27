@@ -1,0 +1,25 @@
+{
+    "id": "pillows",
+    "name": "Pillows",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [2, 0.01, 2],
+        "center": [0, 2, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 1000
+    },
+    "plotter": {
+        "node_capacity": 1000,
+        "radius": 4
+    },
+    "initial_set_copies": 4,
+    "iters": 100,
+    "ifs": {
+        "xforms": [
+            ["poloidal", 1, 0, 0, 90],
+            ["poloidal", 0, 1, 0, 90],
+            ["poloidal", 0, 0, 1, 90]
+        ]
+    }
+}
