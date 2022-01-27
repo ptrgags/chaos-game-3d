@@ -1,23 +1,23 @@
 {
-    "id": "mirrors_and_spheres",
-    "name": "Mirrors and Spheres Tiling",
+    "id": "seaweed",
+    "name": "Seaweed",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
-        "dims": [0.3, 0.3, 0.3],
-        "center": [0.1, 0.1, 0],
+        "dims": [0.3, 0.3, 1.0],
+        "center": [1, 0.3, 0],
         "color": [0.3, 0.8, 0.4],
-        "num_points": 1
+        "num_points": 10
     },
     "plotter": {
         "type": "scatter",
         "format": "glb",
         "node_capacity": 1000,
         "max_depth": 10,
-        "radius": 8
+        "radius": 20
     },
-    "initial_set_copies": 100,
-    "iters": 100,
+    "initial_set_copies": 5,
+    "iters": 10000,
     "ifs": {
         "chooser": "uniform",
         "xforms": [
@@ -36,7 +36,9 @@
                 ["translate", -2, 0, 0],
                 ["invert"],
                 ["translate", 2, 0, 0]
-            ]]
+            ]],
+            ["translate", 0, 0, 1],
+            ["+inverse"]
         ]
     }
 }
