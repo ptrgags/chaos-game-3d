@@ -53,7 +53,7 @@ impl ScatterPlot {
     ///     "type": "scatter",
     ///     "format": "pnts" | "glb" (default "glb"),
     ///     "max_depth": d (default 10),
-    ///     "node_capacity: n,
+    ///     "node_capacity: n (default 5000),
     ///     "radius": r,
     /// }
     pub fn from_json(json: &JsonValue) -> Self {
@@ -67,9 +67,7 @@ impl ScatterPlot {
         };
 
         let max_depth = json["max_depth"].as_u8().unwrap_or(10);
-        let capacity = json["node_capacity"]
-            .as_usize()
-            .expect("node_capacity must be a positive integer");
+        let capacity = json["node_capacity"].as_usize().unwrap_or(5000);
         let radius = json["radius"]
             .as_f32()
             .expect("radius must be a float");

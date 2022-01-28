@@ -10,16 +10,11 @@
         "num_points": 1
     },
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 8
     },
     "initial_set_copies": 100,
     "iters": 100,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["reflect", 0, 1, 0],
             ["chain", [

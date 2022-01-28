@@ -4,10 +4,6 @@
     "description": "Logarithmic spirals (rotation + uniform scale) but in 3D.",
     "algorithm": "chaos_sets",
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 10
     },
     "initial_set": {
@@ -22,7 +18,6 @@
     "initial_set_copies": 10,
     "iters": 1000,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["rotate", 0, 0, 1, 0.01],

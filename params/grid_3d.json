@@ -4,10 +4,6 @@
     "description": "a 3D grid, created by taking many cubes and moving them via a random walk in all 6 directions",
     "algorithm": "chaos_sets",
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 25
     },
     "initial_set": {
@@ -20,7 +16,6 @@
     "initial_set_copies": 20,
     "iters": 100,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["translate",  2,  0,  0],
             ["translate", -2,  0,  0],
@@ -28,12 +23,6 @@
             ["translate",  0, -2,  0],
             ["translate",  0,  0,  2],
             ["translate",  0,  0, -2]
-        ]
-    },
-    "color_ifs": {
-        "chooser": "uniform",
-        "xforms": [
-            ["identity"]
         ]
     }
 }

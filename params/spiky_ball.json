@@ -4,10 +4,6 @@
     "description": "Totating in two directions at once often leads to covering the whole sphere",
     "algorithm": "chaos_sets",
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 2
     },
     "initial_set": {
@@ -20,14 +16,12 @@
     "initial_set_copies": 4,
     "iters": 250,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
-            ["rotate", 0, 0, 1, 90],
-            ["rotate", 1, 0, 0, 0]
+            ["rotate", 0, 0, 1, 45],
+            ["rotate", 1, 0, 0, 45]
         ]
     },
     "color_ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["reflect", 0, 0, 1],

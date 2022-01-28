@@ -10,7 +10,6 @@
         "num_points": 1000
     },
     "plotter": {
-        "node_capacity": 1000,
         "radius": 4
     },
     "initial_set_copies": 4,
