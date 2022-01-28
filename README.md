@@ -14,15 +14,17 @@ the output.
 Generating fractals:
 
 ```
-cargo run PARAMETER_FILE OUTPUT_DIRECTORY
+cargo run PARAMETER_FILE
 ```
 
 Where: 
 
 * PARAMTER_FILE is a JSON file describing the fractal (see the `params/`
     directory for examples)
-* OUTPUT_DIRECTORY is the name of the directory where the tileset will be
-    created. This directory will be created as needed.
+
+The script will create a new directory `viewer/<fractal_id>` containing the
+fractal as a 3D Tiles tileset. The fractal ID comes from the `id` property
+from the paramters JSON file.
 
 Viewer:
 
