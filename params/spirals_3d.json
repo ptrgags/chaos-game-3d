@@ -20,7 +20,7 @@
     "ifs": {
         "xforms": [
             ["chain", [
-                ["rotate", 0, 0, 1, 0.01],
+                ["rotate", 0, 0, 1, 3.6],
                 ["scale", 1.01]
             ]],
             ["+inverse"]

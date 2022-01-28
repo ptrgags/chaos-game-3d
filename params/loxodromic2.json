@@ -1,4 +1,6 @@
 {
+    "id": "loxodromic2",
+    "name": "Another Loxodromic Transformation",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",

@@ -9,8 +9,8 @@
     "initial_set": {
         "color": [0.8, 0.4, 0.2],
         "type": "line",
-        "start": [1.1, -50, 50],
-        "end": [1.1, 50, -50],
+        "start": [1.0, -10, 10],
+        "end": [1.0, 10, -10],
         "num_points": 500
     },
     "initial_set_copies": 10,

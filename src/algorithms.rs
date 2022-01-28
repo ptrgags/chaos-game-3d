@@ -14,7 +14,7 @@ pub trait Algorithm {
     /// Perform the main iterations of the algorithm
     fn iterate(&mut self);
     /// Save the file to disk
-    fn save(&mut self, fname: &str);
+    fn save(&mut self);
     /// Get the complexity of the algorithm measured by number of points in
     /// the output tileset.
     fn complexity(&self) -> usize;
@@ -112,8 +112,9 @@ impl Algorithm for ChaosGame {
         }
     }
 
-    fn save(&mut self, fname: &str) {
-        self.output.save(fname, &self.metadata);
+    fn save(&mut self) {
+        let fname = format!("./viewer/{}", self.metadata.id);
+        self.output.save(&fname, &self.metadata);
     }
 
     /// The complexity of the basic chaos game is O(n) where n is the number
@@ -238,8 +239,9 @@ impl Algorithm for ChaosSets {
         }
     }
 
-    fn save(&mut self, fname: &str) {
-        self.output.save(fname, &self.metadata);
+    fn save(&mut self) {
+        let fname = format!("./viewer/{}", self.metadata.id);
+        self.output.save(&fname, &self.metadata);
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 
