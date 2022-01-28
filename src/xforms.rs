@@ -39,7 +39,13 @@ impl Xform {
 
     pub fn transform(&self, point: &HalfMultivector) -> HalfMultivector {
         let mut product = self.versor.sandwich_product(point);
+        // often multiplication produces almost-zero components, but the
+        // result will always be a vector since I'm only ever transforming
+        // points.
         product.expect_vector();
+        // Some transformations introduce a scaling factor, divide it out
+        // (much like the w component of homongeneous coordinates in traditional
+        // computer graphics)
         product.homogenize();
         product
     }
