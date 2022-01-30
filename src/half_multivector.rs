@@ -1,15 +1,19 @@
 use std::cmp::Eq;
 use std::fmt::{Debug, Formatter, Result};
 
-
 use crate::vector::Vec3;
 
+/// The parity of a half-multivector, i.e. is the number of blades in each
+/// component even (scalar = 0, bivector = 2, quadvector = 4) or odd
+/// (vector = 1, trivector = 3, 5-vector = 5)?
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Parity {
     Even,
     Odd
 }
 
+/// the geometric product will be even if the parities match, and
+/// odd if the parities are opposite
 fn get_product_parity(left: &Parity, right: &Parity) -> Parity {
     if left == right {
         Parity::Even
@@ -99,6 +103,9 @@ const COMPONENTS_EVEN_EVEN: ComponentLUT = [
     [PN, YZ, XZ, XY, XYZP, XYZN, XYPN, XZPN, XN, XP, YZPN, YN, YP, ZN, ZP, SCALAR],
 ];
 
+// Due to symmetries in the multiplication table between the elements and their
+// duals, the even-even and odd-odd quarters of the table have the same
+// components (even though the signs are not the same, see below)
 const COMPONENTS_ODD_ODD: ComponentLUT = COMPONENTS_EVEN_EVEN;
 
 const COMPONENTS_EVEN_ODD: ComponentLUT = [
@@ -120,8 +127,13 @@ const COMPONENTS_EVEN_ODD: ComponentLUT = [
     [XYZ, XPN, YPN, ZPN, N, P, Z, Y, YZP, YZN, X, XZP, XZN, XYP, XYN, XYZPN],
 ];
 
+// Due to symmetries in the multiplication table between the elements and their
+// duals, the even-odd and odd-even quarters of the table have the same
+// components (even though the signs are not the same, see below)
 const COMPONENTS_ODD_EVEN: ComponentLUT = COMPONENTS_EVEN_ODD;
 
+/// Given the parity of two vectors to be multiplied, get the correct
+/// look-up table for the product, as I store them in quadrants.
 fn get_component_table(left: &Parity, right: &Parity) -> ComponentLUT {
     match (left, right) {
         (Parity::Even, Parity::Even) => COMPONENTS_EVEN_EVEN,
@@ -209,6 +221,8 @@ const SIGNS_ODD_EVEN: SignLUT = [
     [1, -1,  1, -1, -1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, 1],
 ];
 
+/// Given the parity of two vectors to be multiplied, get the correct
+/// look-up table for the product, as I store them in quadrants.
 fn get_sign_table(left: &Parity, right: &Parity) -> SignLUT {
     match (left, right) {
         (Parity::Even, Parity::Even) => SIGNS_EVEN_EVEN,
@@ -218,6 +232,7 @@ fn get_sign_table(left: &Parity, right: &Parity) -> SignLUT {
     }
 }
 
+/// Find the first non-zero component
 fn find_start(array: &[f64]) -> usize {
     match array.iter().position(|&x| x != 0.0) {
         Some(index) => index,
@@ -225,6 +240,7 @@ fn find_start(array: &[f64]) -> usize {
     }
 }
 
+/// Find the last non-zero component
 fn find_end(array: &[f64]) -> usize {
     match array.iter().rposition(|&x| x != 0.0) {
         Some(index) => index + 1,
@@ -232,6 +248,14 @@ fn find_end(array: &[f64]) -> usize {
     }
 }
 
+/// A multivector in 3D CGA has 32 components. However, I noticed that for
+/// spatial transformations, you only ever use all odd or all even components
+/// So I only store a half at a time by parity.
+/// 
+/// For example, rotations and most other conformal transformations are even
+/// transformations (often a scalar + bivector) while reflections and most
+/// other anti-conformal (preserves angles but not orientation) are even
+/// (often just a vector)
 #[derive(Clone, PartialEq)]
 pub struct HalfMultivector {
     components: [f64; 16],
@@ -268,6 +292,7 @@ impl HalfMultivector {
         }
     }
 
+    /// The do-nothing operation
     pub fn identity() -> Self {
         let mut components = [0.0; 16];
         components[SCALAR] = 1.0;
@@ -358,6 +383,7 @@ impl HalfMultivector {
         }
     }
 
+    /// Uniform scaling
     pub fn scale(scale_factor: f64) -> Self {
         let half_log_scale = scale_factor.ln() / 2.0;
         let c = half_log_scale.cosh();
@@ -374,6 +400,7 @@ impl HalfMultivector {
         }
     }
 
+    /// translation along the vector (x, y, z)
     pub fn translation(x: f64, y: f64, z: f64) -> Self {
         let hx = 0.5 * x;
         let hy = 0.5 * y;
@@ -398,6 +425,7 @@ impl HalfMultivector {
         }
     }
 
+    /// Reflection in a plane with unit normal (nx, ny, nz)
     pub fn reflection(nx: f64, ny: f64, nz: f64) -> Self {
         let mut components = [0.0; 16];
         components[X] = nx;
@@ -411,6 +439,10 @@ impl HalfMultivector {
         }
     }
 
+    /// Sphere inversion maps points to points with a reciprocal distance from
+    /// the origin. This swaps 0 and infinity. 
+    /// This is an anti-conformal operation (preserves angles but not 
+    /// orientation)
     pub fn inversion() -> Self {
         let mut components = [0.0; 16];
         components[P] = 1.0;
@@ -422,12 +454,15 @@ impl HalfMultivector {
         }
     }
 
+    /// convert a point v = (x, y, z) into its higher-dimensional
+    /// representation P = v + 1/2 v^2 inf + origin. I've seen this notated
+    /// as up()
     pub fn point(x: f64, y: f64, z: f64) -> Self {
         let mag_sqr = x * x + y * y + z * z;
         
-        // x + 1/2x^2 inf + origin
-        // x + 1/2x^2 (n + p) + 1/2(n - p)
-        // x + 1/2(x^2 + 1)n + 1/2(x^2 - 1)p
+        // v + 1/2v^2 inf + origin
+        // v + 1/2v^2 (n + p) + 1/2(n - p)
+        // v + 1/2(v^2 + 1)n + 1/2(v^2 - 1)p
         let n = 0.5 * (mag_sqr + 1.0);
         let p = 0.5 * (mag_sqr - 1.0);
 
@@ -445,6 +480,11 @@ impl HalfMultivector {
         }
     }
 
+    /// Reverse the order of blades. in 3D CGA, this negates any bivector
+    /// and trivector components while leaving everything else the same
+    /// 
+    /// For versors (unit-length multivectors), the reverse is equal to the
+    /// inverse
     pub fn reverse(&self) -> Self {
         let mut components = self.components.clone();
 
@@ -463,6 +503,9 @@ impl HalfMultivector {
         }
     }
 
+    /// Perform the geometric product ab between two half multivectors a and b.
+    /// The result is also a half-multivector, even when the two inputs match
+    /// in parity and odd when they inputs have opposite parity.
     pub fn geometric_product(&self, other: &Self) -> Self {
         let sign_table = get_sign_table(&self.parity, &other.parity);
         let component_table = get_component_table(&self.parity, &other.parity);
@@ -494,16 +537,27 @@ impl HalfMultivector {
         }
     }
 
+    /// Multiply self * other * ~self. This is how transformations are
+    /// always applied in 3D CGA
     pub fn sandwich_product(&self, other: &Self) -> Self {
         let reverse = self.reverse();
         self.geometric_product(&other).geometric_product(&reverse)
     }
 
+    /// Sometimes near-zero components appear when performing geometric product.
+    /// Instead of wasting cycles setting them to zero, just move the start
+    /// and end pointers to the 5 vector components.
+    /// 
+    /// Since this program only ever transforms points -> points, this is
+    /// intended to be run after sandwich_product()
     pub fn expect_vector(&mut self) {
         self.start_index = VECTOR_START;
         self.end_index = VECTOR_END;
     }
 
+    /// Multiplying a point by a scalar produces the same point, so divide
+    /// it out to produce a homogeneous vector. This is essentially the same
+    /// thing as dividing by the w component in traditional computer graphics.
     pub fn homogenize(&mut self) {
         if self.parity != Parity::Odd {
             panic!("homogenize: Vectors must have odd parity!");
