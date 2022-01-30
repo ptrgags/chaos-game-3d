@@ -9,6 +9,21 @@ This program can be used to generate fractals using the Chaos Game as a
 The `viewer/` subdirectory contains a small static page one can use to view
 the output.
 
+### Gallery
+
+These images correspond to some of the parameter files found in `params/`
+
+|||
+|---|---|
+| `sierpinski` | `conjugated_sierpinski` |
+| ![Sierpinski Tetrahedron](figures/sierpinski.png) | ![Bent Sierpinski Tetrahedron](figures/conjugated_sierpinski.png) |
+| `grid_3d` | `seaweed` |
+| ![3D Grid](figures/grid_3d.png) | ![Seaweed tiling](figures/seaweed.png) |
+| `loxodromic` | `pillows` |
+| ![Loxodromic transformation](figures/loxodromic.png) | ![Pillows](figures/pillows.png) |
+| `hopf_fibration` | `torus_knots` |
+| ![Hopf Fibration](figures/hopf_fibration.png) | ![Torus Knots](figures/torus_knots.png) |
+
 ### Usage
 
 Generating fractals:
