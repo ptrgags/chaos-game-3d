@@ -1,6 +1,7 @@
 {
     "id": "hopf_fibration",
     "name": "Hopf Fibration",
+    "description": "like torus_knots, but with the angles matching. This creates an infinite number of interlocking circles",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",

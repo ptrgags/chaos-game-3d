@@ -1,6 +1,7 @@
 {
     "id": "bent_screw",
     "name": "Bent Screw",
+    "description": "Screw motion is rotation combined with translation along the axis. If you use a poloidal rotation to bend the axis around a unit circle, you get an interesting twisty shape.",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",

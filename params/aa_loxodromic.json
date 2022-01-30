@@ -1,6 +1,7 @@
 {
     "id": "aa_loxodromic",
     "name": "Axis-aligned Loxodromic",
+    "description": "Loxodromic transformation (scale and rotation conjugated by a poloidal rotation), but this time the rotation axis is the same axis as the poloidal rotation",
     "algorithm": "chaos_sets",
     "plotter": {
         "radius": 10

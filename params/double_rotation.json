@@ -1,6 +1,7 @@
 {
     "id": "double_rotation",
     "name": "Double Rotation",
+    "description": "Since a poloidal rotation only uses one of the 3D axes, you are free to rotate in the other two. This causes points to spiral around like a torus knot",
     "algorithm": "chaos_sets",
     "plotter": {
         "radius": 10
