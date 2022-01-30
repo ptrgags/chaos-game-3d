@@ -926,6 +926,16 @@ mod tests {
     }
 
     #[test]
+    fn test_inversion_xform() {
+        let xform = HalfMultivector::inversion();
+        let point = HalfMultivector::point(2.0, 0.0, 0.0);
+        let expected = HalfMultivector::point(0.5, 0.0, 0.0);
+        let mut result = xform.sandwich_product(&point);
+        result.homogenize();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
     fn test_cycle_axes_xform() {
         // rotate 120 degrees CCW along the x+y+z direction.
         // This will cycle the axes x -> y -> z -> x

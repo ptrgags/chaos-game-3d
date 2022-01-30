@@ -1,0 +1,41 @@
+{
+    "id": "tangent_spheres",
+    "name": "Reflections in tangent spheres",
+    "algorithm": "chaos_sets",
+    "plotter": {
+        "radius": 4
+    },
+    "initial_set": {
+        "type": "box",
+        "center": [0, 0, 0],
+        "dims": [0.1, 8.0, 0.1],
+        "color": [0.5, 0.3, 0.1],
+        "num_points": 100
+    },
+    "initial_set_copies": 5,
+    "iters": 1000,
+    "ifs": {
+        "xforms": [
+            ["chain", [
+                ["translate", -1, 0, -1],
+                ["invert"],
+                ["translate", 1, 0, 1]
+            ]],
+            ["chain", [
+                ["translate", 1, 0, -1],
+                ["invert"],
+                ["translate", -1, 0, 1]
+            ]],
+            ["chain", [
+                ["translate", 1, 0, 1],
+                ["invert"],
+                ["translate", -1, 0, -1]
+            ]],
+            ["chain", [
+                ["translate", -1, 0, 1],
+                ["invert"],
+                ["translate", 1, 0, -1]
+            ]]
+        ]
+    }
+}
