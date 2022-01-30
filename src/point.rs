@@ -1,5 +1,5 @@
 use crate::vector::Vec3;
-use crate::multivector::Multivector;
+use crate::half_multivector::HalfMultivector;
 
 /// A single point in the fractal point cloud. It has a position, color,
 /// and other metadata for styling the fractal
@@ -23,7 +23,7 @@ pub struct Point<T> {
 
 /// Internally the point is represented as a multivector in geometric algebra
 /// as this makes it easier to apply transformations
-pub type InternalPoint = Point<Multivector>;
+pub type InternalPoint = Point<HalfMultivector>;
 
 /// When writing to disk, the point is converted to a vec3 for storage and
 /// rendering. since OpenGL uses single precision float vectors, this is

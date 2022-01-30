@@ -1,4 +1,6 @@
 {
+    "id": "loxodromic2",
+    "name": "Another Loxodromic Transformation",
     "algorithm": "chaos_sets",
     "initial_set": {
         "type": "box",
@@ -8,49 +10,21 @@
         "num_points": 50
     },
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 9,
         "radius": 4
     },
     "initial_set_copies": 5,
     "iters": 1000,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
+                ["poloidal", 1, 0, 0, 90],
 
-                ["rotate", 0, 0, 1, -0.0015836],
+                ["rotate", 0, 0, 1, -1.5],
                 ["scale", 1.064847],
 
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
+                ["poloidal", -1, 0, 0, 90]
             ]],
-            ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
-
-                ["scale", 0.939102],
-                ["rotate", 0, 0, -1, -0.0015836],
-
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
-            ]]
+            ["+inverse"]
         ]
     }
 }

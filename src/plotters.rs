@@ -51,27 +51,23 @@ impl ScatterPlot {
     /// Load a plotter from JSON of the form:
     /// {
     ///     "type": "scatter",
-    ///     "format": "pnts",
-    ///     "max_depth": d,
-    ///     "node_capacity: n,
+    ///     "format": "pnts" | "glb" (default "glb"),
+    ///     "max_depth": d (default 10),
+    ///     "node_capacity: n (default 5000),
     ///     "radius": r,
     /// }
     pub fn from_json(json: &JsonValue) -> Self {
         let format = json["format"]
             .as_str()
-            .expect("format must be a string");
+            .unwrap_or("glb");
         let tile_type = match format {
             "pnts" => ContentType::Pnts,
             "glb" => ContentType::Glb,
             _ => panic!("format must be either pnts or glb")
         };
 
-        let max_depth = json["max_depth"]
-            .as_u8()
-            .expect("max_depth must be a positive integer");
-        let capacity = json["node_capacity"]
-            .as_usize()
-            .expect("node_capacity must be a positive integer");
+        let max_depth = json["max_depth"].as_u8().unwrap_or(10);
+        let capacity = json["node_capacity"].as_usize().unwrap_or(5000);
         let radius = json["radius"]
             .as_f32()
             .expect("radius must be a float");
@@ -102,15 +98,13 @@ impl Plotter for ScatterPlot {
 ///
 /// ```text
 /// {
-///     "type": "scatter",
+///     "type": "scatter" (default "scatter"),
 ///     ...params
 /// }
 /// ```
 pub fn from_json(json: &JsonValue) -> Box<dyn Plotter> {
     let valid_plotters: Vec<&str> = vec!["scatter"];
-    let plotter_type = &json["type"]
-        .as_str()
-        .expect("plotter type must be a string");
+    let plotter_type = &json["type"].as_str().unwrap_or("scatter");
 
     match &plotter_type[..] {
         "scatter" => ScatterPlot::from_json(&json).to_box(),

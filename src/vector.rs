@@ -50,7 +50,7 @@ impl<T: Display> Debug for Vector3<T> {
 /// `xe1 + ye2 + ze3`
 impl<T: Display> Display for Vector3<T> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}e1 + {}e2 + {}e3", self.x(), self.y(), self.z())
+        write!(f, "{}X + {}Y + {}Z", self.x(), self.y(), self.z())
     }
 }
 
@@ -144,6 +144,15 @@ impl Vec3 {
     /// Create the one vector, (1, 1, 1)
     pub fn ones() -> Vec3 {
         Vec3::new(1.0, 1.0, 1.0)
+    }
+
+    pub fn lerp(a: &Vec3, b: &Vec3, t: f32) -> Vec3 {
+        let p = 1.0 - t;
+        let q = t;
+        let x = p * a.x() + q * b.x();
+        let y = p * a.y() + q * b.y();
+        let z = p * a.z() + q * b.z();
+        Vec3::new(x, y, z)
     }
 
     /// Parse a Vec3 from JSON of the form:

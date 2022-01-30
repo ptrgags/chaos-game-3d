@@ -9,20 +9,37 @@ This program can be used to generate fractals using the Chaos Game as a
 The `viewer/` subdirectory contains a small static page one can use to view
 the output.
 
+### Gallery
+
+These images correspond to some of the parameter files found in `params/`
+
+|||
+|---|---|
+| `sierpinski` | `conjugated_sierpinski` |
+| ![Sierpinski Tetrahedron](figures/sierpinski.png) | ![Bent Sierpinski Tetrahedron](figures/conjugated_sierpinski.png) |
+| `grid_3d` | `seaweed` |
+| ![3D Grid](figures/grid_3d.png) | ![Seaweed tiling](figures/seaweed.png) |
+| `loxodromic` | `pillows` |
+| ![Loxodromic transformation](figures/loxodromic.png) | ![Pillows](figures/pillows.png) |
+| `hopf_fibration` | `torus_knots` |
+| ![Hopf Fibration](figures/hopf_fibration.png) | ![Torus Knots](figures/torus_knots.png) |
+
 ### Usage
 
 Generating fractals:
 
 ```
-cargo run PARAMETER_FILE OUTPUT_DIRECTORY
+cargo run PARAMETER_FILE
 ```
 
 Where: 
 
 * PARAMTER_FILE is a JSON file describing the fractal (see the `params/`
     directory for examples)
-* OUTPUT_DIRECTORY is the name of the directory where the tileset will be
-    created. This directory will be created as needed.
+
+The script will create a new directory `viewer/<fractal_id>` containing the
+fractal as a 3D Tiles tileset. The fractal ID comes from the `id` property
+from the paramters JSON file.
 
 Viewer:
 

@@ -1,9 +1,11 @@
+
+
 use rand::Rng;
 use rand::prelude::ThreadRng;
 use json::JsonValue;
 
 use crate::vector::Vec3;
-use crate::multivector::Multivector;
+use crate::half_multivector::HalfMultivector;
 use crate::point::InternalPoint;
 
 /// This trait is used to arrange a set of points to represent an initial
@@ -80,15 +82,15 @@ impl InitialSet for RandomBox {
         let half_dims = self.dimensions.scale(0.5);
         let min = self.center - half_dims;
         let max = self.center + half_dims;
-        let color = Multivector::from_vec3(&self.color);
+        let color = HalfMultivector::from_vec3(&self.color);
 
         // Generate N random points, uniformly distributed over the box.
         for i in 0..self.num_points {
             let x = self.rng.gen_range(min.x(), max.x());
             let y = self.rng.gen_range(min.y(), max.y());
             let z = self.rng.gen_range(min.z(), max.z());
-        
-            let position = Multivector::vector(x as f64, y as f64, z as f64);
+            
+            let position = HalfMultivector::point(x as f64, y as f64, z as f64);
 
             let point = InternalPoint {
                 position,
@@ -167,17 +169,14 @@ impl RandomLine {
 impl InitialSet for RandomLine {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
-        let color = Multivector::from_vec3(&self.color);
-        let start = Multivector::from_vec3(&self.start);
-        let end = Multivector::from_vec3(&self.end);
+        let color = HalfMultivector::from_vec3(&self.color);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
         for i in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
-            let weighted_start = start.scale(1.0 - t);
-            let weighted_end = end.scale(t);
-            let position = weighted_start.add(&weighted_end);
+            let position_vec3 = Vec3::lerp(&self.start, &self.end, t);
+            let position = HalfMultivector::from_vec3(&position_vec3);
 
             let point = InternalPoint {
                 position,

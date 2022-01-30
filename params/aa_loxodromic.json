@@ -1,12 +1,9 @@
 {
     "id": "aa_loxodromic",
     "name": "Axis-aligned Loxodromic",
+    "description": "Loxodromic transformation (scale and rotation conjugated by a poloidal rotation), but this time the rotation axis is the same axis as the poloidal rotation",
     "algorithm": "chaos_sets",
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 10
     },
     "initial_set": {
@@ -19,40 +16,16 @@
     "initial_set_copies": 3,
     "iters": 1000,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
+                ["poloidal", -1, 0, 0, 90],
 
-                ["rotate", 1, 0, 0, 0.01],
+                ["rotate", 1, 0, 0, 3.6],
                 ["scale", 1.01],
 
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
+                ["poloidal", 1, 0, 0, 90]
             ]],
-            ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0],
-
-                ["scale", 0.99009900990099],
-                ["rotate", -1, 0, 0, 0.01],
-
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
-            ]]
+            ["+inverse"]
         ]
     }
 }

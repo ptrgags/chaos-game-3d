@@ -1,4 +1,5 @@
 import {ReferenceGeometry} from './ReferenceGeometry.js';
+import { FractalShading } from './FractalShading.js';
 
 const defined = Cesium.defined;
 const Matrix4 = Cesium.Matrix4;
@@ -23,30 +24,7 @@ let tileset;
 let attenuation = true;
 let show_bboxes = false;
 
-const customShader = new Cesium.CustomShader({
-    uniforms: {
-        u_initial_set_copies: {
-            type: Cesium.UniformType.FLOAT,
-            value: 1
-        }
-    },
-    LightingModel: Cesium.LightingModel.UNLIT,
-    vertexShaderText: `
-    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        vsOutput.pointSize = 4.0;
-    }
-    `,
-    fragmentShaderText: `
-    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        //Sometimes it's helpful to visualize depth
-        //float dist_from_center = length(fsInput.attributes.positionMC);
-        //float wave = 0.5 + 0.5 * cos(2.0 * 3.1415 * 2.5 * dist_from_center);
-        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
-        vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
-        material.diffuse = rgb;
-    }
-    `
-})
+const shading = new FractalShading();
 
 // Switch to a new model
 function set_model(model_id) {
@@ -70,8 +48,8 @@ function set_model(model_id) {
         url,
         debugShowBoundingVolume: show_bboxes,
         modelMatrix: scale,
-        customShader: customShader
     });
+    shading.apply_shader(tileset);
 
     // Sparse point clouds look better with this on, but it's toggleable
     // because sometimes the fractal structure is clearer with smaller points.
@@ -79,8 +57,7 @@ function set_model(model_id) {
 
     tileset.readyPromise.then(() => {
         const metadata = tileset.metadata.tileset;
-        const initial_set_copies = metadata.getProperty("initial_set_copies");
-        customShader.setUniform("u_initial_set_copies", initial_set_copies);
+        shading.update_metadata(metadata);
     });
 
     // Force all tiles to load. This is a bit dangerous for large tilesets,
@@ -155,6 +132,17 @@ function make_dropdown_option(fractal) {
     option.value = fractal.id;
     model_select.appendChild(option);
 }
+
+const shader_dropdown = document.getElementById("shader");
+shader_dropdown.addEventListener('change', (e) => {
+    shading.current_shader = e.target.value;
+    if (defined(tileset)) {
+        shading.apply_shader(tileset);
+    }
+});
+shading.populate_dropdown(shader_dropdown);
+
+
 
 fetch("./fractals.json")
     .then((response) => response.json())

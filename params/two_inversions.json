@@ -1,0 +1,33 @@
+{
+    "id": "two_inversions",
+    "name": "Two Sphere Inversions",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.01, 1.0, 8.0],
+        "center": [0, 0, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 100
+    },
+    "plotter": {
+        "node_capacity": 1000,
+        "radius": 8
+    },
+    "initial_set_copies": 10,
+    "iters": 100,
+    "ifs": {
+        "chooser": "uniform",
+        "xforms": [
+            ["chain", [
+              ["translate", -1, 0, 0],
+              ["invert"],
+              ["translate", 1, 0, 0]
+            ]],
+            ["chain", [
+              ["translate", 1, 0, 0],
+              ["invert"],
+              ["translate", -1, 0, 0]
+            ]]
+        ]
+    }
+}

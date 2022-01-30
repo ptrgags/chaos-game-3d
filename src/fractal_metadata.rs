@@ -52,8 +52,7 @@ impl FractalMetadata {
         };
 
         let plotter = &json["plotter"];
-        let node_capacity = &plotter["node_capacity"]
-            .as_u16().expect("plotter.node_capacity must be a number");
+        let node_capacity = &plotter["node_capacity"].as_u16().unwrap_or(5000);
 
         let ifs = &json["ifs"];
         let ifs_xform_count = &ifs["xforms"].len();

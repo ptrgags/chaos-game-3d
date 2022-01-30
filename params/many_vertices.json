@@ -5,14 +5,9 @@
     "algorithm": "chaos",
     "iters": 400000,
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 5000,
-        "max_depth": 8,
         "radius": 1
     },
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["scale", 0.5],
@@ -57,7 +52,6 @@
         ]
     },
     "color_ifs": {
-        "chooser": "uniform",
         "xforms": [
             ["chain", [
                 ["scale", 0.5],

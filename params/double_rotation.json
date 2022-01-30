@@ -1,12 +1,9 @@
 {
     "id": "double_rotation",
     "name": "Double Rotation",
+    "description": "Since a poloidal rotation only uses one of the 3D axes, you are free to rotate in the other two. This causes points to spiral around like a torus knot",
     "algorithm": "chaos_sets",
     "plotter": {
-        "type": "scatter",
-        "format": "glb",
-        "node_capacity": 1000,
-        "max_depth": 10,
         "radius": 10
     },
     "initial_set": {
@@ -19,24 +16,11 @@
     "initial_set_copies": 2,
     "iters": 1000,
     "ifs": {
-        "chooser": "uniform",
         "xforms": [
-            ["rotate", 1, 0, 0, 0.01],
-            ["rotate", -1, 0, 0, 0.01],
-            ["chain", [
-                ["translate", -1, 0, 0],
-                ["scale", 0.5],
-                ["reflect_vec", 1, 0, 0],
-                ["invert"],
-                ["translate", -1, 0, 0]
-            ]],
-            ["chain", [
-                ["translate", 1, 0, 0],
-                ["invert"],
-                ["reflect_vec", 1, 0, 0],
-                ["scale", 2],
-                ["translate", 1, 0, 0]
-            ]]
+            ["rotate", 1, 0, 0, 3.6],
+            ["+inverse"],
+            ["poloidal", 1, 0, 0, 90],
+            ["+inverse"]
         ]
     }
 }

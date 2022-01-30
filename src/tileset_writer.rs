@@ -71,21 +71,20 @@ impl TilesetWriter {
                 "version" => "1.0",
             },
             "geometricError" => 1e7,
-            "root" => root_tile
+            "root" => root_tile,
+            "extensionsUsed" => array!["3DTILES_metadata"],
+            "extensions" => object!{
+                "3DTILES_metadata" => self.metadata.make_extension_json()
+            }
         };
 
-        // in 3D Tiles Next mode, a few extensions need to be declared
+        // If using GLB output, we also need to add the
+        // 3DTILES_content_gltf extension
         if self.content_type == ContentType::Glb {
             tileset["extensionsRequired"] = array!["3DTILES_content_gltf"];
-            tileset["extensionsUsed"] = array![
-                "3DTILES_content_gltf", 
-                "3DTILES_metadata"
-            ];
-            tileset["extensions"] = object!{
-                "3DTILES_content_gltf" => object!{
-                    "extensionsUsed" => array!["EXT_mesh_features"],
-                },
-                "3DTILES_metadata" => self.metadata.make_extension_json()
+            tileset["extensionsUsed"].push("3DTILES_content_gltf").unwrap();
+            tileset["extensions"]["3DTILES_content_gltf"] = object!{
+                "extensionsUsed" => array!["EXT_mesh_features"],
             };
         }
 

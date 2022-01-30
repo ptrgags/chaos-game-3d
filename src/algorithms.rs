@@ -4,7 +4,7 @@ use crate::ifs::{self, IFS};
 use crate::initial_set::{self, InitialSet};
 use crate::plotters::{self, Plotter};
 use crate::vector::Vec3;
-use crate::multivector::Multivector;
+use crate::half_multivector::HalfMultivector;
 use crate::point::{InternalPoint, OutputPoint};
 use crate::fractal_metadata::FractalMetadata;
 
@@ -14,7 +14,7 @@ pub trait Algorithm {
     /// Perform the main iterations of the algorithm
     fn iterate(&mut self);
     /// Save the file to disk
-    fn save(&mut self, fname: &str);
+    fn save(&mut self);
     /// Get the complexity of the algorithm measured by number of points in
     /// the output tileset.
     fn complexity(&self) -> usize;
@@ -73,8 +73,8 @@ impl ChaosGame {
 impl Algorithm for ChaosGame {
     fn iterate(&mut self) {
         // Start with a random position and color
-        let mut pos = Multivector::from_vec3(&Vec3::random());
-        let mut color_vec = Multivector::from_vec3(&Vec3::random_color());
+        let mut pos = HalfMultivector::from_vec3(&Vec3::random());
+        let mut color_vec = HalfMultivector::from_vec3(&Vec3::random_color());
         const UPDATE_FREQ: usize = 100000;
         let complexity = self.complexity() / UPDATE_FREQ;
 
@@ -112,8 +112,9 @@ impl Algorithm for ChaosGame {
         }
     }
 
-    fn save(&mut self, fname: &str) {
-        self.output.save(fname, &self.metadata);
+    fn save(&mut self) {
+        let fname = format!("./viewer/{}", self.metadata.id);
+        self.output.save(&fname, &self.metadata);
     }
 
     /// The complexity of the basic chaos game is O(n) where n is the number
@@ -238,8 +239,9 @@ impl Algorithm for ChaosSets {
         }
     }
 
-    fn save(&mut self, fname: &str) {
-        self.output.save(fname, &self.metadata);
+    fn save(&mut self) {
+        let fname = format!("./viewer/{}", self.metadata.id);
+        self.output.save(&fname, &self.metadata);
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 

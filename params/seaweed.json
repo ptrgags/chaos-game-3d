@@ -1,0 +1,39 @@
+{
+    "id": "seaweed",
+    "name": "Seaweed",
+    "algorithm": "chaos_sets",
+    "initial_set": {
+        "type": "box",
+        "dims": [0.3, 0.3, 1.0],
+        "center": [1, 0.3, 0],
+        "color": [0.3, 0.8, 0.4],
+        "num_points": 10
+    },
+    "plotter": {
+        "radius": 8
+    },
+    "initial_set_copies": 5,
+    "iters": 10000,
+    "ifs": {
+        "xforms": [
+            ["reflect", 0, 1, 0],
+            ["chain", [
+                ["rotate", 0, 0, 1, -45],
+                ["reflect", 0, 1, 0],
+                ["rotate", 0, 0, 1, 45]
+            ]],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["reflect", 1, 0, 0],
+                ["translate", 2, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["invert"],
+                ["translate", 2, 0, 0]
+            ]],
+            ["translate", 0, 0, 1],
+            ["+inverse"]
+        ]
+    }
+}
