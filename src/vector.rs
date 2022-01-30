@@ -146,6 +146,15 @@ impl Vec3 {
         Vec3::new(1.0, 1.0, 1.0)
     }
 
+    pub fn lerp(a: &Vec3, b: &Vec3, t: f32) -> Vec3 {
+        let p = 1.0 - t;
+        let q = t;
+        let x = p * a.x() + q * b.x();
+        let y = p * a.y() + q * b.y();
+        let z = p * a.z() + q * b.z();
+        Vec3::new(x, y, z)
+    }
+
     /// Parse a Vec3 from JSON of the form:
     ///
     /// ```text

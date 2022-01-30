@@ -170,14 +170,13 @@ impl InitialSet for RandomLine {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
-        let start = HalfMultivector::from_vec3(&self.start);
-        let end = HalfMultivector::from_vec3(&self.end);
 
         // Generate N random points, uniformly distributed over the 
         // line segment
         for i in 0..self.num_points {
             let t = self.rng.gen_range(0.0, 1.0);
-            let position = HalfMultivector::lerp(&start, &end, t);
+            let position_vec3 = Vec3::lerp(&self.start, &self.end, t);
+            let position = HalfMultivector::from_vec3(&position_vec3);
 
             let point = InternalPoint {
                 position,

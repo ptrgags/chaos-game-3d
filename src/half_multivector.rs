@@ -597,29 +597,6 @@ impl HalfMultivector {
 
         true
     }
-
-    pub fn lerp(a: &Self, b: &Self, t: f64) -> Self {
-        if a.parity != b.parity {
-            panic!("can only lerp versors of the same parity");
-        }
-
-        let start_index = a.start_index.min(b.start_index);
-        let end_index = a.end_index.max(b.end_index);
-
-        let mut components = [0.0; 16];
-        let p = 1.0 - t;
-        let q = t;
-        for i in start_index..end_index {
-            components[i] = p * a.components[i] + q * b.components[i];
-        }
-
-        Self {
-            components: components,
-            parity: a.parity.clone(),
-            start_index,
-            end_index
-        }
-    }
 }
 
 /// Debug format: (Odd|Even)[component0, component1, ..., component15](start-end)
@@ -930,6 +907,16 @@ mod tests {
         let xform = HalfMultivector::inversion();
         let point = HalfMultivector::point(2.0, 0.0, 0.0);
         let expected = HalfMultivector::point(0.5, 0.0, 0.0);
+        let mut result = xform.sandwich_product(&point);
+        result.homogenize();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_inversion_xform2() {
+        let xform = HalfMultivector::inversion();
+        let point = HalfMultivector::point(1.0, 0.0, 1.0);
+        let expected = HalfMultivector::point(0.5, 0.0, 0.5);
         let mut result = xform.sandwich_product(&point);
         result.homogenize();
         assert_eq!(result, expected);
