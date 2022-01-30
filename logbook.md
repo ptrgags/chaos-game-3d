@@ -314,3 +314,118 @@ This morning I added a script, `viewer/make_index.py` that looks through the
 tileset directories and puts together an index file, `fractals.json`. This
 is now used by the viewer to populate the dropdown. This way, I don't have
 to edit `index.html` every time I add a new fractal.
+
+## 2022-01-30 Wrapping up CGA branch
+
+The past several days I've been learning more about conformal geometric
+algebra and updating my implementation. The highlights:
+
+* I tried using Python's `clifford` module to check my math. The `cga_checker/`
+    directory has some scripts I used for checking my implementation
+* I tested the geometric product, and after fixing a typo in the lookup
+    tables, now the transformations work as expected.
+* I learned some cool new things about 3D CGA, see the 
+    "Poloidal and Double Rotations" section below
+* Add some new parameter files
+* Added a dropdown for choosing a shader
+* Added some screenshots to the README
+* Simplified the binary to always generate the result in `viewer/` - this is
+    because the viewer assumes the tileset will be there.
+
+### Poloidal and Double Rotations!
+
+I was looking through my old fractal parameters from 2020 and tried to see how
+I bent shapes around the unit sphere. 
+
+I was taking the 2D Möbius transformations I had learned about in the book
+_Indra's Pearls_ by David Mumford, Caroline Series and David Wright and trying
+to generalize them to 3D. It was a messy chain of transformations, and
+I actually used the wrong type of reflection. It should have looked something
+like this:
+
+```
+M = T * S * V * H * T
+
+where 
+  T = translate(1, 0, 0) -- translate in the X direction
+  H = reflect(1, 0, 0) -- reflection in plane normal to x axis
+  V = inversion() -- sphere inversion
+  S = dilation(2) -- 
+
+Now compute
+
+M' = M * A * ~M
+
+where A is some other transformation... messy right?
+```
+
+Messy, right? in 3D (vector space) geometric algebra, the translations and
+inversion means that I can't easily simplify this into a sandwich product.
+
+However, in 3D conformal geometric algebra, the extra dimensions mean that
+translations and inversions are handled more sanely. I tried multiplying this
+long chain of versors together, and, much to my surprise, it simplified to the
+elegant:
+
+```
+-sqrt(2)/2 - sqrt(2)/2 * e14
+```
+
+In other words, this is a _rotation_ in the e14 plane (I prefer `xp` since e1 is
+the `x` direction and e4 is the "plus" direction (usually written `e+` in the
+literature, but I use `p` to avoid confusion when doing calculations on paper).
+I had a hunch it was like a higher dimensional rotation, but in this case, it
+_literally_ is a higher-dimensional rotation. Strange, but elegant!
+
+From our 3D perspective, this rotates points in perfect 
+[vortex rings](https://en.wikipedia.org/wiki/Vortex_ring)
+(but fixed in place, not moving, like
+[this image in the same article](https://en.wikipedia.org/wiki/Vortex_ring#/media/File:Vortex_ring.gif))
+I call it a "poloidal rotation" for lack of a better name. Poloidal refers to
+the direction around a torus through the hole. [See here](https://en.wikipedia.org/wiki/Toroidal_and_poloidal_coordinates). However, it's a direct generalization of
+elliptic Möbius transformations, so I suppose "elliptic rotation" would work
+too... Or just "rotation" if you're 4-dimensional. 
+
+To check my work, I wrote `cga_checker/poloidal4.py` and confirmed that this
+rotation works for other angles.
+
+From there, I also realized that you can make a _double_ rotation, by rotating
+in the `xp` plane simultaneously with the `yz` plane. This choice is not
+unique, any 2 orthogonal planes in the `x, y, z, and p` directions.
+
+To try to visualize this, and try other things, I tried a few things with
+ganja.js. See these examples:
+
+* [Parabolic transformation](https://enkimute.github.io/ganja.js/examples/coffeeshop.html#RPzAmg3bS)
+* [Double Rotation](https://enkimute.github.io/ganja.js/examples/coffeeshop.html#ysnayUxhH)
+* [More Double rotations](https://enkimute.github.io/ganja.js/examples/coffeeshop.html#wS8uznb-d)
+* [Hopf fibration (angles the same)](https://enkimute.github.io/ganja.js/examples/coffeeshop.html#wS8uznb-d)
+
+From double rotations, I learned a bit about Hopf fibrations.
+[This YouTube video](https://youtu.be/lHT9xI01sqw) was quite helpful.
+
+### Future Steps
+
+I'm not quite done with this project, there's a few more things I want to do:
+
+* The initial sets look kinda messy. I'd rather use a determnistic shape. I
+    want to make lines, planes, disks, and spheres with regularly spaced
+    points. for the disk and sphere, I want to try a
+    [Fibonacci lattice](http://extremelearning.com.au/how-to-evenly-distribute-points-on-a-sphere-more-effectively-than-the-canonical-fibonacci-lattice/)
+    since they look cool!
+* I might consider making more types of transformation choosers. It would be
+    helpful to make it less random. Some possible ideas:
+    * Don't allow backtracking (applying `A` and `A^(-1)` in a row), that's a
+        waste of iterations
+    * Allow a Markov chain to weight the transitions. This is essentially like
+        the `xaos` parameters in [Apophysis 7x](https://sourceforge.net/projects/apophysis7x/).
+    * For tilings, it would be nice to choose transformations like iterating
+        over a 1-, 2- or 3-dimensional grid, that way you get nice even-looking
+        results. The only tricky part is choosing the iteration bounds so it
+        doesn't explode in complexity.
+* Instead of scaling the tileset to the size of the earth, I should position it
+    correctly in the world. 
+* It would be cool to have something like an arc-ball camera. Maybe use the
+    arrow keys or a gamepad?
+* Once CesiumJS's implementation of 3D Tiles Next is further along, there's
+    plenty of cool styling opportunities
