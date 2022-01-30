@@ -566,25 +566,14 @@ impl HalfMultivector {
             return false;
         }
 
-        if self.start_index != other.start_index {
-            println!(
-                "start index doesn't match! {}, {}",
-                self.start_index,
-                other.start_index
-            );
-            return false;
-        }
+        // start and end index may not be exactly the same (e.g. if one
+        // multivector is the result of a calculation and the other is
+        // created from the point constructor). So just take the most general
+        // range and make sure the values match up
+        let start_index = self.start_index.min(other.start_index);
+        let end_index = self.end_index.max(other.end_index);
 
-        if self.end_index != other.end_index {
-            println!(
-                "end index doesn't match! {}, {}",
-                self.end_index,
-                other.end_index
-            );
-            return false;
-        }
-
-        for i in SCALAR_START..BIVECTOR_END {
+        for i in start_index..end_index {
             if !((self.components[i] - other.components[i]).abs() < epsilon) {
                 println!(
                     "components don't match! {:?}, {:?}",
@@ -932,18 +921,10 @@ mod tests {
         let z = HalfMultivector::point(0.0, 0.0, 1.0);
         let zero = HalfMultivector::point(0.0, 0.0, 0.0);
 
-        let mut rot_x = xform.sandwich_product(&x);
-        rot_x.expect_vector();
-        let mut rot_y = xform.sandwich_product(&y);
-        rot_y.expect_vector();
-        let mut rot_z = xform.sandwich_product(&z);
-        rot_z.expect_vector();
-        let mut rot_zero = xform.sandwich_product(&zero);
-        rot_zero.expect_vector();
-
-        println!("R(x): {:?}\ny: {:?}", rot_x, y);
-        println!("R(y): {:?}\nz: {:?}", rot_y, z);
-        println!("R(z): {:?}\nx: {:?}", rot_z, x);
+        let rot_x = xform.sandwich_product(&x);
+        let rot_y = xform.sandwich_product(&y);
+        let rot_z = xform.sandwich_product(&z);
+        let rot_zero = xform.sandwich_product(&zero);
 
         assert!(rot_x.almost_equal(&y, 1e-9));
         assert!(rot_y.almost_equal(&z, 1e-9));
