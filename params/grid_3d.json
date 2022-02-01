@@ -7,8 +7,9 @@
         "radius": 25
     },
     "initial_set": {
-        "type": "box",
+        "type": "sphere",
         "center": [0, 0, 0],
+        "radius": 0.5,
         "dims": [1, 1, 1],
         "color": [0, 1, 1],
         "num_points": 50
