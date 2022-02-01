@@ -12,9 +12,9 @@
         "radius": 0.5,
         "dims": [1, 1, 1],
         "color": [0, 1, 1],
-        "num_points": 50
+        "num_points": 500
     },
-    "initial_set_copies": 20,
+    "initial_set_copies": 5,
     "iters": 100,
     "ifs": {
         "xforms": [
