@@ -1,0 +1,68 @@
+{
+    "id": "three_limit_circles",
+    "name": "Three Limit Circles",
+    "algorithm": "chaos",
+    "plotter": {
+        "radius": 4
+    },
+    "initial_set": {
+        "type": "sphere",
+        "radius": 0.4,
+        "center": [1, -1, 0],
+        "dims": [1, 1, 1],
+        "color": [0.5, 0.3, 0.1],
+        "num_points": 50
+    },
+    "initial_set_copies": 2,
+    "iters": 100000,
+    "ifs": {
+        "xforms": [
+            ["invert"],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["invert"],
+                ["translate", 2, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", 2, 0, 0],
+                ["invert"],
+                ["translate", -2, 0, 0]
+            ]],
+            ["chain", [
+                ["translate", 0, -2, 0],
+                ["invert"],
+                ["translate", 0, 2, 0]
+            ]],
+            ["chain", [
+                ["translate", 0, 2, 0],
+                ["invert"],
+                ["translate", 0, -2, 0]
+            ]],
+            ["chain", [
+                ["translate", 0, 0, -2],
+                ["invert"],
+                ["translate", 0, 0, 2]
+            ]],
+            ["chain", [
+                ["translate", 0, 0, 2],
+                ["invert"],
+                ["translate", 0, 0, -2]
+            ]],
+            ["chain", [
+                ["translate", -2, 2, 0],
+                ["invert"],
+                ["translate", 2, -2, 0]
+            ]],
+            ["chain", [
+                ["translate", 0, -2, -2],
+                ["invert"],
+                ["translate", 0, 2, 2]
+            ]],
+            ["chain", [
+                ["translate", 2, 0, 2],
+                ["invert"],
+                ["translate", -2, 0, -2]
+            ]]
+        ]
+    }
+}

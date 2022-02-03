@@ -17,8 +17,8 @@
     "ifs": {
         "xforms": [
             ["chain", [
-                ["poloidal", 0, 0, 1, 5],
-                ["rotate", 0, 0, 1, 15]
+                ["poloidal", 0, 0, 1, 15],
+                ["rotate", 0, 0, 1, 5]
             ]]
         ]
     }
