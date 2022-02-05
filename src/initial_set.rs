@@ -415,8 +415,8 @@ impl InitialSet for GridQuad {
             let u = (col as f64) / ((x_count - 1) as f64);
             let v = (row as f64) / ((y_count - 1) as f64);
 
-            let x = (self.width * u) as f32;
-            let y = (self.height * v) as f32;
+            let x = (self.width * u - 0.5 * self.width) as f32;
+            let y = (self.height * v - 0.5 * self.height) as f32;
 
             let position_vec3 = self.center + self.x_dir * x + self.y_dir * y;
             let position = HalfMultivector::from_vec3(&position_vec3);
@@ -439,7 +439,7 @@ impl InitialSet for GridQuad {
 
     fn len(&self) -> usize {
         // TODO: I need to store the effective size
-        1
+        self.num_points
     }
 }
 
