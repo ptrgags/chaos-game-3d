@@ -429,3 +429,18 @@ I'm not quite done with this project, there's a few more things I want to do:
     arrow keys or a gamepad?
 * Once CesiumJS's implementation of 3D Tiles Next is further along, there's
     plenty of cool styling opportunities
+
+## 2022-02-05 More Cluster Types
+
+The past couple of days I've been working on adding a few more cluster types:
+
+* evenly spaced lines, circles, quads, boxes
+* Fibonacci lattice disks and spheres. Formulas were found in [this article](http://extremelearning.com.au/how-to-evenly-distribute-points-on-a-sphere-more-effectively-than-the-canonical-fibonacci-lattice/)
+* A list of specific points.
+
+By being more precise in the initial clusters, the final results will look
+sharper.
+
+The next thing I want to do is add a cluster type of "many" that lets me
+list multiple starting shapes. Sometimes it helps to start with multiple
+shapes to get a better idea of the overall shape
