@@ -11,7 +11,7 @@ use crate::point::InternalPoint;
 /// set that will be sent through a Chaos Game algorithm. Typically, this is
 /// done by randomly generating a set of points in some arrangement like a
 /// box or line.
-pub trait InitialSet {
+pub trait Cluster {
     /// Generate a set of points. This may be called several times, and each
     /// time it must produce a new set of points.
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint>; 
@@ -51,10 +51,10 @@ impl Points {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for Points {
+impl Cluster for Points {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
@@ -118,10 +118,10 @@ impl Line {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for Line {
+impl Cluster for Line {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
@@ -207,10 +207,10 @@ impl RandomLine {
         Self::new(start, end, color, *num_points)
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for RandomLine {
+impl Cluster for RandomLine {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
@@ -291,10 +291,10 @@ impl Circle {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for Circle {
+impl Cluster for Circle {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
@@ -388,10 +388,10 @@ impl GridQuad {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for GridQuad {
+impl Cluster for GridQuad {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut grid = Vec::new();
 
@@ -479,10 +479,10 @@ impl FibonacciDisk {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for FibonacciDisk {
+impl Cluster for FibonacciDisk {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         // Golden ratio
         let phi = (1.0 + (5.0f64).sqrt()) / 2.0;
@@ -568,10 +568,10 @@ impl FibonacciSphere {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for FibonacciSphere {
+impl Cluster for FibonacciSphere {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         // Golden ratio
         let phi = (1.0 + (5.0f64).sqrt()) / 2.0;
@@ -683,10 +683,10 @@ impl GridBox {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 }
 
-impl InitialSet for GridBox {
+impl Cluster for GridBox {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut grid = Vec::new();
 
@@ -778,7 +778,7 @@ impl RandomBox {
         }
     }
 
-    to_box!(InitialSet);
+    to_box!(Cluster);
 
     /// Parse a RandomBox generator from JSON of the form:
     /// ```text
@@ -802,7 +802,7 @@ impl RandomBox {
     }
 }
 
-impl InitialSet for RandomBox {
+impl Cluster for RandomBox {
     fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
 
@@ -857,7 +857,7 @@ impl InitialSet for RandomBox {
 ///     ...params
 /// }
 /// ```
-pub fn from_json(json: &JsonValue) -> Box<dyn InitialSet> {
+pub fn from_json(json: &JsonValue) -> Box<dyn Cluster> {
     let valid_types: Vec<&str> = vec![
         "points",
         "line",

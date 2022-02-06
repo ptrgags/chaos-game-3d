@@ -1,7 +1,7 @@
 use json::JsonValue;
 
 use crate::ifs::{self, IFS};
-use crate::initial_set::{self, InitialSet};
+use crate::clusters::{self, Cluster};
 use crate::plotters::{self, Plotter};
 use crate::vector::Vec3;
 use crate::half_multivector::HalfMultivector;
@@ -136,7 +136,7 @@ pub struct ChaosSets {
     /// IFS for transforming colors
     color_ifs: IFS,
     /// Pattern for the initial sets
-    initial_set: Box<dyn InitialSet>,
+    initial_set: Box<dyn Cluster>,
     /// How many initial sets to create. Each one is transformed independently
     /// from the others.
     initial_copies: usize,
@@ -178,7 +178,7 @@ impl ChaosSets {
     /// ```text
     /// {
     ///     "algorithm": "chaos_sets",
-    ///     "initial_set": <InitialSet JSON>,
+    ///     "initial_set": <Cluster JSON>,
     ///     "initial_set_copies": N,
     ///     "ifs": <IFS JSON>,
     ///     "color_ifs": <IFS JSON>,
@@ -190,7 +190,7 @@ impl ChaosSets {
         let metadata = FractalMetadata::from_json(json);
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
-        let arranger = initial_set::from_json(&json["initial_set"]);
+        let arranger = clusters::from_json(&json["initial_set"]);
         let plotter = plotters::from_json(&json["plotter"]);
         let initial_copies: usize = json["initial_set_copies"]
             .as_usize()
