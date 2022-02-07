@@ -2,7 +2,7 @@
     "id": "two_inversions",
     "name": "Two Sphere Inversions",
     "algorithm": "chaos_sets",
-    "initial_set": {
+    "cluster": {
         "type": "quad",
         "center": [0, 0, 0],
         "dims": [1, 8],
@@ -14,7 +14,7 @@
     "plotter": {
         "radius": 8
     },
-    "initial_set_copies": 3,
+    "cluster_copies": 3,
     "iters": 100,
     "ifs": {
         "chooser": "uniform",

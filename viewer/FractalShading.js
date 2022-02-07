@@ -10,7 +10,7 @@ const UNLIT = new Cesium.CustomShader({
 
 const COLOR_CLUSTERS = new Cesium.CustomShader({
     uniforms: {
-        u_initial_set_copies: {
+        u_cluster_copies: {
             type: Cesium.UniformType.FLOAT,
             value: 1
         }
@@ -24,7 +24,7 @@ const COLOR_CLUSTERS = new Cesium.CustomShader({
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
+        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_cluster_copies;
         vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
         material.diffuse = rgb;
     }
@@ -33,7 +33,7 @@ const COLOR_CLUSTERS = new Cesium.CustomShader({
 
 const HIGHLIGHT_FIRST = new Cesium.CustomShader({
     uniforms: {
-        u_initial_set_copies: {
+        u_cluster_copies: {
             type: Cesium.UniformType.FLOAT,
             value: 1
         }
@@ -143,8 +143,8 @@ class FractalShading {
     }
 
     update_metadata(metadata) {
-        const initial_set_copies = metadata.getProperty("initial_set_copies");
-        COLOR_CLUSTERS.setUniform("u_initial_set_copies", initial_set_copies);
+        const cluster_copies = metadata.getProperty("cluster_copies");
+        COLOR_CLUSTERS.setUniform("u_cluster_copies", cluster_copies);
     }
 
     populate_dropdown(dropdown_element) {

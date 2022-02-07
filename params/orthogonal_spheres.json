@@ -6,7 +6,7 @@
     "plotter": {
         "radius": 4
     },
-    "initial_set": {
+    "cluster": {
         "type": "many",
         "clusters": [
             {
@@ -26,7 +26,7 @@
         ],
         "num_points": 200
     },
-    "initial_set_copies": 6,
+    "cluster_copies": 6,
     "iters": 100,
     "ifs": {
         "xforms": [

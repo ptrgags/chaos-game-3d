@@ -6,7 +6,7 @@
     "plotter": {
         "radius": 25
     },
-    "initial_set": {
+    "cluster": {
         "type": "sphere",
         "center": [0, 0, 0],
         "radius": 0.5,
@@ -14,7 +14,7 @@
         "color": [0, 1, 1],
         "num_points": 500
     },
-    "initial_set_copies": 5,
+    "cluster_copies": 5,
     "iters": 100,
     "ifs": {
         "xforms": [

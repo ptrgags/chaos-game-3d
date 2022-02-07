@@ -6,7 +6,7 @@
         "radius": 16,
         "max_depth": 20
     },
-    "initial_set": {
+    "cluster": {
         "type": "points",
         "positions": [
             [2, 0, 1],
@@ -21,7 +21,7 @@
         "num_points": 8,
         "color": [0.5, 0.3, 0.1]
     },
-    "initial_set_copies": 1,
+    "cluster_copies": 1,
     "iters": 20000,
     "ifs": {
         "xforms": [

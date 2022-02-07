@@ -4,7 +4,7 @@
     "description": "Sierpinski tetrahedron starting by tracing two lines out of the limit set",
     "algorithm": "chaos_sets",
     "iters": 1000,
-    "initial_set": {
+    "cluster": {
         "type": "many",
         "clusters": [
             {
@@ -24,7 +24,7 @@
         ],
         "num_points": 100
     },
-    "initial_set_copies": 10,
+    "cluster_copies": 10,
     "plotter": {
         "radius": 1.5
     },

@@ -2,7 +2,7 @@
     "id": "pillows",
     "name": "Pillows",
     "algorithm": "chaos_sets",
-    "initial_set": {
+    "cluster": {
         "type": "disk",
         "center": [0, 2, 0],
         "x_dir": [1, 0, 0],
@@ -14,7 +14,7 @@
     "plotter": {
         "radius": 4
     },
-    "initial_set_copies": 4,
+    "cluster_copies": 4,
     "iters": 100,
     "ifs": {
         "xforms": [

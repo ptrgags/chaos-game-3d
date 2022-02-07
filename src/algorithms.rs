@@ -178,8 +178,8 @@ impl ChaosSets {
     /// ```text
     /// {
     ///     "algorithm": "chaos_sets",
-    ///     "initial_set": <Cluster JSON>,
-    ///     "initial_set_copies": N,
+    ///     "cluster": <Cluster JSON>,
+    ///     "cluster_copies": N,
     ///     "ifs": <IFS JSON>,
     ///     "color_ifs": <IFS JSON>,
     ///     "plotter": <Plotter JSON>,
@@ -190,9 +190,9 @@ impl ChaosSets {
         let metadata = FractalMetadata::from_json(json);
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
-        let arranger = clusters::from_json(&json["initial_set"]);
+        let arranger = clusters::from_json(&json["cluster"]);
         let plotter = plotters::from_json(&json["plotter"]);
-        let initial_copies: usize = json["initial_set_copies"]
+        let initial_copies: usize = json["cluster_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
         let num_iters = json["iters"]

@@ -6,14 +6,14 @@
     "plotter": {
         "radius": 10
     },
-    "initial_set": {
+    "cluster": {
         "color": [0.8, 0.4, 0.2],
         "type": "line",
         "start": [1.1, -10, 10],
         "end": [1.1, 10, -10],
         "num_points": 100
     },
-    "initial_set_copies": 10,
+    "cluster_copies": 10,
     "iters": 100,
     "ifs": {
         "xforms": [
