@@ -444,3 +444,19 @@ sharper.
 The next thing I want to do is add a cluster type of "many" that lets me
 list multiple starting shapes. Sometimes it helps to start with multiple
 shapes to get a better idea of the overall shape
+
+## 2022-02-07 Finishing Touches
+
+For this cluster branch, I added a couple of finishing touches:
+
+1. added the `ManyClusters` struct so I can list multiple cluster shapes in
+    a single fractal/tiling
+2. renaming `initial_set` to `cluster` in the JSON
+
+I did notice a couple things I'll need to investigate when I do a self-review:
+
+1. When a point gets mapped to infinity (when a point at (0, 0, 0) gets 
+inverted), I need to handle that carefully. I need to see if the multivector
+representation handles this cleanly or if it leads to divide by zero errors.
+2. For some reason `hopf_fibration` gives me an empty tileset. I'll have to
+    debug that one.
