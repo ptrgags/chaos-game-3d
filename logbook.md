@@ -429,3 +429,18 @@ I'm not quite done with this project, there's a few more things I want to do:
     arrow keys or a gamepad?
 * Once CesiumJS's implementation of 3D Tiles Next is further along, there's
     plenty of cool styling opportunities
+
+## 2022-02-07 Down to Earth
+
+Today I finally got around to updating an old branch to put the tileset
+on the globe. I updated the reference geometry too.
+
+Looking through https://sandcastle.cesium.com/ today, I came across
+`DebugModelMatrixPrimitive` -- this would actually be more useful than my
+current set of axes since they're color-coded. I plan to add this next.
+
+I'm still not thrilled with the camera controls, so I might do something
+about that in a future branch. [the Camera Tutorial](https://sandcastle.cesium.com/?src=Camera%20Tutorial.html) would be a good reference for learning. Though
+I want something more like an arc-ball camera and use the mouse (and/or gamepad)
+Though... for some fractals being able to pan will also be helpful. I'll have
+to think about this, or maybe have two different modes
