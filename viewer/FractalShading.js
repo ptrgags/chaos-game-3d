@@ -71,11 +71,28 @@ const COLOR_BY_DISTANCE = new Cesium.CustomShader({
     `
 });
 
+const COLOR_OCTANTS = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 position = fsInput.attributes.positionMC;
+        vec3 octants = step(0.0, position);
+        material.diffuse = octants;
+    }
+    `
+});
+
 const SHADERS = {
     unlit: UNLIT,
     cluster: COLOR_CLUSTERS,
     first: HIGHLIGHT_FIRST,
-    distance: COLOR_BY_DISTANCE
+    distance: COLOR_BY_DISTANCE,
+    octant: COLOR_OCTANTS,
 };
 
 const OPTIONS = [
@@ -94,6 +111,10 @@ const OPTIONS = [
     {
         name: "Color by Distance from Origin",
         value: "distance"
+    },
+    {
+        name: "Color by Octant",
+        value: "octant"
     }
 ];
 

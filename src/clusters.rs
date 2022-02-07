@@ -709,15 +709,15 @@ impl Cluster for GridBox {
 
         for i in 0..m {
             let layer = i / (x_count * y_count);
-            let row = i / x_count;
+            let row = (i / x_count) % y_count;
             let col = i % x_count;
             let u = (col as f64) / ((x_count - 1) as f64);
             let v = (row as f64) / ((y_count - 1) as f64);
             let w = (layer as f64) / ((z_count - 1) as f64);
 
-            let x = (dims_x * u) as f32;
-            let y = (dims_y * v) as f32;
-            let z = (dims_z * w) as f32;
+            let x = (dims_x * (u - 0.5)) as f32;
+            let y = (dims_y * (v - 0.5)) as f32;
+            let z = (dims_z * (w - 0.5)) as f32;
 
             let position_vec3 = 
                 self.center + 
@@ -841,6 +841,52 @@ impl Cluster for RandomBox {
     }
 }
 
+pub struct ManyClusters {
+    /// One or more interal clusters
+    clusters: Vec<Box<dyn Cluster>>
+}
+
+impl ManyClusters {
+    /// Parse a Cluster generator from JSON of the form:
+    /// ```text
+    /// {
+    ///     "type": "many",
+    ///     "clusters": [cluster_json, cluster_json, ...]
+    ///     "num_points": N
+    /// }
+    /// ```
+    pub fn from_json(json: &JsonValue) -> Self {
+        let mut clusters = Vec::new();
+        for cluster_json in json["clusters"].members() {
+            let cluster = from_json(&cluster_json);
+            clusters.push(cluster);
+        }
+
+        Self {
+            clusters
+        }
+    }
+
+    to_box!(Cluster);
+}
+
+impl Cluster for ManyClusters {
+    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+        let mut points = Vec::new();
+        let n = self.clusters.len() as u16;
+        for (i, cluster) in self.clusters.iter_mut().enumerate() {
+            let index = set_id * n + (i as u16);
+            let mut cluster_points = cluster.generate(index);
+            points.append(&mut cluster_points);
+        }
+        points
+    }
+
+    fn len(&self) -> usize {
+        self.clusters.iter().map(|x| x.len()).sum()
+    }
+}
+
 /// Parse one of the initial set types from a JSON value of the form:
 /// ```text
 /// {
@@ -874,6 +920,7 @@ pub fn from_json(json: &JsonValue) -> Box<dyn Cluster> {
         .expect("type must be a string");
 
     match &type_id[..] {
+        "many" => ManyClusters::from_json(&json).to_box(),
         // 0-dimensional
         "points" => Points::from_json(&json).to_box(),
         // 1-dimensional
