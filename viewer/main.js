@@ -1,4 +1,4 @@
-import {ReferenceGeometry} from './ReferenceGeometry.js';
+import { ReferenceGeometry } from './ReferenceGeometry.js';
 import { FractalShading } from './FractalShading.js';
 
 const defined = Cesium.defined;
@@ -13,9 +13,7 @@ Cesium.ExperimentalFeatures.enableModelExperimental = true;
 
 // Create the viewer. Hide the globe, I'm using Cesium for the 3D tiles
 // rendering, not geospatial data.
-const viewer = new Cesium.Viewer('cesiumContainer', {
-    globe: false
-});
+const viewer = new Cesium.Viewer('cesiumContainer');
 
 // The currently loaded tileset (if there is one)
 let tileset;
@@ -26,61 +24,39 @@ let show_bboxes = false;
 
 const shading = new FractalShading();
 
+// Put the tileset right above City Hall in Philadelphia, PA, U.S.
+const position = Cartesian3.fromDegrees(-75.1635996, 39.9523789, 50);
+const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+
 // Switch to a new model
 function set_model(model_id) {
     viewer.scene.primitives.remove(tileset);
 
-    const url = `${model_id}/tileset.json`;
+    const url = `${model_id}/tileset.json`;    
 
-    // Until I figure out better camera settings, scale up the tileset
-    // to be larger than the radius earth, which is 6.37 million meters
-    // 
-    // Scaling it here with a model matrix is a lot easier than baking the
-    // scale into the tileset, though it causes some issues
-    const BIGGER_THAN_EARTH = 10000000.0;
-    const scaleAmount = new Cartesian3(
-        BIGGER_THAN_EARTH, BIGGER_THAN_EARTH, BIGGER_THAN_EARTH);
-    const scale = Matrix4.fromScale(scaleAmount);
-
-    // Create a new tileset. The old tileset is discarded to the garbage
-    // collector.
-    tileset = new Cesium.Cesium3DTileset({
+    tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
         url,
         debugShowBoundingVolume: show_bboxes,
-        modelMatrix: scale,
-    });
+        modelMatrix: modelMatrix
+    }));
     shading.apply_shader(tileset);
+    
+    viewer.zoomTo(tileset);
+    
 
     // Sparse point clouds look better with this on, but it's toggleable
     // because sometimes the fractal structure is clearer with smaller points.
     tileset.pointCloudShading.attenuation = attenuation;
+    tileset.pointCloudShading.maximumAttenuation = 4;
 
     tileset.readyPromise.then(() => {
         const metadata = tileset.metadata.tileset;
         shading.update_metadata(metadata);
     });
 
-    // Force all tiles to load. This is a bit dangerous for large tilesets,
-    // but until I fix some camera issues, this is the only way to render
-    // things properly
-    //tileset.maximumScreenSpaceError = 0;
-
-    viewer.scene.primitives.add(tileset);
 }
 
-// Something to experiment with later.
-viewer.scene.logarithmicDepthBuffer = false;
-
-function configure_camera() {
-    const camera = viewer.scene.camera;
-    const frustum = camera.frustum;
-
-    // Prevent clipping when we zoom in close to see details
-    frustum.near = 1e-4;
-    frustum.far = 1e11;
-}
-
-const ref_geometry = new ReferenceGeometry(viewer.scene);
+const ref_geometry = new ReferenceGeometry(viewer.scene, modelMatrix);
 function init_reference_geometry() {
     for (const id of ReferenceGeometry.GEOMETRY_IDS) {
         const checkbox = document.getElementById(id);
@@ -153,7 +129,6 @@ fetch("./fractals.json")
         model_select.dispatchEvent(new Event("change"));
     });
 
-configure_camera();
 init_reference_geometry();
 
 window.viewer = viewer;

@@ -1,9 +1,6 @@
 const Cartesian3 = Cesium.Cartesian3;
 const defined = Cesium.defined;
 
-// A bit bigger than the radius of earth. Eventually I want to change
-// this to be a lot smaller
-const UNIT_LENGTH = 10000000.0;
 const LINE_COLOR = Cesium.Color.YELLOW;
 
 /**
@@ -12,10 +9,11 @@ const LINE_COLOR = Cesium.Color.YELLOW;
  * This will help me explore the structure of tilings and fractals
  */
 class ReferenceGeometry {
-    constructor(scene) {
+    constructor(scene, modelMatrix) {
         this._scene = scene;
         // Map of checkbox id -> Primitive
         this._primitives = new Map();
+        this._modelMatrix = modelMatrix;
         this._create_geometry();
     }
 
@@ -43,7 +41,7 @@ class ReferenceGeometry {
 
     _make_unit_sphere() {
         const outline = new Cesium.EllipsoidOutlineGeometry({
-            radii: new Cartesian3(UNIT_LENGTH, UNIT_LENGTH, UNIT_LENGTH),
+            radii: new Cartesian3(1, 1, 1),
             stackPartitions: 8,
             slicePartitions: 8
         });
@@ -52,8 +50,8 @@ class ReferenceGeometry {
 
     _make_unit_cube() {
         const outline = new Cesium.BoxOutlineGeometry({
-            minimum: new Cartesian3(-UNIT_LENGTH, -UNIT_LENGTH, -UNIT_LENGTH),
-            maximum: new Cartesian3(UNIT_LENGTH, UNIT_LENGTH, UNIT_LENGTH),
+            minimum: new Cartesian3(-1, -1, -1),
+            maximum: new Cartesian3(1, 1, 1),
         });
         return this._make_outline_primitive(outline);
     }
@@ -62,11 +60,11 @@ class ReferenceGeometry {
         const SIZE = 10;
         const start = Cartesian3.multiplyByScalar(
             direction, 
-            SIZE * UNIT_LENGTH, 
+            SIZE, 
             new Cartesian3());
         const end = Cartesian3.multiplyByScalar(
             direction, 
-            -SIZE * UNIT_LENGTH, 
+            -SIZE, 
             new Cartesian3());
         const line = new Cesium.SimplePolylineGeometry({
             positions: [start, end],
@@ -76,12 +74,12 @@ class ReferenceGeometry {
         return this._make_outline_primitive(line);
     }
 
-    _make_outline_primitive(outline, modelMatrix) {
+    _make_outline_primitive(outline) {
         const color_attribute = 
             Cesium.ColorGeometryInstanceAttribute.fromColor(LINE_COLOR);
         const instance = new Cesium.GeometryInstance({
             geometry: outline,
-            modelMatrix,
+            modelMatrix: this._modelMatrix,
             attributes: {
                 color: color_attribute
             }
