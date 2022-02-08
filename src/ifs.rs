@@ -68,6 +68,11 @@ impl IFS {
         self.last_xform = index;
         points.iter().map(|point| xform.transform(point)).collect()
     }
+
+    /// Reset. This operation should happen once per
+    pub fn reset(&mut self) {
+        self.chooser.reset();
+    }
 }
 
 /// Parse an IFS from JSON of the form:
