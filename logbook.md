@@ -429,3 +429,24 @@ I'm not quite done with this project, there's a few more things I want to do:
     arrow keys or a gamepad?
 * Once CesiumJS's implementation of 3D Tiles Next is further along, there's
     plenty of cool styling opportunities
+
+## 2022-02-08 No Backtracking Chooser
+
+When exploring tilings where the transforms come in pairs of inverses
+(think: up/down & left/right), iterations get wasted by applying transformations
+that cancel (e.g. up then down). A simple way to do this is to disallow
+inverses. If I store the transformations as `[A, A^(-1), B, B^(-1), ...]`, then
+all that needs to be done is to keep track of the last transformation that was
+applied and forbid the adjacent index (+1 if the last index was even, -1 
+otherwise)
+
+### Next Steps:
+
+* I need to change how the `chaos_sets` algorithm to iterate each copy of the
+    initial set separately, and call `chooser.reset()` afterwards. Right now,
+    if there is only 1 pair of inverses, everything winds up going down the
+    same path, which defeats the purpose.
+* I also want to try a more general Markov chain chooser, similar to the `xaos`
+    parameters in Apophysis. The parameters will be a matrix of weights that
+    will be turned into cumulative probability distributions for easy random
+    generation.

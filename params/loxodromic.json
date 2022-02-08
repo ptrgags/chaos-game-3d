@@ -15,6 +15,7 @@
     "initial_set_copies": 5,
     "iters": 1000,
     "ifs": {
+        "chooser": "no_backtracking",
         "xforms": [
             ["chain", [
                 ["poloidal", 1, 0, 0, 90],

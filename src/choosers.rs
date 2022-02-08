@@ -94,8 +94,6 @@ impl Chooser for NoBacktrackingChooser {
             selection += 1;
         }
 
-        println!("{}", selection);
-
         self.last_selection = selection;
         selection
     }
