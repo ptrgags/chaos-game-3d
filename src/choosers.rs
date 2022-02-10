@@ -109,20 +109,151 @@ impl Debug for NoBacktrackingChooser {
     }
 }
 
+pub struct MarkovChooser {
+    /// cumulative probabilities for the initial iteration.
+    /// This is useful for hinting where to start
+    initial_probabilities: Vec<f64>,
+    /// cumulative probabilities matrix for subsequent iterations
+    cumulative_probabilities: Vec<Vec<f64>>,
+    num_xforms: usize,
+    last_selection: usize,
+    rng: ThreadRng,
+}
+
+impl MarkovChooser {
+    /// Parse a Markov chain chooser from JSON of the form:
+    /// 
+    /// {
+    ///     "type": "markov",
+    ///     "initial_weights": [w0, w1, ...]
+    ///     "weights": [
+    ///       [w00, w01, ...],
+    ///       [w10, w11, ...],
+    ///       ...
+    ///     ]
+    /// }
+    pub fn from_json(json: &JsonValue) -> Self {
+        let weights = Self::parse_weights(json);
+        let n = weights.len();
+
+        let initial_weights = Self::parse_weights_row(&json["initial_weights"]);
+        let initial_probabilities =
+            Self::weights_to_cumulative_probabilities(&initial_weights);
+        
+        // sanity check
+        if initial_probabilities.len() != n {
+            panic!("initial_weights must be the same length as the weights matrix rows");
+        }
+
+        let mut cumulative_probabilities = Vec::new();
+        for row in weights {
+            if row.len() != n {
+                panic!("weights must be a square matrix");
+            }
+
+            let cumulative_row = 
+                Self::weights_to_cumulative_probabilities(&row);
+            cumulative_probabilities.push(cumulative_row);
+        }
+
+        Self {
+            initial_probabilities,
+            cumulative_probabilities,
+            num_xforms: n,
+            last_selection: n + 1,
+            rng: rand::thread_rng(),
+        }
+    }
+
+    fn parse_weights(json: &JsonValue) -> Vec<Vec<f64>> {
+        let mut weights = Vec::new();
+        for row_json in json["weights"].members() {
+            let row = Self::parse_weights_row(row_json);
+            weights.push(row);
+        }
+        weights
+    }
+
+    fn parse_weights_row(json: &JsonValue) -> Vec<f64> {
+        match json {
+            JsonValue::Array(components) => 
+                components.iter()
+                    .map(|x| x.as_f64().expect("weights must be numbers"))
+                    .collect(),
+            _ => panic!("weights row must be an array of numbers")
+        }
+    }
+
+    fn weights_to_cumulative_probabilities(weights: &Vec<f64>) -> Vec<f64> {
+        let n = weights.len();
+        let mut probabilities = vec![0.0; n];
+
+        let weight_sum: f64 = weights.iter().sum();
+
+        let mut cumulative_sum = 0.0;
+        for (i, weight) in weights.iter().enumerate() {
+            cumulative_sum += weight;
+            probabilities[i] = cumulative_sum / weight_sum;
+        }
+        probabilities
+    }
+}
+
+impl Chooser for MarkovChooser {
+    fn choose(&mut self) -> usize {
+        let n = self.num_xforms;
+
+
+        let probabilities;
+        if self.last_selection == n + 1 {
+            // For the first iteration, use the initial weights.
+            probabilities = &self.initial_probabilities;
+        } else {
+            // Get the row of cumulative probabilities from the previous
+            // transformation.
+            probabilities = &self.cumulative_probabilities[self.last_selection];
+        }
+        
+        let value: f64 = self.rng.gen_range(0.0, 1.0);
+        for (i, probability) in probabilities.iter().enumerate() {
+            if value <= *probability {
+                self.last_selection = i;
+                return i;
+            }
+        }
+
+        panic!("Should never reach here - maybe probabilities weren't normalized correctly?");
+    }
+
+    fn reset(&mut self) {
+        self.last_selection = self.num_xforms + 1;
+    }
+}
+
+impl Debug for MarkovChooser {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "MarkovChooser({}, {}, {:?})",
+            self.num_xforms,
+            self.last_selection,
+            self.cumulative_probabilities)
+    }
+}
+
 /// Parse a transformation chooser from the IFS JSON
 /// 
 /// ```text
 /// {
-///     "chooser": "uniform" (default "uniform"),
+///     "type": "uniform" (default "uniform"),
 ///     ...params
 /// }
 /// ```
 pub fn from_json(json: &JsonValue, n: usize) -> Box<dyn Chooser> {
-    let chooser_type = json.as_str().unwrap_or("uniform");
+    let chooser_type = json["type"].as_str().unwrap_or("uniform");
 
     match &chooser_type[..] {
         "uniform" => Box::new(UniformChooser::new(n)),
         "no_backtracking" => Box::new(NoBacktrackingChooser::new(n)),
+        "markov" => Box::new(MarkovChooser::from_json(json)),
         _ => panic!("Invalid chooser type")
     }
 }
