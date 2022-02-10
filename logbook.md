@@ -450,3 +450,18 @@ otherwise)
     parameters in Apophysis. The parameters will be a matrix of weights that
     will be turned into cumulative probability distributions for easy random
     generation.
+
+## 2022-02-10 Markov Chooser
+
+Today I wrapped up my Markov chain chooser. I realized it would also be helpful
+to have a set of `initial_weights` so I can control the first transformation
+that gets applied.
+
+Apophysis has a `random` variation that can be used to bring points
+back to the center of the pattern. This program does not have that, but
+by increasing the number of initial clusters (and perhaps reducing the number of
+iterations) you can achieve similar goals.
+
+I also wanted to make a depth-first-search chooser, but I think it's better to
+implement that as an algorithm instead that ignores its chooser. But I'll leave
+that for another branch.
