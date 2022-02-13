@@ -138,9 +138,9 @@ pub struct ChaosSets {
     color_ifs: IFS,
     /// Pattern for the initial sets
     cluster: Box<dyn Cluster>,
-    /// How many initial sets to create. Each one is transformed independently
+    /// How many initial clusters to create. Each one is transformed independently
     /// from the others.
-    initial_copies: usize,
+    cluster_copies: usize,
     /// Octree-based plotter for storing the output
     output: Box<dyn Plotter>,
     /// Number of iterations to perform.
@@ -194,7 +194,7 @@ impl ChaosSets {
         let color_ifs = ifs::from_json(&json["color_ifs"]);
         let cluster = clusters::from_json(&json["cluster"]);
         let plotter = plotters::from_json(&json["plotter"]);
-        let initial_copies: usize = json["cluster_copies"]
+        let cluster_copies: usize = json["cluster_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
         let num_iters = json["iters"]
@@ -210,7 +210,7 @@ impl ChaosSets {
             position_ifs,
             color_ifs,
             cluster,
-            initial_copies,
+            cluster_copies,
             output: plotter,
             num_iters,
         }
@@ -240,7 +240,7 @@ impl ChaosSets {
 
 impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
-        for i in 0..self.initial_copies {
+        for i in 0..self.cluster_copies {
             self.iterate_cluster(i as u16);
         }
     }
@@ -255,7 +255,8 @@ impl Algorithm for ChaosSets {
     /// the number of iterations.
     fn complexity(&self) -> usize {
         let points_per_buf = self.cluster.point_count();
-        let points_per_iter = points_per_buf * self.initial_copies;
+        let points_per_iter = points_per_buf * self.cluster_copies;
+        println!("{}, {}", points_per_buf, self.cluster_copies);
        
         // Add in the size of a single buffer to account for the 0-th
         // iteration.

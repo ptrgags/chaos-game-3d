@@ -3,9 +3,9 @@
     "name": "3D Loxodromic Transformation",
     "algorithm": "chaos_sets",
     "cluster": {
-        "type": "box",
-        "dims": [0.01, 0.01, 4],
-        "center": [0, 0, 0],
+        "type": "line",
+        "start": [0, 0, -2],
+        "end": [0, 0, 2],
         "color": [0.3, 0.8, 0.4],
         "num_points": 50
     },

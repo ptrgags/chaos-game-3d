@@ -3,7 +3,7 @@
     "name": "Torus Knots",
     "algorithm": "chaos_sets",
     "cluster": {
-        "type": "box",
+        "type": "rand_box",
         "dims": [0.5, 0.5, 0.01],
         "center": [0.0, 0, 0],
         "color": [0.3, 0.8, 0.4],
