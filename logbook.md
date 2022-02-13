@@ -518,3 +518,21 @@ you quickly get diminishing returns by this method.
 
 The conclusion here is no-backtracking is great for 1 pair, okay for 2-pairs,
 and not much better than uniformly random above this.
+
+## 2022-02-13 A Productive Weekend
+
+Yesterday and today I added quite a few things:
+
+1. I added cluster coordinates to each cluster. For 1D shapes like a line, this
+    is a single `u` coordinate. For 2D shapes like a grid or disk, this is a
+    `uv` coordinate pair. For 3D shapes like a box, this is a `uvw` triple.
+2. I refactored most of `glb_writer.rs` to A. refactor the accessor and buffer
+    view management since it was messy, B. to add the cluster coordinates and
+    other ids, and C. To switch from `EXT_mesh_features` to custom
+    glTF attributes. This last bit is temporary to prepare for future changes
+    to the spec, and it allows me to use the values in Custom Shaders
+3. Now that I have more variables available in the shader, I tried making some
+    new shaders, including one that's animated!
+    
+There's so much cool stuff to explore here, and more to add, but I think this
+is a good stopping point for one weekend.
