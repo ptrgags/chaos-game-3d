@@ -69,7 +69,8 @@ impl IFS {
         points.iter().map(|point| xform.transform(point)).collect()
     }
 
-    /// Reset. This operation should happen once per
+    /// Reset. This operation should be applied at the start of iterating
+    /// each cluster to ensure each one takes a different path through the tree
     pub fn reset(&mut self) {
         self.chooser.reset();
     }

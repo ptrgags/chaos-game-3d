@@ -38,9 +38,16 @@ impl Debug for UniformChooser {
     }
 }
 
+/// A chooser for tilings with pairs of inverse transformations. After taking
+/// a step, the next step must not be the inverse to avoid backtracking.
+/// This is most effective for 1 or 2 pairs of transformations, beyond that
+/// the difference falls off roughly with the square of the number of pairs.
 pub struct NoBacktrackingChooser {
+    // The last transformation that was applied
     last_selection: usize,
+    // The total number of transformations
     num_xforms: usize,
+    // The random number generator
     rng: ThreadRng,
 }
 
@@ -109,14 +116,27 @@ impl Debug for NoBacktrackingChooser {
     }
 }
 
+/// A chooser that uses a Markov Chain to provide more control over the
+/// probability distribution.
+/// 
+/// Instead of entering probabilities, this takes a matrix of weights, where
+/// the row indicates the last transformation applied and the column indicates
+/// a transation from last -> current transformation. The weights are
+/// automatically turned into cumulative proability distributions
+/// 
+/// For increased control, there's also one extra row for initial weights.
+/// This is a probability distribution for the first transformation
 pub struct MarkovChooser {
     /// cumulative probabilities for the initial iteration.
     /// This is useful for hinting where to start
     initial_probabilities: Vec<f64>,
     /// cumulative probabilities matrix for subsequent iterations
     cumulative_probabilities: Vec<Vec<f64>>,
+    // The total number of transformations
     num_xforms: usize,
+    // The last transformation that was applied
     last_selection: usize,
+    // The random number generator.
     rng: ThreadRng,
 }
 
