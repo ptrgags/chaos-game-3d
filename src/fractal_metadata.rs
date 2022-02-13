@@ -12,10 +12,13 @@ pub struct FractalMetadata {
     pub description: String,
     /// The number of iterations
     pub iterations: u64,
-    /// How many points in the initial set
-    pub cluster_point_count: u16,
     /// How many copies of the initial set
     pub cluster_copies: u16,
+    /// How many points in the initial set in total
+    pub cluster_point_count: u16,
+    /// For ManyClusters, what is the maximum number of points in any
+    /// sub cluster
+    pub subcluster_max_point_count: u16,
     /// How many transformations are in the IFS
     pub ifs_xform_count: u8,
     /// How many transformations are in the color IFS. Default is 1 (identity)
@@ -42,15 +45,6 @@ impl FractalMetadata {
         let cluster_copies = &json["cluster_copies"]
             .as_u16().unwrap_or(1);
 
-        let cluster = &json["cluster"];
-        let cluster_point_count = match cluster {
-            JsonValue::Null => 1,
-            JsonValue::Object(_) => 
-                cluster["num_points"]
-                    .as_u16().expect("cluster.num_points must be a number"),
-            _ => panic!("")
-        };
-
         let plotter = &json["plotter"];
         let node_capacity = &plotter["node_capacity"].as_u16().unwrap_or(5000);
 
@@ -69,8 +63,10 @@ impl FractalMetadata {
             name: name.to_string(),
             description: description.to_string(),
             iterations: *iterations,
-            cluster_point_count: cluster_point_count,
             cluster_copies: *cluster_copies,
+            // these point counts will be determined later
+            cluster_point_count: 0,
+            subcluster_max_point_count: 0,
             ifs_xform_count: *ifs_xform_count as u8,
             color_ifs_xform_count: color_ifs_xform_count as u8,
             algorithm: algorithm.to_string(),

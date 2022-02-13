@@ -137,7 +137,7 @@ pub struct ChaosSets {
     /// IFS for transforming colors
     color_ifs: IFS,
     /// Pattern for the initial sets
-    initial_set: Box<dyn Cluster>,
+    cluster: Box<dyn Cluster>,
     /// How many initial sets to create. Each one is transformed independently
     /// from the others.
     initial_copies: usize,
@@ -190,10 +190,9 @@ impl ChaosSets {
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
-        let metadata = FractalMetadata::from_json(json);
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
-        let arranger = clusters::from_json(&json["cluster"]);
+        let cluster = clusters::from_json(&json["cluster"]);
         let plotter = plotters::from_json(&json["plotter"]);
         let initial_copies: usize = json["cluster_copies"]
             .as_usize()
@@ -201,12 +200,16 @@ impl ChaosSets {
         let num_iters = json["iters"]
             .as_usize()
             .expect("iters must be a positive integer");
+        let mut metadata = FractalMetadata::from_json(json);
+        metadata.cluster_point_count = cluster.point_count() as u16;
+        metadata.subcluster_max_point_count = 
+            cluster.subcluster_max_point_count() as u16;
 
         Self {
             metadata,
             position_ifs,
             color_ifs,
-            initial_set: arranger,
+            cluster,
             initial_copies,
             output: plotter,
             num_iters,
@@ -224,7 +227,7 @@ impl ChaosSets {
         self.position_ifs.reset();
         self.color_ifs.reset();
 
-        let mut buffer = self.initial_set.generate(cluster_copy, 0);
+        let mut buffer = self.cluster.generate(cluster_copy, 0);
         self.output.plot_points(&buffer);
 
         for i in 0..self.num_iters {
@@ -251,7 +254,7 @@ impl Algorithm for ChaosSets {
     /// initial set, n is the number of copies of the initial set, and p is
     /// the number of iterations.
     fn complexity(&self) -> usize {
-        let points_per_buf = self.initial_set.len();
+        let points_per_buf = self.cluster.point_count();
         let points_per_iter = points_per_buf * self.initial_copies;
        
         // Add in the size of a single buffer to account for the 0-th

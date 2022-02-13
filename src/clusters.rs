@@ -17,7 +17,12 @@ pub trait Cluster {
     fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
         -> Vec<InternalPoint>;
     /// Get the number of points in the initial set for measuring complexity.
-    fn len(&self) -> usize;
+    fn point_count(&self) -> usize;
+    /// For ManyClusters, of all the sub-clusters, what is the most points
+    /// we have in any sub-cluster? this is helpful for color mapping.
+    fn subcluster_max_point_count(&self) -> usize {
+        self.point_count()
+    }
 }
 
 /// A set of specific points to start at
@@ -83,7 +88,7 @@ impl Cluster for Points {
         points
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.positions.len()
     }
 }
@@ -164,7 +169,7 @@ impl Cluster for Line {
         points
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -253,7 +258,7 @@ impl Cluster for RandomLine {
         points
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -346,7 +351,7 @@ impl Cluster for Circle {
         points
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -463,7 +468,7 @@ impl Cluster for GridQuad {
         grid
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -553,7 +558,7 @@ impl Cluster for FibonacciDisk {
         lattice
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -653,7 +658,7 @@ impl Cluster for FibonacciSphere {
         lattice
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -787,7 +792,7 @@ impl Cluster for GridBox {
         grid
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -886,7 +891,7 @@ impl Cluster for RandomBox {
         points
     }
 
-    fn len(&self) -> usize {
+    fn point_count(&self) -> usize {
         self.num_points
     }
 }
@@ -931,8 +936,12 @@ impl Cluster for ManyClusters {
         points
     }
 
-    fn len(&self) -> usize {
-        self.clusters.iter().map(|x| x.len()).sum()
+    fn point_count(&self) -> usize {
+        self.clusters.iter().map(|x| x.point_count()).sum()
+    }
+
+    fn subcluster_max_point_count(&self) -> usize {
+        self.clusters.iter().map(|x| x.point_count()).max().unwrap_or(0)
     }
 }
 
