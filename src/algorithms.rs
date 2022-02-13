@@ -149,7 +149,7 @@ pub struct ChaosSets {
 impl ChaosSets {
 
     /// Apply the position/color IFS to a buffer, and produce a new buffer
-    pub fn transform_buffer(
+    pub fn transform_cluster(
             &mut self, points: Vec<InternalPoint>, iteration: u64
             ) -> Vec<InternalPoint> {
 
@@ -211,31 +211,31 @@ impl ChaosSets {
     }
 
     to_box!(Algorithm);
+
+    /// Iterate a single cluster
+    fn iterate_cluster(&mut self, cluster_id: u16) {
+        // Some IFS choosers are stateful, so reset the state to ensure
+        // each cluster gets a unique path
+        // NOTE: for the future: this is not thread-safe. If I want to
+        // use threading someday, each thread needs a copy of the chooser
+        self.position_ifs.reset();
+        self.color_ifs.reset();
+
+        let mut buffer = self.initial_set.generate(cluster_id);
+        self.output.plot_points(&buffer);
+
+        for i in 0..self.num_iters {
+            let new_buffer = self.transform_cluster(buffer, i as u64);
+            self.output.plot_points(&new_buffer);
+            buffer = new_buffer;
+        }
+    }
 }
 
 impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
-        // Generate a number of initial sets. They will be transformed
-        // independently. This helps to view more of the search space
-        let mut buffers: Vec<Vec<InternalPoint>> = 
-            (0..self.initial_copies)
-                .map(|i| { self.initial_set.generate(i as u16) })
-                .collect();
-
-        // Only write the first copy to the output, since they are all in
-        // the same location
-        self.output.plot_points(&buffers[0]);
-
-        // Every iteration, transform each buffer using the IFS, 
-        // and plot the results in the output buffer.
-        for i in 0..self.num_iters {
-            let mut new_buffers: Vec<Vec<InternalPoint>> = Vec::new();
-            for point_buffer in buffers.into_iter() {
-                let new_buffer = self.transform_buffer(point_buffer, i as u64);
-                self.output.plot_points(&new_buffer);
-                new_buffers.push(new_buffer);
-            }
-            buffers = new_buffers;
+        for i in 0..self.initial_copies {
+            self.iterate_cluster(i as u16);
         }
     }
 
