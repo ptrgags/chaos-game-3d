@@ -13,7 +13,7 @@ pub struct FractalMetadata {
     /// The number of iterations
     pub iterations: u64,
     /// How many points in the initial set
-    pub initial_set_point_count: u16,
+    pub cluster_point_count: u16,
     /// How many copies of the initial set
     pub cluster_copies: u16,
     /// How many transformations are in the IFS
@@ -42,12 +42,12 @@ impl FractalMetadata {
         let cluster_copies = &json["cluster_copies"]
             .as_u16().unwrap_or(1);
 
-        let initial_set = &json["cluster"];
-        let initial_set_point_count = match initial_set {
+        let cluster = &json["cluster"];
+        let cluster_point_count = match cluster {
             JsonValue::Null => 1,
             JsonValue::Object(_) => 
-                initial_set["num_points"]
-                    .as_u16().expect("initial_set.num_points must be a number"),
+                cluster["num_points"]
+                    .as_u16().expect("cluster.num_points must be a number"),
             _ => panic!("")
         };
 
@@ -69,7 +69,7 @@ impl FractalMetadata {
             name: name.to_string(),
             description: description.to_string(),
             iterations: *iterations,
-            initial_set_point_count: initial_set_point_count,
+            cluster_point_count: cluster_point_count,
             cluster_copies: *cluster_copies,
             ifs_xform_count: *ifs_xform_count as u8,
             color_ifs_xform_count: color_ifs_xform_count as u8,
@@ -100,7 +100,7 @@ impl FractalMetadata {
                             "iterations" => object!{
                                 "componentType" => "UINT64"
                             },
-                            "initial_set_point_count" => object!{
+                            "cluster_point_count" => object!{
                                 "componentType" => "UINT16"
                             },
                             "cluster_copies" => object!{
@@ -129,7 +129,7 @@ impl FractalMetadata {
                     "name" => self.name.clone(),
                     "description" => self.description.clone(),
                     "iterations" => self.iterations,
-                    "initial_set_point_count" => self.initial_set_point_count,
+                    "cluster_point_count" => self.cluster_point_count,
                     "cluster_copies" => self.cluster_copies,
                     "ifs_xform_count" => self.ifs_xform_count,
                     "color_ifs_xform_count" => self.color_ifs_xform_count,
