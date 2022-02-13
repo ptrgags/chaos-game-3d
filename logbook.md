@@ -429,3 +429,61 @@ I'm not quite done with this project, there's a few more things I want to do:
     arrow keys or a gamepad?
 * Once CesiumJS's implementation of 3D Tiles Next is further along, there's
     plenty of cool styling opportunities
+
+## 2022-02-08 No Backtracking Chooser
+
+When exploring tilings where the transforms come in pairs of inverses
+(think: up/down & left/right), iterations get wasted by applying transformations
+that cancel (e.g. up then down). A simple way to do this is to disallow
+inverses. If I store the transformations as `[A, A^(-1), B, B^(-1), ...]`, then
+all that needs to be done is to keep track of the last transformation that was
+applied and forbid the adjacent index (+1 if the last index was even, -1 
+otherwise)
+
+### Next Steps:
+
+* I need to change how the `chaos_sets` algorithm to iterate each copy of the
+    initial set separately, and call `chooser.reset()` afterwards. Right now,
+    if there is only 1 pair of inverses, everything winds up going down the
+    same path, which defeats the purpose.
+* I also want to try a more general Markov chain chooser, similar to the `xaos`
+    parameters in Apophysis. The parameters will be a matrix of weights that
+    will be turned into cumulative probability distributions for easy random
+    generation.
+
+## 2022-02-10 Markov Chooser
+
+Today I wrapped up my Markov chain chooser. I realized it would also be helpful
+to have a set of `initial_weights` so I can control the first transformation
+that gets applied.
+
+Apophysis has a `random` variation that can be used to bring points
+back to the center of the pattern. This program does not have that, but
+by increasing the number of initial clusters (and perhaps reducing the number of
+iterations) you can achieve similar goals.
+
+I also wanted to make a depth-first-search chooser, but I think it's better to
+implement that as an algorithm instead that ignores its chooser. But I'll leave
+that for another branch.
+
+## 2022-02-12 No Backtracking Chooser - Probability Analysis.
+
+Yesterday I explored the math of the no-backtracking chooser. I confirmed
+what my intuition was telling me, that it works well for 1 or 2 pairs of
+transformations, but not very well above that.
+
+For 1 pair of transformations, the uniform probability for each transform is
+`1/2`. With then no-backtracking rule, the only valid transformation has
+probability 1. The difference here is large, `1 - 1/2 = 1/2`
+
+For 2 pairs, the uniform probability is `1/4`. With the no-backtracking
+rule each valid transformation has probability 1/3. The difference is quite
+a bit smaller, `1/3 - 1/4 = 1/12`.
+
+For `p` pairs, the unform probability is `1/(2p)`. With no-backtracking,
+the probabilities become `1/(2p - 1)`. The difference is
+`1/(2p - 1) - 1/(2p) = 1/(4p^2 - 2p)`. This falls off quadratically, so
+you quickly get diminishing returns by this method. 
+
+The conclusion here is no-backtracking is great for 1 pair, okay for 2-pairs,
+and not much better than uniformly random above this.

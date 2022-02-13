@@ -68,6 +68,12 @@ impl IFS {
         self.last_xform = index;
         points.iter().map(|point| xform.transform(point)).collect()
     }
+
+    /// Reset. This operation should be applied at the start of iterating
+    /// each cluster to ensure each one takes a different path through the tree
+    pub fn reset(&mut self) {
+        self.chooser.reset();
+    }
 }
 
 /// Parse an IFS from JSON of the form:

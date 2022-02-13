@@ -7,14 +7,15 @@
         "dims": [0.01, 0.01, 4],
         "center": [0, 0, 0],
         "color": [0.3, 0.8, 0.4],
-        "num_points": 100
+        "num_points": 50
     },
     "plotter": {
         "radius": 4
     },
-    "initial_set_copies": 5,
+    "initial_set_copies": 10,
     "iters": 1000,
     "ifs": {
+        "chooser": "no_backtracking",
         "xforms": [
             ["chain", [
                 ["poloidal", 1, 0, 0, 90],
