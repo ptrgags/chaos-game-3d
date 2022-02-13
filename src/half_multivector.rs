@@ -573,7 +573,9 @@ impl HalfMultivector {
         let scale_factor = n - p;
 
         if scale_factor == 0.0 {
-            panic!("null vectors cannot be homogenized!");
+            // null vectors would result in a divide by zero, so 
+            // just leave it alone.
+            return;
         }
 
 
@@ -604,7 +606,9 @@ impl HalfMultivector {
         let scale_factor = n - p;
 
         if scale_factor == 0.0 {
-            panic!("null vectors cannot be homogenized!");
+            // a null vector typically means the point blew up to infinity
+            println!("warning - point went to infinity?");
+            Vec3::new(1e9, 1e9, 1e9);
         }
 
         let x = self.components[X] / scale_factor;

@@ -256,7 +256,6 @@ impl Algorithm for ChaosSets {
     fn complexity(&self) -> usize {
         let points_per_buf = self.cluster.point_count();
         let points_per_iter = points_per_buf * self.cluster_copies;
-        println!("{}, {}", points_per_buf, self.cluster_copies);
        
         // Add in the size of a single buffer to account for the 0-th
         // iteration.

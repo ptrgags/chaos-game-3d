@@ -51,6 +51,28 @@ const COLOR_CLUSTER_COPIES = new Cesium.CustomShader({
     `
 });
 
+const COLOR_LAST_XFORMS = new Cesium.CustomShader({
+    uniforms: {
+        u_xform_count: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.last_xform / u_xform_count;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
 const HIGHLIGHT_FIRST = new Cesium.CustomShader({
     uniforms: {
         u_cluster_copies: {
@@ -107,13 +129,30 @@ const COLOR_OCTANTS = new Cesium.CustomShader({
     `
 });
 
+
+const VIEW_CLUSTER_COORDINATES = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = fsInput.attributes.cluster_coordinates;
+    }
+    `
+});
+
 const SHADERS = {
     unlit: UNLIT,
     iterations: COLOR_ITERATIONS,
     cluster_copies: COLOR_CLUSTER_COPIES,
+    last_xform: COLOR_LAST_XFORMS,
     first: HIGHLIGHT_FIRST,
     distance: COLOR_BY_DISTANCE,
     octant: COLOR_OCTANTS,
+    cluster_coordinates: VIEW_CLUSTER_COORDINATES
 };
 
 const OPTIONS = [
@@ -122,15 +161,23 @@ const OPTIONS = [
         value: "unlit"
     },
     {
-        name: "Color by Iteration",
+        name: "Color by iteration",
         value: "iterations"
     },
     {
-        name: "Color by Cluster Copy",
+        name: "Color by cluster copy",
         value: "cluster_copies"
     },
     {
-        name: "Highlight First Cluster",
+        name: "Color by last xform",
+        value: "last_xform"
+    },
+    {
+        name: "View cluster coordinates",
+        value: "cluster_coordinates"
+    },
+    {
+        name: "Highlight first cluster",
         value: "first"
     },
     {
@@ -170,6 +217,9 @@ class FractalShading {
     update_metadata(metadata) {
         const iterations = metadata.getProperty("iterations");
         COLOR_ITERATIONS.setUniform("u_iterations", iterations);
+
+        const ifs_xform_count = metadata.getProperty("ifs_xform_count");
+        COLOR_LAST_XFORMS.setUniform("u_xform_count", ifs_xform_count);
 
         //"cluster_point_count":500,"cluster_copies":5,"ifs_xform_count":6,"color_ifs_xform_count":1,"algorithm":"chaos_sets","node_capacity":5000
         const cluster_copies = metadata.getProperty("cluster_copies");
