@@ -40,8 +40,7 @@ impl Debug for UniformChooser {
 
 /// A chooser for tilings with pairs of inverse transformations. After taking
 /// a step, the next step must not be the inverse to avoid backtracking.
-/// This is most effective for 1 or 2 pairs of transformations, beyond that
-/// the difference falls off roughly with the square of the number of pairs.
+/// This is most effective when there's only 1 or 2 pairs of transformations.
 pub struct NoBacktrackingChooser {
     // The last transformation that was applied
     last_selection: usize,

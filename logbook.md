@@ -465,3 +465,25 @@ iterations) you can achieve similar goals.
 I also wanted to make a depth-first-search chooser, but I think it's better to
 implement that as an algorithm instead that ignores its chooser. But I'll leave
 that for another branch.
+
+## 2022-02-12 No Backtracking Chooser - Probability Analysis.
+
+Yesterday I explored the math of the no-backtracking chooser. I confirmed
+what my intuition was telling me, that it works well for 1 or 2 pairs of
+transformations, but not very well above that.
+
+For 1 pair of transformations, the uniform probability for each transform is
+`1/2`. With then no-backtracking rule, the only valid transformation has
+probability 1. The difference here is large, `1 - 1/2 = 1/2`
+
+For 2 pairs, the uniform probability is `1/4`. With the no-backtracking
+rule each valid transformation has probability 1/3. The difference is quite
+a bit smaller, `1/3 - 1/4 = 1/12`.
+
+For `p` pairs, the unform probability is `1/(2p)`. With no-backtracking,
+the probabilities become `1/(2p - 1)`. The difference is
+`1/(2p - 1) - 1/(2p) = 1/(4p^2 - 2p)`. This falls off quadratically, so
+you quickly get diminishing returns by this method. 
+
+The conclusion here is no-backtracking is great for 1 pair, okay for 2-pairs,
+and not much better than uniformly random above this.
