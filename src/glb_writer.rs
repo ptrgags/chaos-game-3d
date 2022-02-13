@@ -1,6 +1,9 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+use json::JsonValue;
+use json::number::Number;
+
 use crate::point::OutputPoint;
 
 /// glTF version number. 2.0 is the latest as of this writing.
@@ -16,8 +19,10 @@ const GLTF_HEADER_LENGTH: u32 = 12;
 /// Length of a chunk header (length + type)
 const GLTF_CHUNK_HEADER_LENGTH: u32 = 8;
 
+/// Size of a single-precision float
+const SIZE_FLOAT: u32 = 4;
 /// Size of a vec3
-const SIZE_VEC3: u32 = 3 * 4;
+const SIZE_VEC3: u32 = 3 * SIZE_FLOAT;
 /// Size of an RGB color encoded as unsigned bytes
 const SIZE_COLOR_RGB: u32 = 3;
 // Size of an unsigned 64-bit integer in bytes
@@ -39,6 +44,10 @@ const PADDING_JSON: u8 = ' ' as u8;
 
 /// A struct for keeping track of the size of a buffer view within the buffer 
 struct BufferView {
+    /// Human-readable name for the buffer view
+    name: String,
+    /// The index of the bufer view
+    id: u32,
     /// The offset within the buffer that marks the start of the buffer view
     byte_offset: u32,
     /// The length of the buffer view
@@ -50,11 +59,14 @@ struct BufferView {
 
 impl BufferView {
     /// Create an empty buffer view
-    pub fn new() -> Self {
+    pub fn new(name: &str, id: u32, byte_offset: u32, byte_length: u32)
+            -> Self {
         Self {
-            byte_offset: 0,
-            byte_length: 0,
-            padding_length: 0
+            name: String::from(name),
+            id,
+            byte_offset,
+            byte_length,
+            padding_length: compute_padding_length(byte_length, ALIGNMENT)
         }
     }
 
@@ -62,31 +74,35 @@ impl BufferView {
     pub fn after_offset(&self) -> u32 {
         self.byte_offset + self.byte_length + self.padding_length
     }
+
+    pub fn to_json(&self) -> JsonValue {
+        object!{
+            "name" => self.name.clone(),
+            "buffer" => 0,
+            "byteOffset" => self.byte_offset,
+            "byteLength" => self.byte_length,
+        }
+    }
 }
 
 /// A struct for keeping track of glTF accessor settings
 struct Accessor {
-    /// The index of the buffer view that stores this accessor. This program
-    /// uses one buffer view per accessor. 
-    buffer_view: u32,
-    /// The type of this glTF accessor (e.g. )
-    component_type: u32,
-    /// minimum value of each component of the accessor. Only required for
-    /// position
-    min: Option<Vec<f32>>,
-    /// minimum value of each component of the accessor. Only required for
-    /// position
-    max: Option<Vec<f32>>,
+    /// Attribute semantic since every accesor will also be a vertex
+    /// attribute
+    semantic: String,
+    /// ID of this accessor.
+    accessor_id: u32,
+    /// JSON description of the accesor
+    json: JsonValue
 }
 
 impl Accessor {
     /// Create an empty accessor
-    pub fn new() -> Self {
+    pub fn new(semantic: &str, accessor_id: u32, json: JsonValue) -> Self {
         Self {
-            buffer_view: 0,
-            component_type: 0,
-            min: None,
-            max: None
+            semantic: String::from(semantic),
+            accessor_id,
+            json
         }
     }
 }
@@ -130,27 +146,11 @@ pub struct GlbWriter {
     binary_chunk: Chunk,
     /// The total length of the buffer in the BIN chunk
     buffer_length: u32,
-    /// The POSITION accessor
-    accessor_position: Accessor,
-    /// The COLOR_0 accessor
-    accessor_color: Accessor,
-    /// The FEATURE_ID_0 accessor
-    accessor_feature_ids: Accessor,
-    /// The bufferView layout for the POSITION attribute
-    buffer_view_position: BufferView,
-    /// The bufferView layout for the COLOR_0 attribute
-    buffer_view_color: BufferView,
-    /// The bufferView layout for the FEATURE_ID_0 attribute
-    buffer_view_feature_ids: BufferView,
-    /// The bufferView layout for the "iterations" metadata property
-    buffer_view_iterations: BufferView,
-    /// The bufferView layout for the "point_id" metadata property
-    buffer_view_point_id: BufferView,
-    /// The bufferView layout for the "last_xforms" metadata property
-    buffer_view_last_xforms: BufferView,
-    /// The bufferView layout for the "color_xforms" metadata property
-    buffer_view_last_color_xforms: BufferView,
-    /// The glTF JSON that goes into the JSON chunk
+    /// The glTF accessors.
+    accessors: Vec<Accessor>,
+    /// The glTF buffer views.
+    buffer_views: Vec<BufferView>,
+    // The final JSON string that will be written to the JSON chunk
     json: String,
 }
 
@@ -162,16 +162,8 @@ impl GlbWriter {
             json_chunk: Chunk::new(),
             binary_chunk: Chunk::new(),
             buffer_length: 0,
-            accessor_position: Accessor::new(),
-            accessor_color: Accessor::new(),
-            accessor_feature_ids: Accessor::new(),
-            buffer_view_position: BufferView::new(),
-            buffer_view_color: BufferView::new(),
-            buffer_view_feature_ids: BufferView::new(),
-            buffer_view_iterations: BufferView::new(),
-            buffer_view_point_id: BufferView::new(),
-            buffer_view_last_xforms: BufferView::new(),
-            buffer_view_last_color_xforms: BufferView::new(),
+            accessors: Vec::new(),
+            buffer_views: Vec::new(),
             json: String::new(),
         }
     }
@@ -199,72 +191,239 @@ impl GlbWriter {
         let point_count = buffer.len() as u32;
         self.point_count = point_count;
 
-        // vec3 position
-        let position_length = point_count * SIZE_VEC3;
-        self.buffer_view_position.byte_offset = 0;
-        self.buffer_view_position.byte_length = position_length;
-        self.buffer_view_position.padding_length = compute_padding_length(
-            position_length, ALIGNMENT);
-
-        self.accessor_position.buffer_view = 0;
-        self.accessor_position.component_type = GLTF_FLOAT;
-
         // min/max is required for positions
         let (min, max) = compute_min_max(buffer);
-        self.accessor_position.min = Some(min);
-        self.accessor_position.max = Some(max);
 
-        // vec3 color stored as 3 x UNSIGNED_BYTE + 1 byte padding
+        // vec3 POSITION -------------------------------------------------
+        let position_length = point_count * SIZE_VEC3;
+        let position_bv = BufferView::new(
+            "Positions", 
+            self.buffer_views.len() as u32,
+            0,
+            position_length
+        );
+        self.buffer_views.push(position_bv);
+
+        // reference to the previous buffer view so computing the next
+        // offset is always written last_bv.after_offset(). This way, if
+        // in the future I make some buffer views optional the code is more
+        // maintainable.
+        let mut last_bv: &BufferView = &position_bv;
+
+        let position_accessor = Accessor::new(
+            "POSITION",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Positions",
+                "bufferView" => position_bv.id,
+                "count" => point_count,
+                "min" => min,
+                "max" => max,
+                "type" => "VEC3",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(position_accessor);
+
+        // vec3 COLOR_0 -------------------------------------------------
+        // stored as 3 x UNSIGNED_BYTE + 1 byte padding
         let color_length = point_count * (SIZE_COLOR_RGB + 1);
-        self.buffer_view_color.byte_offset = self.buffer_view_position.after_offset();
-        self.buffer_view_color.byte_length = color_length;
-        self.buffer_view_color.padding_length = compute_padding_length(
-            color_length, ALIGNMENT);
+        let color_bv = BufferView::new(
+            "Colors",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            color_length
+        );
+        self.buffer_views.push(color_bv);
+        last_bv = &color_bv;
 
-        self.accessor_color.buffer_view = 1;
-        self.accessor_color.component_type = GLTF_UNSIGNED_BYTE;
+        let color_accessor = Accessor::new(
+            "COLOR_0",
+            self.accessors.len() as u32,
+            object! {
+                "name" => "Colors",
+                "bufferView" => color_bv.id,
+                "count" => point_count,
+                "type" => "VEC3",
+                "component_type" => GLTF_UNSIGNED_BYTE,
+                "normalized" => true,
+            }
+        );
+        self.accessors.push(color_accessor);
         
-        // u16 feature ID + 2 byte padding
-        let feature_id_length = point_count * (SIZE_U16 + 2);
-        self.buffer_view_feature_ids.byte_offset = self.buffer_view_color.after_offset();
-        self.buffer_view_feature_ids.byte_length = feature_id_length;
-        self.buffer_view_feature_ids.padding_length = compute_padding_length(
-            feature_id_length, ALIGNMENT);
+        // vec3 _CLUSTER_COORDINATES (aka uvw coordinates) ------------------
+        let uvw_length = point_count * SIZE_VEC3;
+        let uvw_bv = BufferView::new(
+            "Cluster Coordinates",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            color_length
+        );
+        self.buffer_views.push(uvw_bv);
+        last_bv = &uvw_bv;
 
-        self.accessor_feature_ids.buffer_view = 2;
-        self.accessor_feature_ids.component_type = GLTF_UNSIGNED_BYTE;
+        let uvw_accessor = Accessor::new(
+            "_CLUSTER_COORDINATES",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Cluster Coordinates",
+                "bufferView" => uvw_bv.id,
+                "count" => point_count,
+                "type" => "VEC3",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(uvw_accessor);
 
-        // metadata buffer views
-        // u64 iteration count
-        let iterations_length = point_count * SIZE_U64;
-        self.buffer_view_iterations.byte_offset = self.buffer_view_feature_ids.after_offset();
-        self.buffer_view_iterations.byte_length = iterations_length;
-        // 8-byte values will always be aligned so padding = default of 0
+        // float _FEATURE_ID_0 (iterations) ----------------------------------
+        let iteration_length = point_count * SIZE_FLOAT;
+        let iteration_bv = BufferView::new(
+            "Feature ID 0 (iterations)",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            iteration_length
+        );
+        self.buffer_views.push(iteration_bv);
+        last_bv = &iteration_bv;
 
-        // u16 point ID
-        let ids_length = point_count * SIZE_U16;
-        self.buffer_view_point_id.byte_offset = self.buffer_view_iterations.after_offset();
-        self.buffer_view_point_id.byte_length = ids_length;
-        self.buffer_view_point_id.padding_length = compute_padding_length(
-            ids_length, ALIGNMENT);
+        let iteration_accessor = Accessor::new(
+            "_FEATURE_ID_0",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Feature ID 0 (iterations)",
+                "bufferView" => iteration_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(iteration_accessor);
 
-        // u8 ID of the last transform applied
-        let last_xforms_length = point_count * SIZE_U8;
-        self.buffer_view_last_xforms.byte_offset = self.buffer_view_point_id.after_offset();
-        self.buffer_view_last_xforms.byte_length = last_xforms_length;
-        self.buffer_view_last_xforms.padding_length = compute_padding_length(
-            last_xforms_length, ALIGNMENT);
+        // float _FEATURE_ID_1 (cluster_copy) --------------------------------
+        let cluster_copy_length = point_count * SIZE_FLOAT;
+        let cluster_copy_bv = BufferView::new(
+            "Feature ID 1 (cluster copy)",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            cluster_copy_length
+        );
+        self.buffer_views.push(cluster_copy_bv);
+        last_bv = &cluster_copy_bv;
 
-        // u8 ID of the last color transform applied
-        let last_color_xforms_length = point_count * SIZE_U8;
-        self.buffer_view_last_color_xforms.byte_offset = self.buffer_view_last_xforms.after_offset();
-        self.buffer_view_last_color_xforms.byte_length = last_color_xforms_length;
-        self.buffer_view_last_color_xforms.padding_length = compute_padding_length(
-            last_color_xforms_length, ALIGNMENT);
-        
+        let cluster_copy_accessor = Accessor::new(
+            "_FEATURE_ID_1",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Feature ID 1 (cluster copy)",
+                "bufferView" => cluster_copy_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(cluster_copy_accessor);
+
+        // float _FEATURE_ID_2 (cluster id) --------------------------------
+        let cluster_id_length = point_count * SIZE_FLOAT;
+        let cluster_id_bv = BufferView::new(
+            "Feature ID 2 (cluster id)",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            cluster_id_length
+        );
+        self.buffer_views.push(cluster_id_bv);
+        last_bv = &cluster_id_bv;
+
+        let cluster_id_accessor = Accessor::new(
+            "_FEATURE_ID_2",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Feature ID 2 (cluster id)",
+                "bufferView" => cluster_id_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(cluster_id_accessor);
+
+        // float _FEATURE_ID_3 (point id) ----------------------------------
+        let point_id_length = point_count * SIZE_FLOAT;
+        let point_id_bv = BufferView::new(
+            "Feature ID 3 (point id)",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            point_id_length
+        );
+        self.buffer_views.push(point_id_bv);
+        last_bv = &point_id_bv;
+
+        let point_id_accessor = Accessor::new(
+            "_FEATURE_ID_3",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Feature ID 3 (point id)",
+                "bufferView" => point_id_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(point_id_accessor);
+
+        // float _LAST_XFORM ----------------------------------------------
+        let last_xform_length = point_count * SIZE_FLOAT;
+        let last_xform_bv = BufferView::new(
+            "Last xform applied",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            last_xform_length
+        );
+        self.buffer_views.push(last_xform_bv);
+        last_bv = &last_xform_bv;
+
+        let last_xform_accessor = Accessor::new(
+            "_LAST_XFORM",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Last xform applied",
+                "bufferView" => last_xform_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(last_xform_accessor);
+
+        // float _LAST_COLOR_XFORM ----------------------------------------
+        let last_color_xform_length = point_count * SIZE_FLOAT;
+        let last_color_xform_bv = BufferView::new(
+            "Last xform applied",
+            self.buffer_views.len() as u32,
+            last_bv.after_offset(),
+            last_color_xform_length
+        );
+        self.buffer_views.push(last_color_xform_bv);
+        last_bv = &last_color_xform_bv;
+
+        let last_color_xform_accessor = Accessor::new(
+            "_LAST_XFORM",
+            self.accessors.len() as u32,
+            object!{
+                "name" => "Last xform applied",
+                "bufferView" => last_color_xform_bv.id,
+                "count" => point_count,
+                "type" => "SCALAR",
+                "componentType" => GLTF_FLOAT
+            }
+        );
+        self.accessors.push(last_color_xform_accessor);
+
+        // binary chunk layout ---------------------------------------------
+
         // The offset after the last buffer view is equal to the length of
         // the entire buffer.
-        let buffer_length = self.buffer_view_last_color_xforms.after_offset();
+        let buffer_length = last_bv.after_offset();
         self.binary_chunk.chunk_length = buffer_length;
         // Since the buffer views are already padded, no extra padding is needed
         self.binary_chunk.padding_length = 0;
@@ -274,65 +433,20 @@ impl GlbWriter {
 
     /// Create the glTF JSON for the JSON chunk
     fn make_json(&mut self) {
+        let accessors: Vec<JsonValue> = 
+            self.accessors.iter().map(|x| x.json).collect();
+        let buffer_views: Vec<JsonValue> =
+            self.buffer_views.iter().map(|x| x.to_json()).collect();
+
+        let mut attributes = object!{};
+        for accessor in self.accessors {
+            let id: Number = accessor.accessor_id.into();
+            attributes[&accessor.semantic] = JsonValue::Number(id);
+        }
+
         let json = object!{
             "asset" => object!{
                 "version" => "2.0"
-            },
-            "extensionsUsed" => array![
-                "EXT_mesh_features"
-            ],
-            "extensions" => object!{
-                "EXT_mesh_features" => object!{
-                    "schema" => object!{
-                        "classes" => object!{
-                            "fractal" => object!{
-                                "name" => "Fractal",
-                                "description" => "Details about the fractal",
-                                "properties" => object!{
-                                    "iterations" => object!{
-                                        "description" => "Iteration number when this point is plotted. Note that the first few iterations are not plotted, so iterations 0-9 will not appear.",
-                                        "componentType" => "UINT64",
-                                        "required" => true,
-                                    },
-                                    "point_id" => object!{
-                                        "description" => "ID for the point within the initial set. If the basic scatterplot is used, this will always be 0. When algorithm chaos_sets is used, this will be the ID within the initial set, while FEATURE_ID_0 will contain the id of the initial set copy",
-                                        "componentType" => "UINT16",
-                                        "required" => true,
-                                    },
-                                    "last_xform" => object!{
-                                        "componentType" => "UINT8",
-                                        "required" => true,
-                                    },
-                                    "last_color_xform" => object!{
-                                        "componentType" => "UINT8",
-                                        "required" => true
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "propertyTables" => array![
-                        object!{
-                            "name" => "fractal",
-                            "class" => "fractal",
-                            "count" => self.point_count,
-                            "properties" => object!{
-                                "iterations" => object!{
-                                    "bufferView" => 3
-                                },
-                                "point_id" => object!{
-                                    "bufferView" => 4
-                                },
-                                "last_xform" => object!{
-                                    "bufferView" => 5
-                                },
-                                "last_color_xform" => object!{
-                                    "bufferView" => 6
-                                }
-                            }
-                        }
-                    ]
-                }
             },
             "scene" => 0,
             "scenes" => array![
@@ -355,102 +469,14 @@ impl GlbWriter {
                 object!{
                     "primitives" => array![
                         object!{
-                            "attributes" => object!{
-                                "POSITION" => 0,
-                                "COLOR_0" => 1,
-                                "FEATURE_ID_0" => 2
-                            },
+                            "attributes" => attributes,
                             "mode" => GLTF_POINTS,
-                            "extensions" => object!{
-                                "EXT_mesh_features" => object!{
-                                    "propertyTables" => array![0],
-                                    "featureIds" => array![
-                                        object!{
-                                            "offset" => 0,
-                                            "repeat" => 1
-                                        },
-                                        object!{
-                                            "attribute" => 0
-                                        }
-                                    ]
-                                }
-                            }
                         }
                     ]
                 }
             ],
-            "accessors" => array![
-                object!{
-                    "name" => "Positions",
-                    "count" => self.point_count,
-                    "bufferView" => self.accessor_position.buffer_view,
-                    "min" => self.accessor_position.min.as_ref().unwrap().clone(),
-                    "max" => self.accessor_position.max.as_ref().unwrap().clone(),
-                    "type" => "VEC3",
-                    "componentType" => self.accessor_position.component_type
-                },
-                object!{
-                    "name" => "Colors",
-                    "count" => self.point_count,
-                    "bufferView" => self.accessor_color.buffer_view,
-                    "type" => "VEC3",
-                    "normalized" => true,
-                    "componentType" => self.accessor_color.component_type,
-                },
-                object!{
-                    "name" => "Feature IDs",
-                    "count" => self.point_count,
-                    "bufferView" => self.accessor_feature_ids.buffer_view,
-                    "type" => "SCALAR",
-                    "componentType" => self.accessor_feature_ids.component_type
-                }
-            ],
-            "bufferViews" => array![
-                object!{
-                    "name" => "Positions",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_position.byte_length,
-                    "byteOffset" => self.buffer_view_position.byte_offset,
-                },
-                object!{
-                    "name" => "Colors",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_color.byte_length,
-                    "byteOffset" => self.buffer_view_color.byte_offset,
-                    "byteStride" => 4
-                },
-                object!{
-                    "name" => "Feature IDs",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_feature_ids.byte_length,
-                    "byteOffset" => self.buffer_view_feature_ids.byte_offset,
-                    "byteStride" => 4
-                },
-                object!{
-                    "name" => "Iteration Count",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_iterations.byte_length,
-                    "byteOffset" => self.buffer_view_iterations.byte_offset,
-                },
-                object!{
-                    "name" => "Point ID",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_point_id.byte_length,
-                    "byteOffset" => self.buffer_view_point_id.byte_offset,
-                },
-                object!{
-                    "name" => "Last xform ID",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_last_xforms.byte_length,
-                    "byteOffset" => self.buffer_view_last_xforms.byte_offset,
-                },
-                object!{
-                    "name" => "Last color xform ID",
-                    "buffer" => 0,
-                    "byteLength" => self.buffer_view_last_color_xforms.byte_length,
-                    "byteOffset" => self.buffer_view_last_color_xforms.byte_offset,
-                }
-            ],
+            "accessors" => accessors,
+            "bufferViews" => buffer_views,
             "buffers" => array![
                 object!{
                     "byteLength" => self.buffer_length
