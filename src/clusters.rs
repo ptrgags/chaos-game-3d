@@ -14,13 +14,17 @@ use crate::point::InternalPoint;
 pub trait Cluster {
     /// Generate a set of points. This may be called several times, and each
     /// time it must produce a new set of points.
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint>; 
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+        -> Vec<InternalPoint>;
     /// Get the number of points in the initial set for measuring complexity.
     fn len(&self) -> usize;
 }
 
+/// A set of specific points to start at
 pub struct Points {
+    // The points to use
     positions: Vec<Vec3>,
+    // The initial color of the points
     color: Vec3
 }
 
@@ -55,15 +59,20 @@ impl Points {
 }
 
 impl Cluster for Points {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+            -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
+        let n = self.positions.len() as f32;
         for (i, position) in self.positions.iter().enumerate() {
+            let u = (i as f32) / (n + 1.0);
             let point = InternalPoint {
                 position: HalfMultivector::from_vec3(&position),
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u, 0.0, 0.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -122,7 +131,8 @@ impl Line {
 }
 
 impl Cluster for Line {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+            -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
 
@@ -139,8 +149,10 @@ impl Cluster for Line {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(t, 0.0, 0.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -211,7 +223,8 @@ impl RandomLine {
 }
 
 impl Cluster for RandomLine {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+            -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
 
@@ -225,8 +238,10 @@ impl Cluster for RandomLine {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(t, 0.0, 0.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -295,7 +310,7 @@ impl Circle {
 }
 
 impl Cluster for Circle {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) -> Vec<InternalPoint> {
         let mut points = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
 
@@ -316,8 +331,10 @@ impl Cluster for Circle {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(t as f32, 0.0, 0.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -348,8 +365,13 @@ pub struct GridQuad {
     height: f64,
     /// The quad starts with a solid color
     color: Vec3,
-    /// Generate up to N points (possibly less) in the grid
-    num_points: usize
+    // The actual number of points in the x direction
+    x_count: usize,
+    // The actual number of points in the y direction.
+    y_count: usize,
+    /// The actual number of points in the grid (may be less than the value in 
+    /// the JSON)
+    num_points: usize,
 }
 
 /// Parse a GridQuad generator from JSON of the form:
@@ -374,8 +396,20 @@ impl GridQuad {
         let y_dir = Vec3::from_json(&json["y_dir"], Vec3::new(0.0, 1.0, 0.0));
         let color = Vec3::from_json(&json["color"], Vec3::ones());
         let num_points = &json["num_points"]
-            .as_usize()
+            .as_f64()
             .expect("num_points must be a positive integer");
+
+        // Compute the effective grid size. If n points cannot be evenly
+        // divided into the same ratio as width/height, the grid may be
+        // slightly smaller
+        // See https://www.desmos.com/calculator/ltvzx6ezec
+        let n = *num_points;
+        let area = width * height;
+        let density = n / area;
+        let sqrt_density = density.sqrt();
+        let x_count = (width * sqrt_density).floor() as usize;
+        let y_count = (height * sqrt_density).floor() as usize;
+        let m = x_count * y_count;
 
         Self {
             center,
@@ -383,8 +417,10 @@ impl GridQuad {
             y_dir,
             width,
             height,
-            num_points: *num_points,
-            color
+            color,
+            x_count,
+            y_count,
+            num_points: m,
         }
     }
 
@@ -392,28 +428,16 @@ impl GridQuad {
 }
 
 impl Cluster for GridQuad {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+            -> Vec<InternalPoint> {
         let mut grid = Vec::new();
-
-        // Compute the effective grid size. If n points cannot be evenly
-        // divided into the same ratio as width/height, the grid may be
-        // slightly smaller
-        // See https://www.desmos.com/calculator/ltvzx6ezec
-        let n = self.num_points as f64;
-        let area = self.width * self.height;
-        let density = n / area;
-        let sqrt_density = density.sqrt();
-        let x_count = (self.width * sqrt_density).floor() as usize;
-        let y_count = (self.height * sqrt_density).floor() as usize;
-        let m = x_count * y_count;
-
         let color = HalfMultivector::from_vec3(&self.color);
 
-        for i in 0..m {
-            let row = i / x_count;
-            let col = i % x_count;
-            let u = (col as f64) / ((x_count - 1) as f64);
-            let v = (row as f64) / ((y_count - 1) as f64);
+        for i in 0..self.num_points {
+            let row = i / self.x_count;
+            let col = i % self.x_count;
+            let u = (col as f64) / ((self.x_count - 1) as f64);
+            let v = (row as f64) / ((self.y_count - 1) as f64);
 
             let x = (self.width * u - 0.5 * self.width) as f32;
             let y = (self.height * v - 0.5 * self.height) as f32;
@@ -424,8 +448,10 @@ impl Cluster for GridQuad {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u as f32, v as f32, 0.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -438,7 +464,6 @@ impl Cluster for GridQuad {
     }
 
     fn len(&self) -> usize {
-        // TODO: I need to store the effective size
         self.num_points
     }
 }
@@ -483,7 +508,8 @@ impl FibonacciDisk {
 }
 
 impl Cluster for FibonacciDisk {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16)
+            -> Vec<InternalPoint> {
         // Golden ratio
         let phi = (1.0 + (5.0f64).sqrt()) / 2.0;
         let n = self.num_points as f64;
@@ -513,8 +539,10 @@ impl Cluster for FibonacciDisk {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u as f32, v as f32, 1.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -572,7 +600,8 @@ impl FibonacciSphere {
 }
 
 impl Cluster for FibonacciSphere {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16)
+            -> Vec<InternalPoint> {
         // Golden ratio
         let phi = (1.0 + (5.0f64).sqrt()) / 2.0;
         let n = self.num_points as f64;
@@ -610,8 +639,10 @@ impl Cluster for FibonacciSphere {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u as f32, v as f32, 1.0),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -641,9 +672,14 @@ pub struct GridBox {
     z_dir: Vec3,
     /// The box starts off with a solid color (RGB from 0 to 1)
     color: Vec3,
-    /// Number of points per box. If this is not evenly divisible
-    /// by the product of all three dimensions, the actual number of points
-    /// may be smaller than this number
+    /// Number of points in the x direction
+    x_count: usize,
+    /// Number of points in the y direction
+    y_count: usize,
+    /// Number of points in the z direction
+    z_count: usize,
+    /// Number of points in the box. This may be smaller than the value
+    /// in the JSON
     num_points: usize,
 }
 
@@ -669,32 +705,14 @@ impl GridBox {
         let z_dir = Vec3::from_json(&json["z_dir"], Vec3::new(0.0, 0.0, 1.0));
         let color = Vec3::from_json(&json["color"], Vec3::ones());
         let num_points = &json["num_points"]
-            .as_usize()
+            .as_f64()
             .expect("num_points must be a positive integer");
 
-        Self {
-            center,
-            dimensions,
-            x_dir,
-            y_dir,
-            z_dir,
-            num_points: *num_points,
-            color
-        }
-    }
+        let n = num_points;
 
-    to_box!(Cluster);
-}
-
-impl Cluster for GridBox {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
-        let mut grid = Vec::new();
-
-        let n = self.num_points as f64;
-
-        let dims_x = *self.dimensions.x() as f64;
-        let dims_y = *self.dimensions.y() as f64;
-        let dims_z = *self.dimensions.z() as f64;
+        let dims_x = *dimensions.x() as f64;
+        let dims_y = *dimensions.y() as f64;
+        let dims_z = *dimensions.z() as f64;
 
         let volume = dims_x * dims_y * dims_z;
         let density = n / volume;
@@ -705,15 +723,40 @@ impl Cluster for GridBox {
         let z_count = (dims_z * cbrt_density).floor() as usize;
         let m = x_count * y_count * z_count;
 
+        Self {
+            center,
+            dimensions,
+            x_dir,
+            y_dir,
+            z_dir,
+            color,
+            x_count,
+            y_count,
+            z_count,
+            num_points: m,
+        }
+    }
+
+    to_box!(Cluster);
+}
+
+impl Cluster for GridBox {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16)
+            -> Vec<InternalPoint> {
+        let mut grid = Vec::new();
         let color = HalfMultivector::from_vec3(&self.color);
 
-        for i in 0..m {
-            let layer = i / (x_count * y_count);
-            let row = (i / x_count) % y_count;
-            let col = i % x_count;
-            let u = (col as f64) / ((x_count - 1) as f64);
-            let v = (row as f64) / ((y_count - 1) as f64);
-            let w = (layer as f64) / ((z_count - 1) as f64);
+        let dims_x = *self.dimensions.x() as f64;
+        let dims_y = *self.dimensions.y() as f64;
+        let dims_z = *self.dimensions.z() as f64;
+
+        for i in 0..self.num_points {
+            let layer = i / (self.x_count * self.y_count);
+            let row = (i / self.x_count) % self.y_count;
+            let col = i % self.x_count;
+            let u = (col as f64) / ((self.x_count - 1) as f64);
+            let v = (row as f64) / ((self.y_count - 1) as f64);
+            let w = (layer as f64) / ((self.z_count - 1) as f64);
 
             let x = (dims_x * (u - 0.5)) as f32;
             let y = (dims_y * (v - 0.5)) as f32;
@@ -729,8 +772,10 @@ impl Cluster for GridBox {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u as f32, v as f32, w as f32),
                 iteration: 0,
+                cluster_copy, 
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -743,7 +788,6 @@ impl Cluster for GridBox {
     }
 
     fn len(&self) -> usize {
-        // TODO: I need to store the effective size
         self.num_points
     }
 }
@@ -803,7 +847,8 @@ impl RandomBox {
 }
 
 impl Cluster for RandomBox {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16)
+            -> Vec<InternalPoint> {
         let mut points = Vec::new();
 
         // Find the bounding box for generating points
@@ -814,17 +859,22 @@ impl Cluster for RandomBox {
 
         // Generate N random points, uniformly distributed over the box.
         for i in 0..self.num_points {
-            let x = self.rng.gen_range(min.x(), max.x());
-            let y = self.rng.gen_range(min.y(), max.y());
-            let z = self.rng.gen_range(min.z(), max.z());
+            let u = self.rng.gen_range(0.0, 1.0);
+            let v = self.rng.gen_range(0.0, 1.0);
+            let w = self.rng.gen_range(0.0, 1.0);
+            let x = (1.0 - u) * min.x() + u * max.x();
+            let y = (1.0 - v) * min.y() + v * max.y();
+            let z = (1.0 - w) * min.z() + w * max.z();
             
             let position = HalfMultivector::point(x as f64, y as f64, z as f64);
 
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                feature_id: set_id,
+                cluster_coordinates: Vec3::new(u, v, w),
                 iteration: 0,
+                cluster_copy,
+                cluster_id,
                 point_id: i as u16,
                 last_xform: 0,
                 last_color_xform: 0
@@ -871,12 +921,11 @@ impl ManyClusters {
 }
 
 impl Cluster for ManyClusters {
-    fn generate(&mut self, set_id: u16) -> Vec<InternalPoint> {
+    fn generate(&mut self, cluster_copy: u16, _cluster_id: u16)
+            -> Vec<InternalPoint> {
         let mut points = Vec::new();
-        let n = self.clusters.len() as u16;
         for (i, cluster) in self.clusters.iter_mut().enumerate() {
-            let index = set_id * n + (i as u16);
-            let mut cluster_points = cluster.generate(index);
+            let mut cluster_points = cluster.generate(cluster_copy, i as u16);
             points.append(&mut cluster_points);
         }
         points

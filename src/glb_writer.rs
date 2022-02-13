@@ -510,7 +510,9 @@ impl GlbWriter {
             colors.push(0x00);
 
             // align to 4-byte boundaries
-            feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
+            //feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
+            feature_ids.push(0x00);
+            feature_ids.push(0x00);
             feature_ids.push(0x00);
             feature_ids.push(0x00);
 

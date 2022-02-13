@@ -79,8 +79,7 @@ impl Algorithm for ChaosGame {
         let complexity = self.complexity() / UPDATE_FREQ;
 
         // For the basic chaos game, everything is the same feature
-        const FEATURE_ID: u16 = 0;
-        const POINT_ID: u16 = 0;
+        let cluster_coordinates: Vec3 = Vec3::zero();
 
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
@@ -89,9 +88,11 @@ impl Algorithm for ChaosGame {
                 let point = OutputPoint {
                     position: pos.to_vec3(),
                     color: color_vec.to_vec3(),
-                    feature_id: FEATURE_ID,
+                    cluster_coordinates,
                     iteration: i as u64,
-                    point_id: POINT_ID,
+                    cluster_copy: 0,
+                    cluster_id: 0,
+                    point_id: 0,
                     last_xform: self.position_ifs.get_last_xform(),
                     last_color_xform: self.color_ifs.get_last_xform()
                 };
@@ -165,8 +166,10 @@ impl ChaosSets {
         points.iter().enumerate().map(|(i, point)| InternalPoint {
             position: new_positions[i].clone(),
             color: new_colors[i].clone(),
-            feature_id: point.feature_id,
+            cluster_coordinates: point.cluster_coordinates.clone(),
             iteration,
+            cluster_copy: point.cluster_copy,
+            cluster_id: point.cluster_id,
             point_id: point.point_id,
             last_xform,
             last_color_xform
@@ -213,7 +216,7 @@ impl ChaosSets {
     to_box!(Algorithm);
 
     /// Iterate a single cluster
-    fn iterate_cluster(&mut self, cluster_id: u16) {
+    fn iterate_cluster(&mut self, cluster_copy: u16) {
         // Some IFS choosers are stateful, so reset the state to ensure
         // each cluster gets a unique path
         // NOTE: for the future: this is not thread-safe. If I want to
@@ -221,7 +224,7 @@ impl ChaosSets {
         self.position_ifs.reset();
         self.color_ifs.reset();
 
-        let mut buffer = self.initial_set.generate(cluster_id);
+        let mut buffer = self.initial_set.generate(cluster_copy, 0);
         self.output.plot_points(&buffer);
 
         for i in 0..self.num_iters {
