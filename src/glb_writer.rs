@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use json::JsonValue;
-use json::number::Number;
 
 use crate::point::OutputPoint;
 
@@ -25,12 +24,6 @@ const SIZE_FLOAT: u32 = 4;
 const SIZE_VEC3: u32 = 3 * SIZE_FLOAT;
 /// Size of an RGB color encoded as unsigned bytes
 const SIZE_COLOR_RGB: u32 = 3;
-// Size of an unsigned 64-bit integer in bytes
-const SIZE_U64: u32 = 8;
-// Size of an unsigned 16-bit integer in bytes
-const SIZE_U16: u32 = 2;
-// Size of an unsigned 8-bit integer in bytes
-const SIZE_U8: u32 = 1;
 
 /// Alignment for each buffer view. I'm setting them all to 8
 /// as this is the simplest way to satisfy both glTF and EXT_mesh_features
@@ -45,16 +38,18 @@ const PADDING_JSON: u8 = ' ' as u8;
 /// A struct for keeping track of the size of a buffer view within the buffer 
 struct BufferView {
     /// Human-readable name for the buffer view
-    name: String,
+    pub name: String,
     /// The index of the bufer view
-    id: u32,
+    pub id: u32,
     /// The offset within the buffer that marks the start of the buffer view
-    byte_offset: u32,
+    pub byte_offset: u32,
     /// The length of the buffer view
-    byte_length: u32,
+    pub byte_length: u32,
+    /// For buffer views that are not aligned, 
+    pub byte_stride: Option<u32>,
     /// How many additional bytes of padding are needed to meet alignment
     /// requirements
-    padding_length: u32,
+    pub padding_length: u32,
 }
 
 impl BufferView {
@@ -66,6 +61,7 @@ impl BufferView {
             id,
             byte_offset,
             byte_length,
+            byte_stride: None,
             padding_length: compute_padding_length(byte_length, ALIGNMENT)
         }
     }
@@ -76,12 +72,18 @@ impl BufferView {
     }
 
     pub fn to_json(&self) -> JsonValue {
-        object!{
+        let mut result = object!{
             "name" => self.name.clone(),
             "buffer" => 0,
             "byteOffset" => self.byte_offset,
             "byteLength" => self.byte_length,
+        };
+
+        if let Some(stride) = self.byte_stride {
+            result["byteStride"] = JsonValue::Number(stride.into());
         }
+
+        result
     }
 }
 
@@ -202,20 +204,20 @@ impl GlbWriter {
             0,
             position_length
         );
-        self.buffer_views.push(position_bv);
 
-        // reference to the previous buffer view so computing the next
-        // offset is always written last_bv.after_offset(). This way, if
-        // in the future I make some buffer views optional the code is more
-        // maintainable.
-        let mut last_bv: &BufferView = &position_bv;
+        // Get the id of this buffer view (for use in the accessor)
+        // and the offset of the next buffer view so the buffer view struct
+        // can be pushed to the vec.
+        let mut bv_id = position_bv.id;
+        let mut next_bv_offset = position_bv.after_offset();
+        self.buffer_views.push(position_bv);
 
         let position_accessor = Accessor::new(
             "POSITION",
             self.accessors.len() as u32,
             object!{
                 "name" => "Positions",
-                "bufferView" => position_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "min" => min,
                 "max" => max,
@@ -228,24 +230,27 @@ impl GlbWriter {
         // vec3 COLOR_0 -------------------------------------------------
         // stored as 3 x UNSIGNED_BYTE + 1 byte padding
         let color_length = point_count * (SIZE_COLOR_RGB + 1);
-        let color_bv = BufferView::new(
+        let mut color_bv = BufferView::new(
             "Colors",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             color_length
         );
+        // a normalized vec3 is only 3 bytes, so set the stride
+        color_bv.byte_stride = Some(SIZE_COLOR_RGB + 1);
+        bv_id = color_bv.id;
+        next_bv_offset = color_bv.after_offset();
         self.buffer_views.push(color_bv);
-        last_bv = &color_bv;
 
         let color_accessor = Accessor::new(
             "COLOR_0",
             self.accessors.len() as u32,
             object! {
                 "name" => "Colors",
-                "bufferView" => color_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "VEC3",
-                "component_type" => GLTF_UNSIGNED_BYTE,
+                "componentType" => GLTF_UNSIGNED_BYTE,
                 "normalized" => true,
             }
         );
@@ -256,18 +261,19 @@ impl GlbWriter {
         let uvw_bv = BufferView::new(
             "Cluster Coordinates",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
-            color_length
+            next_bv_offset,
+            uvw_length
         );
+        bv_id = uvw_bv.id;
+        next_bv_offset = uvw_bv.after_offset();
         self.buffer_views.push(uvw_bv);
-        last_bv = &uvw_bv;
 
         let uvw_accessor = Accessor::new(
             "_CLUSTER_COORDINATES",
             self.accessors.len() as u32,
             object!{
                 "name" => "Cluster Coordinates",
-                "bufferView" => uvw_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "VEC3",
                 "componentType" => GLTF_FLOAT
@@ -280,18 +286,19 @@ impl GlbWriter {
         let iteration_bv = BufferView::new(
             "Feature ID 0 (iterations)",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             iteration_length
         );
+        bv_id = iteration_bv.id;
+        next_bv_offset = iteration_bv.after_offset();
         self.buffer_views.push(iteration_bv);
-        last_bv = &iteration_bv;
 
         let iteration_accessor = Accessor::new(
             "_FEATURE_ID_0",
             self.accessors.len() as u32,
             object!{
                 "name" => "Feature ID 0 (iterations)",
-                "bufferView" => iteration_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -304,18 +311,19 @@ impl GlbWriter {
         let cluster_copy_bv = BufferView::new(
             "Feature ID 1 (cluster copy)",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             cluster_copy_length
         );
+        bv_id = cluster_copy_bv.id;
+        next_bv_offset = cluster_copy_bv.after_offset();
         self.buffer_views.push(cluster_copy_bv);
-        last_bv = &cluster_copy_bv;
 
         let cluster_copy_accessor = Accessor::new(
             "_FEATURE_ID_1",
             self.accessors.len() as u32,
             object!{
                 "name" => "Feature ID 1 (cluster copy)",
-                "bufferView" => cluster_copy_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -328,18 +336,19 @@ impl GlbWriter {
         let cluster_id_bv = BufferView::new(
             "Feature ID 2 (cluster id)",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             cluster_id_length
         );
+        bv_id = cluster_id_bv.id;
+        next_bv_offset = cluster_id_bv.after_offset();
         self.buffer_views.push(cluster_id_bv);
-        last_bv = &cluster_id_bv;
 
         let cluster_id_accessor = Accessor::new(
             "_FEATURE_ID_2",
             self.accessors.len() as u32,
             object!{
                 "name" => "Feature ID 2 (cluster id)",
-                "bufferView" => cluster_id_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -352,18 +361,19 @@ impl GlbWriter {
         let point_id_bv = BufferView::new(
             "Feature ID 3 (point id)",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             point_id_length
         );
+        bv_id = point_id_bv.id;
+        next_bv_offset = point_id_bv.after_offset();
         self.buffer_views.push(point_id_bv);
-        last_bv = &point_id_bv;
 
         let point_id_accessor = Accessor::new(
             "_FEATURE_ID_3",
             self.accessors.len() as u32,
             object!{
                 "name" => "Feature ID 3 (point id)",
-                "bufferView" => point_id_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -376,18 +386,19 @@ impl GlbWriter {
         let last_xform_bv = BufferView::new(
             "Last xform applied",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             last_xform_length
         );
+        bv_id = last_xform_bv.id;
+        next_bv_offset = last_xform_bv.after_offset();
         self.buffer_views.push(last_xform_bv);
-        last_bv = &last_xform_bv;
 
         let last_xform_accessor = Accessor::new(
             "_LAST_XFORM",
             self.accessors.len() as u32,
             object!{
                 "name" => "Last xform applied",
-                "bufferView" => last_xform_bv.id,
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -400,18 +411,19 @@ impl GlbWriter {
         let last_color_xform_bv = BufferView::new(
             "Last xform applied",
             self.buffer_views.len() as u32,
-            last_bv.after_offset(),
+            next_bv_offset,
             last_color_xform_length
         );
+        bv_id = last_color_xform_bv.id;
+        next_bv_offset = last_color_xform_bv.after_offset();
         self.buffer_views.push(last_color_xform_bv);
-        last_bv = &last_color_xform_bv;
 
         let last_color_xform_accessor = Accessor::new(
-            "_LAST_XFORM",
+            "_LAST_COLOR_XFORM",
             self.accessors.len() as u32,
             object!{
-                "name" => "Last xform applied",
-                "bufferView" => last_color_xform_bv.id,
+                "name" => "Last color xform applied",
+                "bufferView" => bv_id,
                 "count" => point_count,
                 "type" => "SCALAR",
                 "componentType" => GLTF_FLOAT
@@ -423,7 +435,7 @@ impl GlbWriter {
 
         // The offset after the last buffer view is equal to the length of
         // the entire buffer.
-        let buffer_length = last_bv.after_offset();
+        let buffer_length = next_bv_offset;
         self.binary_chunk.chunk_length = buffer_length;
         // Since the buffer views are already padded, no extra padding is needed
         self.binary_chunk.padding_length = 0;
@@ -434,14 +446,14 @@ impl GlbWriter {
     /// Create the glTF JSON for the JSON chunk
     fn make_json(&mut self) {
         let accessors: Vec<JsonValue> = 
-            self.accessors.iter().map(|x| x.json).collect();
+            self.accessors.iter().map(|x| x.json.clone()).collect();
         let buffer_views: Vec<JsonValue> =
             self.buffer_views.iter().map(|x| x.to_json()).collect();
 
         let mut attributes = object!{};
-        for accessor in self.accessors {
-            let id: Number = accessor.accessor_id.into();
-            attributes[&accessor.semantic] = JsonValue::Number(id);
+        for accessor in self.accessors.iter() {
+            attributes[&accessor.semantic] = 
+                JsonValue::Number(accessor.accessor_id.into());
         }
 
         let json = object!{
@@ -469,7 +481,7 @@ impl GlbWriter {
                 object!{
                     "primitives" => array![
                         object!{
-                            "attributes" => attributes,
+                            "attributes" => attributes.clone(),
                             "mode" => GLTF_POINTS,
                         }
                     ]
@@ -521,81 +533,74 @@ impl GlbWriter {
     fn write_buffer(&self, file: &mut File, buffer: &Vec<OutputPoint>) {
         let mut positions: Vec<u8> = Vec::new();
         let mut colors: Vec<u8> = Vec::new();
-        let mut feature_ids: Vec<u8> = Vec::new();
+        let mut cluster_coordinates: Vec<u8> = Vec::new();
         let mut iterations: Vec<u8> = Vec::new();
+        let mut cluster_copies: Vec<u8> = Vec::new();
+        let mut cluster_ids: Vec<u8> = Vec::new();
         let mut point_ids: Vec<u8> = Vec::new();
         let mut last_xforms: Vec<u8> = Vec::new();
         let mut last_color_xforms: Vec<u8> = Vec::new();
-        let mut padding;
+        
 
         for point in buffer {
             positions.extend_from_slice(&point.position.pack());
 
-            // align to 4-byte-boundaries
+            // colors is a normalized vec3. Since each one is only 3 bytes,
+            // we need to add a fourth byte of padding.
             colors.extend_from_slice(&point.color.to_color().pack());
             colors.push(0x00);
 
-            // align to 4-byte boundaries
-            //feature_ids.extend_from_slice(&point.feature_id.to_le_bytes());
-            feature_ids.push(0x00);
-            feature_ids.push(0x00);
-            feature_ids.push(0x00);
-            feature_ids.push(0x00);
+            cluster_coordinates.extend_from_slice(
+                &point.cluster_coordinates.pack());
 
-            iterations.extend_from_slice(&point.iteration.to_le_bytes());
-            point_ids.extend_from_slice(&point.point_id.to_le_bytes());
-            last_xforms.push(point.last_xform);
-            last_color_xforms.push(point.last_color_xform);
+            // all of the ids, though they are actually integers, are stored
+            // in the glTF as FLOAT accessors since this is easiest for use
+            // on the GPU.
+            let iteration = point.iteration as f32;
+            iterations.extend_from_slice(&iteration.to_le_bytes());
+
+            let cluster_copy = point.cluster_copy as f32;
+            cluster_copies.extend_from_slice(&cluster_copy.to_le_bytes());
+
+            let cluster_id = point.cluster_id as f32;
+            cluster_ids.extend_from_slice(&cluster_id.to_le_bytes());
+
+            let point_id = point.point_id as f32;
+            point_ids.extend_from_slice(&point_id.to_le_bytes());
+
+            let last_xform = point.last_xform as f32;
+            last_xforms.extend_from_slice(&last_xform.to_le_bytes());
+
+            let last_color_xform = point.last_color_xform as f32;
+            last_color_xforms.extend_from_slice(&last_color_xform.to_le_bytes());
         }
 
-        // Positions
-        padding = make_padding(
-            self.buffer_view_position.padding_length, PADDING_BINARY);
-        
-        file.write_all(&positions).expect("Could not write positions");
-        file.write_all(&padding).expect("Could not write position padding");
+        // Make a parallel vector of data to match the buffer views
+        let bv_data = vec![
+            positions,
+            colors,
+            cluster_coordinates,
+            iterations,
+            cluster_copies,
+            cluster_ids,
+            point_ids,
+            last_xforms,
+            last_color_xforms,
+        ];
 
-        // Colors
-        padding = make_padding(
-            self.buffer_view_color.padding_length, PADDING_BINARY);
-
-        file.write_all(&colors).expect("Could not write colors");
-        file.write_all(&padding).expect("Could not write color padding");
-        
-        // Feature IDs
-        padding = make_padding(
-            self.buffer_view_feature_ids.padding_length, PADDING_BINARY);
-
-        file.write_all(&feature_ids).expect("Could not write feature IDs");
-        file.write_all(&padding).expect("Could not write feature ID padding");
-
-        // Iteration numbers
-        padding = make_padding(
-            self.buffer_view_iterations.padding_length, PADDING_BINARY);
-
-        file.write_all(&iterations).expect("Could not write iterations");
-        file.write_all(&padding).expect("Could not write iterations padding");
-
-        // Point IDs within an initial set
-        padding = make_padding(
-            self.buffer_view_point_id.padding_length, PADDING_BINARY);
-
-        file.write_all(&point_ids).expect("Could not write point IDs");
-        file.write_all(&padding).expect("Could not write point ID padding");
-
-        // Transformation indices for position IFS
-        padding = make_padding(
-            self.buffer_view_last_xforms.padding_length, PADDING_BINARY);
-
-        file.write_all(&last_xforms).expect("Could not write last xforms");
-        file.write_all(&padding).expect("Could not write last xform padding");
-
-        // Transformation indices for color IFS
-        padding = make_padding(
-            self.buffer_view_last_color_xforms.padding_length, PADDING_BINARY);
-
-        file.write_all(&last_color_xforms).expect("Could not write last xforms");
-        file.write_all(&padding).expect("Could not write last xform padding");
+        let n = bv_data.len();
+        for i in 0..n {
+            let buffer_view = &self.buffer_views[i];
+            let data = &bv_data[i];
+            let padding = 
+                make_padding(buffer_view.padding_length, PADDING_BINARY);
+            
+            let message = format!("Could not write bufferView {}", buffer_view.name);
+            file.write_all(&data).expect(&message);
+            
+            let padding_message = format!("could not write padding for bufferView {}", buffer_view.name);
+            file.write_all(&padding).expect(&padding_message);
+        }
     }
 }
 
