@@ -144,6 +144,94 @@ const VIEW_CLUSTER_COORDINATES = new Cesium.CustomShader({
     `
 });
 
+const ANIMATE_CUMULATIVE = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        float iter_normalized = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = mod(0.1 * u_time, 1.0);
+
+        vsOutput.pointSize = 4.0;
+
+        // hide points by multiplying by NaN
+        if (iter_normalized > t) {
+            vsOutput.positionMC = vec3(0.0) / 0.0;
+        }
+    }
+    `,
+
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float iter_normalized = fsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = mod(0.1 * u_time, 1.0);
+
+        float hotspot = smoothstep(0.2, 0.1, t - iter_normalized);
+        float brightness = smoothstep(0.5, 0.3, t - iter_normalized);
+        vec3 color = 0.8 * vec3(brightness) + 0.2;
+        color = mix(color, vec3(1.0, 0.5, 0.0), hotspot);
+        material.diffuse = color;
+    }
+    `
+});
+
+const ANIMATE_PULSE = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.float,
+            value: 0
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = fsInput.attributes.cluster_coordinates;
+    }
+    `
+});
+
+const ANIMATE_HIGHLIGHT = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.float,
+            value: 0
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = fsInput.attributes.cluster_coordinates;
+    }
+    `
+});
+
 const SHADERS = {
     unlit: UNLIT,
     iterations: COLOR_ITERATIONS,
@@ -152,7 +240,10 @@ const SHADERS = {
     first: HIGHLIGHT_FIRST,
     distance: COLOR_BY_DISTANCE,
     octant: COLOR_OCTANTS,
-    cluster_coordinates: VIEW_CLUSTER_COORDINATES
+    cluster_coordinates: VIEW_CLUSTER_COORDINATES,
+    animate_cumulative: ANIMATE_CUMULATIVE,
+    animate_pulse: ANIMATE_PULSE,
+    animate_highlight: ANIMATE_HIGHLIGHT
 };
 
 const OPTIONS = [
@@ -187,6 +278,18 @@ const OPTIONS = [
     {
         name: "Color by Octant",
         value: "octant"
+    },
+    {
+        name: "Animate iterations (cumulatively)",
+        value: "animate_cumulative"
+    },
+    {
+        name: "Animate iterations (pulse)",
+        value: "animate_pulse"
+    },
+    {
+        name: "Animate iterations (highlight)",
+        value: "animate_highlight"
     }
 ];
 
@@ -217,14 +320,22 @@ class FractalShading {
     update_metadata(metadata) {
         const iterations = metadata.getProperty("iterations");
         COLOR_ITERATIONS.setUniform("u_iterations", iterations);
+        ANIMATE_CUMULATIVE.setUniform("u_iterations", iterations);
+        ANIMATE_PULSE.setUniform("u_iterations", iterations);
+        ANIMATE_HIGHLIGHT.setUniform("u_iterations", iterations);
 
         const ifs_xform_count = metadata.getProperty("ifs_xform_count");
         COLOR_LAST_XFORMS.setUniform("u_xform_count", ifs_xform_count);
 
         //"cluster_point_count":500,"cluster_copies":5,"ifs_xform_count":6,"color_ifs_xform_count":1,"algorithm":"chaos_sets","node_capacity":5000
         const cluster_copies = metadata.getProperty("cluster_copies");
-        console.log(cluster_copies);
         COLOR_CLUSTERS.setUniform("u_cluster_copies", cluster_copies);
+    }
+
+    update_time(time_sec) {
+        ANIMATE_CUMULATIVE.setUniform("u_time", time_sec);
+        ANIMATE_PULSE.setUniform("u_time", time_sec);
+        ANIMATE_HIGHLIGHT.setUniform("u_time", time_sec);
     }
 
     populate_dropdown(dropdown_element) {

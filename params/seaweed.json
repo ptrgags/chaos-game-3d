@@ -3,7 +3,7 @@
     "name": "Seaweed",
     "algorithm": "chaos_sets",
     "cluster": {
-        "type": "box",
+        "type": "rand_box",
         "dims": [0.3, 0.3, 1.0],
         "center": [1, 0.3, 0],
         "color": [0.3, 0.8, 0.4],

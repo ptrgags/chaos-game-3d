@@ -142,7 +142,11 @@ shader_dropdown.addEventListener('change', (e) => {
 });
 shading.populate_dropdown(shader_dropdown);
 
-
+const start_time = performance.now();
+viewer.scene.postUpdate.addEventListener(function() {
+    const elapsed_time_sec = (performance.now() - start_time) / 1000;
+    shading.update_time(elapsed_time_sec);
+});
 
 fetch("./fractals.json")
     .then((response) => response.json())

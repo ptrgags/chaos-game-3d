@@ -13,9 +13,12 @@
         "color": [0.0, 0.4, 0.8],
         "num_points": 100
     },
-    "cluster_copies": 3,
+    "cluster_copies": 6,
     "iters": 1000,
     "ifs": {
+        "chooser": {
+            "type": "no_backtracking"
+        },
         "xforms": [
             ["chain", [
                 ["poloidal", -1, 0, 0, 90],
