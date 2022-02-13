@@ -22,13 +22,11 @@
             ["chain", [
               ["translate", -1, 0, 0],
               ["invert"],
-              ["rotate", 1, 0, 0, 90],
               ["translate", 1, 0, 0]
             ]],
             ["chain", [
               ["translate", 1, 0, 0],
               ["invert"],
-              ["rotate", 1, 0, 0, -90],
               ["translate", -1, 0, 0]
             ]]
         ]
