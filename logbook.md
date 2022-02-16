@@ -536,3 +536,13 @@ Yesterday and today I added quite a few things:
     
 There's so much cool stuff to explore here, and more to add, but I think this
 is a good stopping point for one weekend.
+
+### 2022-02-16 New Metadata Extensions
+
+Recently, `EXT_mesh_features` was split into two extensions: `EXT_mesh_features`
+(just the feature IDs now) and `EXT_structural_metadata` (just the metadata).
+After this weekend's changes to use custom glTF attributes, this was a lot
+easier to implement.
+
+I'm not going to merge this branch for a while though since these extensions
+are still being implemented in CesiumJS.
