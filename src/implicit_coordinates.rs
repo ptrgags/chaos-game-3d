@@ -1,5 +1,5 @@
 // This program always uses octrees
-const BRANCHING_FACTOR: usize = 8;
+//const BRANCHING_FACTOR: usize = 8;
 
 pub struct ImplicitCoordinates {
     pub subtree_levels: usize,

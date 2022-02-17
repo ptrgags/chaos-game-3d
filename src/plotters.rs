@@ -81,12 +81,14 @@ impl Plotter for ScatterPlot {
 
     /// Save the tileset into a directory of the given name. This creates
     /// the directory if it does not already exist
-    fn save(&mut self, dirname: &str, metadata: &FractalMetadata) {
+    fn save(&mut self, tileset_id: &str, metadata: &FractalMetadata) {
         // Decimate the mesh recursively to generate LODs
         self.root.decimate();
         let writer = TilesetWriter::new(
-            self.tile_type.clone(), metadata.clone());
-        writer.save(dirname, &self.root);
+            tileset_id,
+            self.tile_type.clone(),
+            metadata.clone());
+        writer.save(&self.root);
     }
 }
 

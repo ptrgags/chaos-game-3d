@@ -90,11 +90,6 @@ impl OctNode {
         &self.children
     }
 
-    /// Return pairs of (octant, child) for each child in an internal node
-    pub fn labeled_children(&self) -> Vec<(usize, &OctNode)> {
-        self.children.iter().enumerate().collect()
-    }
-
     /// Borrow the points. This is used when writing data to disk
     pub fn get_points(&self) -> &Vec<OutputPoint> {
         &self.points
