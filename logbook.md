@@ -536,3 +536,25 @@ Yesterday and today I added quite a few things:
     
 There's so much cool stuff to explore here, and more to add, but I think this
 is a good stopping point for one weekend.
+
+## 2022-02-18 Triangles and Tetrahedra
+
+Yesterday I added a `Triangle` chooser to make a grid of points arranged
+in a triangle. The UVs are barycentric coordinates. Today I added a
+`Tetrahedron`, very similar just with an extra dimension.
+
+I also came across the 2019 Bridges math art paper, "Discrete Gyroid Surface" by
+Ulrich Reitebuch, Martin Skrodzki and Konrad Polthier, which makes a simplified
+gyroid mesh that focuses on the symmetries of the structure. I figured this
+would be a cool test of my triangle chooser, so I implemented it. I had to get
+clever to show the "front" and "back" sides, both by adding extra triangles
+offset by a tiny bit, and updating the shader to fix the coloring scheme
+so it matches the paper. see `gyroid_sides.json` (I might rename this one to 
+`gyroid` and remove the other one later, this one turned out better.)
+
+I'm also realizing that some fractals would benefit from specialized shaders.
+Maybe one dropdown option selects a specialized shader when available?
+I suppose it would also be possible to include the shader text in the fractal,
+but in JSON form you'd have to escape all the newlines, it would be hard to
+read. I'll think about this... maybe not in the `clusters` branch though, it's
+already quite bloated.
