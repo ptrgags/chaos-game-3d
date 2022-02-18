@@ -144,6 +144,23 @@ const VIEW_CLUSTER_COORDINATES = new Cesium.CustomShader({
     `
 });
 
+const TRIANGLE_EDGES = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 barycentric = fsInput.attributes.cluster_coordinates;
+        float min_coordinate = min(min(barycentric.x, barycentric.y), barycentric.z);
+        float edge = smoothstep(0.1, 0.0, min_coordinate);
+        material.diffuse = vec3(edge);
+    }
+    `
+});
+
 const ANIMATE_CUMULATIVE = new Cesium.CustomShader({
     uniforms: {
         u_iterations: {
@@ -241,6 +258,7 @@ const SHADERS = {
     distance: COLOR_BY_DISTANCE,
     octant: COLOR_OCTANTS,
     cluster_coordinates: VIEW_CLUSTER_COORDINATES,
+    triangle_edges: TRIANGLE_EDGES,
     animate_cumulative: ANIMATE_CUMULATIVE,
     animate_pulse: ANIMATE_PULSE,
     animate_highlight: ANIMATE_HIGHLIGHT
@@ -266,6 +284,10 @@ const OPTIONS = [
     {
         name: "View cluster coordinates",
         value: "cluster_coordinates"
+    },
+    {
+        name: "Emphasize Triangle Edges",
+        value: "triangle_edges"
     },
     {
         name: "Highlight first cluster",
