@@ -1,10 +1,10 @@
 {
-    "id": "gyroid",
-    "name": "Discrete Gyroid Surface",
-    "description": "Trying to implement a shape describe in \"Discrete Gyroid Surface\" by Reitebuch, Skrodzki and Polthier https://archive.bridgesmathart.org/2019/bridges2019-461.html",
+    "id": "gyroid_sides",
+    "name": "Discrete Gyroid Surface Sides",
+    "description": "Like gyroid, but make front and back faces on the gyroid",
     "algorithm": "chaos_sets",
     "plotter": {
-        "radius": 10
+        "radius": 9
     },
     "cluster": {
         "type": "many",
@@ -16,7 +16,7 @@
                     [-1, 1, 0],
                     [0, -1, -1]
                 ],
-                "color": [1.0, 0.0, 0.0],
+                "color": [0.5, 0.0, 1.0],
                 "side_points": 15
             },
             {
@@ -26,13 +26,33 @@
                     [0, -1, -1],
                     [-1, 1, 0]
                 ],
-                "color": [1.0, 0.5, 0.0],
+                "color": [0.5, 0.0, 1.0],
+                "side_points": 15
+            },
+            {
+                "type": "triangle",
+                "vertices": [
+                    [1, 1, -0.9],
+                    [-1, 1, 0.1],
+                    [0.1, -1, -1]
+                ],
+                "color": [0.8, 0.8, 0.8],
+                "side_points": 15
+            },
+            {
+                "type": "triangle",
+                "vertices": [
+                    [-0.9, -1, 1],
+                    [0.1, -1, -1],
+                    [-1, 1, 0.1]
+                ],
+                "color": [0.8, 0.8, 0.8],
                 "side_points": 15
             }
         ]
     },
-    "cluster_copies": 100,
-    "iters": 40,
+    "cluster_copies": 150,
+    "iters": 25,
     "ifs": {
         "chooser": {
             "type": "markov",

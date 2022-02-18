@@ -156,7 +156,39 @@ const TRIANGLE_EDGES = new Cesium.CustomShader({
         vec3 barycentric = fsInput.attributes.cluster_coordinates;
         float min_coordinate = min(min(barycentric.x, barycentric.y), barycentric.z);
         float edge = smoothstep(0.1, 0.0, min_coordinate);
-        material.diffuse = vec3(edge);
+        material.diffuse = mix(material.diffuse, vec3(1.0), edge);
+    }
+    `
+});
+
+const GYROID = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 8.0;
+    }
+    `,
+    fragmentShaderText: `
+    float xnor(float a, float b) {
+        float a_and_b = min(a, b);
+        float not_a_and_not_b = min(1.0 - a, 1.0 - b);
+        return max(a_and_b, not_a_and_not_b);
+    }
+
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 pos = fsInput.attributes.positionMC;
+        vec3 cell_id = floor((pos + 1.0) / 2.0);
+        float diagonal = cell_id.x + cell_id.y + cell_id.z;
+        float parity = mod(diagonal, 2.0);
+        float is_back = float(fsInput.attributes.featureId_2 > 1.0);
+        vec3 color1 = vec3(0.5, 0.0, 1.0);
+        vec3 color2 = vec3(0.0, 1.0, 1.0);
+        material.diffuse = mix(color1, color2, xnor(parity, is_back));
+
+        vec3 barycentric = fsInput.attributes.cluster_coordinates;
+        float min_coordinate = min(min(barycentric.x, barycentric.y), barycentric.z);
+        float edge = smoothstep(0.1, 0.0, min_coordinate);
+        material.diffuse = mix(material.diffuse, vec3(1.0), edge);
     }
     `
 });
@@ -259,6 +291,7 @@ const SHADERS = {
     octant: COLOR_OCTANTS,
     cluster_coordinates: VIEW_CLUSTER_COORDINATES,
     triangle_edges: TRIANGLE_EDGES,
+    gyroid: GYROID,
     animate_cumulative: ANIMATE_CUMULATIVE,
     animate_pulse: ANIMATE_PULSE,
     animate_highlight: ANIMATE_HIGHLIGHT
@@ -288,6 +321,10 @@ const OPTIONS = [
     {
         name: "Emphasize Triangle Edges",
         value: "triangle_edges"
+    },
+    {
+        name: "Discrete Gyroid Surface",
+        value: "gyroid"
     },
     {
         name: "Highlight first cluster",
