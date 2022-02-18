@@ -759,6 +759,108 @@ impl Cluster for FibonacciSphere {
     }
 }
 
+/// Points arranged in a tetrahedron grid
+pub struct Tetrahedron {
+    /// The three vertices of the triangle.
+    vertices: [Vec3; 4],
+    /// How many points on each side of the triangle. The total number
+    /// of points will be tetrahedral_number(side_points)
+    side_points: usize,
+    /// The triangle starts with a solid color
+    color: Vec3,
+}
+
+impl Tetrahedron {
+    /// Parse a Triangle generator from JSON of the form:
+    /// ```text
+    /// {
+    ///     "type": "triangle",
+    ///     "vertices": [
+    ///         [Ax, Ay, Az],
+    ///         [Bx, By, Bz],
+    ///         [Cx, Cy, Cz],
+    ///         [Dx, Dy, Dz],
+    ///     ],
+    ///     "side_points": N // total points will be tetrahedral_number(N)
+    ///     "color": [r, g, b] // 0.0 to 1.0
+    /// }
+    /// ```
+    pub fn from_json(json: &JsonValue) -> Self {
+        let vertices_json = &json["vertices"];
+        let vertex_a = Vec3::from_json(&vertices_json[0], Vec3::zero());
+        let vertex_b = Vec3::from_json(
+            &vertices_json[1], Vec3::new(1.0, 0.0, 0.0));
+        let vertex_c = Vec3::from_json(
+            &vertices_json[2], Vec3::new(0.0, 1.0, 0.0));
+        let vertex_d = Vec3::from_json(
+            &vertices_json[3], Vec3::new(0.0, 0.0, 1.0));
+        let vertices = [vertex_a, vertex_b, vertex_c, vertex_d];
+        let color = Vec3::from_json(&json["color"], Vec3::ones());
+        let side_points = &json["side_points"]
+            .as_usize()
+            .expect("side_points must be a positive integer");
+
+        Self {
+            vertices,
+            side_points: *side_points,
+            color,
+        }
+    }
+
+    to_box!(Cluster);
+}
+
+impl Cluster for Tetrahedron {
+    fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
+            -> Vec<InternalPoint> {
+        
+        let n = self.side_points;
+        let denominator = (n - 1) as f32;
+        let color = HalfMultivector::from_vec3(&self.color);
+
+        let [a, b, c, d] = self.vertices;
+
+        let mut grid = Vec::new();
+        for i in 0..n {
+            let p = (i as f32) / denominator;
+            for j in 0..(n - i) {
+                let q = (j as f32) / denominator;
+                for k in 0..(n - i - j) {
+                    let r = (k as f32) / denominator;
+                    let s = 1.0 - p - q - r;
+
+                    let position_vec3 = a * p + b * q + c * r + d * s;
+                    let position = HalfMultivector::from_vec3(&position_vec3);
+
+                    let point = InternalPoint {
+                        position,
+                        color: color.clone(),
+                        // these coordinates are a vec3, so the last component
+                        // will have to be computed from 1 - p - q - r in
+                        // the shader.
+                        cluster_coordinates: Vec3::new(p, q, r),
+                        iteration: 0,
+                        cluster_copy,
+                        cluster_id,
+                        point_id: i as u16,
+                        last_xform: 0,
+                        last_color_xform: 0
+                    };
+        
+                    grid.push(point);
+                }   
+            }
+        }
+
+        grid
+    }
+
+    fn point_count(&self) -> usize {
+        let n = self.side_points;
+        (n * (n + 1) * (n + 2)) / 6
+    }
+}
+
 /// Generate a box of evenly-spaced points
 pub struct GridBox {
     /// Center of the box
@@ -1049,9 +1151,11 @@ impl Cluster for ManyClusters {
 ///         "line" | 
 ///         "rand_line" | 
 ///         "circle" | 
+///         "triangle" |
 ///         "quad" |
 ///         "disk" |
 ///         "sphere" | 
+///         "tetrahedron" |
 ///         "box" |
 ///         "rand_box"
 ///     ...params
@@ -1089,7 +1193,7 @@ pub fn from_json(json: &JsonValue) -> Box<dyn Cluster> {
         "disk" => FibonacciDisk::from_json(&json).to_box(),
         "sphere" => FibonacciSphere::from_json(&json).to_box(),
         // 3-dimensional
-        //"tetrahedron" => Tetrahedron::from_json(&json).to_box(),
+        "tetrahedron" => Tetrahedron::from_json(&json).to_box(),
         "box" => GridBox::from_json(&json).to_box(),
         "rand_box" => RandomBox::from_json(&json).to_box(),
         _ => panic!(
