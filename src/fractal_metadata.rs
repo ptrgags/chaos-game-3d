@@ -26,7 +26,15 @@ pub struct FractalMetadata {
     /// The algorithm that was used
     pub algorithm: String,
     /// how many points are stored in each octree node
-    pub node_capacity: u16
+    pub node_capacity: u16,
+    /// Estimated fractal dimension
+    pub fractal_dimension: f64,
+    /// Number of levels used to compute the fractal dimension
+    pub fractal_dimension_levels: u8,
+    /// Size of each box from the fractal dimension estimation
+    pub box_sizes: Vec<f64>,
+    /// How many boxes at each level
+    pub box_counts: Vec<u64>,
 }
 
 impl FractalMetadata {
@@ -71,6 +79,10 @@ impl FractalMetadata {
             color_ifs_xform_count: color_ifs_xform_count as u8,
             algorithm: algorithm.to_string(),
             node_capacity: *node_capacity,
+            fractal_dimension: 0.0,
+            fractal_dimension_levels: 0,
+            box_counts: Vec::new(),
+            box_sizes: Vec::new(),
         }
     }
 
@@ -113,6 +125,25 @@ impl FractalMetadata {
                             },
                             "node_capacity" => object!{
                                 "componentType" => "UINT16"
+                            },
+                            "fractal_dimension" => object!{
+                                "description" => "Fractal dimension, estimated with the box-counting dimension (see https://en.wikipedia.org/wiki/Minkowski%E2%80%93Bouligand_dimension)",
+                                "componentType" => "FLOAT64"
+                            },
+                            "fractal_dimension_levels" => object!{
+                                "description" => "How many levels were used to estimate the fractal dimension. The larger, the more accurate",
+                                "type" => "ARRAY",
+                                "componentType" => "FLOAT64"
+                            },
+                            "box_counts" => object!{
+                                "description" => "Box counts at each level of the tree when estimating the fractal dimension",
+                                "type" => "ARRAY",
+                                "componentType" => "FLOAT64"
+                            },
+                            "box_sizes" => object!{
+                                "description" => "Box sizes at each level of the tree when estimating the fractal dimension",
+                                "type" => "ARRAY",
+                                "componentType" => "FLOAT64"
                             }
                         }
                     }
@@ -131,6 +162,10 @@ impl FractalMetadata {
                     "color_ifs_xform_count" => self.color_ifs_xform_count,
                     "algorithm" => self.algorithm.clone(),
                     "node_capacity" => self.node_capacity,
+                    "fractal_dimension" => self.fractal_dimension,
+                    "fractal_dimension_levels" => self.fractal_dimension_levels,
+                    "box_counts" => self.box_counts.clone(),
+                    "box_sizes" => self.box_sizes.clone(),
                 }
             }
         }

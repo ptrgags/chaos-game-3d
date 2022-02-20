@@ -5,7 +5,7 @@ use crate::clusters::{self, Cluster};
 use crate::plotters::{self, Plotter};
 use crate::vector::Vec3;
 use crate::half_multivector::HalfMultivector;
-use crate::point::{InternalPoint, OutputPoint};
+use crate::point::{InternalPoint};
 use crate::fractal_metadata::FractalMetadata;
 
 /// A generic IFS-based rendering algorithm like the Chaos Game and other
@@ -85,9 +85,9 @@ impl Algorithm for ChaosGame {
             // Skip the first few iterations as they are often not on 
             // the fractal.
             if i >= STARTUP_ITERS {
-                let point = OutputPoint {
-                    position: pos.to_vec3(),
-                    color: color_vec.to_vec3(),
+                let point = InternalPoint {
+                    position: pos.clone(),
+                    color: color_vec.clone(),
                     cluster_coordinates,
                     iteration: i as u64,
                     cluster_copy: 0,

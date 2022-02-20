@@ -9,6 +9,7 @@ mod algorithms;
 mod bbox;
 mod choosers;
 mod clusters;
+mod fractal_dimension;
 mod fractal_metadata;
 mod glb_writer;
 mod ifs;

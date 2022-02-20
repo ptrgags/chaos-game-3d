@@ -5,7 +5,8 @@
     "algorithm": "chaos",
     "iters": 1000000,
     "plotter": {
-        "radius": 1
+        "radius": 1,
+        "fractal_dimension_levels": 6
     },
     "ifs": {
         "xforms": [

@@ -587,6 +587,10 @@ impl HalfMultivector {
         self.components[N] *= inv_scale_factor;
     } 
 
+    pub fn get_vector_components(&self) -> [f64; 3] {
+        [self.components[X], self.components[Y], self.components[Z]]
+    }
+
     pub fn from_vec3(position: &Vec3) -> Self {
         Self::point(
             *position.x() as f64,
