@@ -558,3 +558,38 @@ I suppose it would also be possible to include the shader text in the fractal,
 but in JSON form you'd have to escape all the newlines, it would be hard to
 read. I'll think about this... maybe not in the `clusters` branch though, it's
 already quite bloated.
+
+## 2022-02-20 Fractal Dimension Estimator
+
+Today I tried estimating the fractal dimension via the
+[box-counting dimension](https://en.wikipedia.org/wiki/Minkowski%E2%80%93Bouligand_dimension).
+
+I used spatial hashes to count the boxes at each level of detail, like so:
+
+```
+for each point:
+    for each box-counting level d:
+        let box_size = L / 2^d  // L is the size of the largest box
+        let coordinates = hash(point, d) // compute which box
+        spatial_hashes[d].insert(coordinates) // mark this box as visited
+
+box_counts[d] = spatial_hashes[d].len()
+```
+
+And from the box counts and sizes, it's just a matter of linear regression
+to compute the fractal dimension, as explained in
+[this article by Paul Bourke](http://paulbourke.net/fractals/cubecount/).
+
+It's working, though two issues I'll have to address:
+
+1. This algorithm, though `O(n)` (n is the number of points) adds quite a bit
+    of overhead once you get to 1M points. It would be better to make this
+    a command line option so it can be skipped if fractal dimension is not
+    desired.
+2. The relationship between the log side length and log box count is linear,
+    but in practice, there comes a point where the detail in the point cloud
+    stops. This causes the graph to suddenly approach a limit (seems to be the
+    logarithm of the number of points?) and this messes up the linear 
+    regression. I should consider computing the limit of the algorithm based
+    on the `complexity()` function I already have, since that tells me the
+    number of points in advance.
