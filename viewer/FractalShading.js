@@ -240,14 +240,38 @@ const ANIMATE_PULSE = new Cesium.CustomShader({
             value: 1
         },
         u_time: {
-            type: Cesium.UniformType.float,
+            type: Cesium.UniformType.FLOAT,
             value: 0
         }
     },
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
+    const float RADIUS = 0.1;
+    const float LOOP_TIME = 1.0;
+
+    // loop the animation
+    float loop(float x) {
+        return mod(x + RADIUS, LOOP_TIME + 2.0 * RADIUS) - RADIUS;
+    }
+
+    // Make a bell-curve shape though it uses smoothstep to exactly meet the
+    // x axis
+    float bell(float x) {
+        return smoothstep(1.0, 0.0, abs(x) / RADIUS);
+    }
+
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        vsOutput.pointSize = 4.0;
+        float x = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = 0.1 * u_time;
+
+        float animation_curve = bell(loop(x - t));
+
+        // Discard points outside the bell curve
+        if (animation_curve == 0.0) {
+            vsOutput.positionMC = vec3(0.0) / 0.0;
+        }
+
+        vsOutput.pointSize = 6.0 * animation_curve;
     }
     `,
     fragmentShaderText: `
