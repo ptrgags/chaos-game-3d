@@ -390,7 +390,7 @@ class FractalShading {
 
     update_metadata(metadata) {
         const iterations = metadata.getProperty("iterations");
-        COLOR_ITERATIONS.setUniform("u_iterations", iterations);
+        SHADERS.iterations.setUniform("u_iterations", iterations);
         SHADERS.animate_cumulative.setUniform("u_iterations", iterations);
         SHADERS.animate_pulse.setUniform("u_iterations", iterations);
         SHADERS.animate_highlight.setUniform("u_iterations", iterations);

@@ -1,6 +1,6 @@
 {
-    "id": "conjugated_sierpinski",
-    "name": "Conjugated Sierpinski Tetrahedron",
+    "id": "bent_sierpinski",
+    "name": "Bent Sierpinski Tetrahedron",
     "description": "Sierpinski tetrahedron transforms conjugated by a transformation that includes a sphere inverstion. This causes the tetrahedron to bulge outwards in a curved shape",
     "algorithm": "chaos",
     "iters": 500000,
