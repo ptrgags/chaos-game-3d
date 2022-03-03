@@ -640,7 +640,7 @@ impl Cluster for FibonacciDisk {
             let point = InternalPoint {
                 position,
                 color: color.clone(),
-                cluster_coordinates: Vec3::new(u as f32, v as f32, 1.0),
+                cluster_coordinates: Vec3::new(u as f32, v as f32, 0.0),
                 iteration: 0,
                 cluster_copy,
                 cluster_id,
