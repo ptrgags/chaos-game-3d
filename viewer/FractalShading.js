@@ -1,4 +1,6 @@
-const UNLIT = new Cesium.CustomShader({
+const SHADERS = {};
+
+SHADERS.unlit = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -7,7 +9,7 @@ const UNLIT = new Cesium.CustomShader({
     `,  
 });
 
-const COLOR_ITERATIONS = new Cesium.CustomShader({
+SHADERS.iterations = new Cesium.CustomShader({
     uniforms: {
         u_iterations: {
             type: Cesium.UniformType.FLOAT,
@@ -29,7 +31,7 @@ const COLOR_ITERATIONS = new Cesium.CustomShader({
     `
 })
 
-const COLOR_CLUSTER_COPIES = new Cesium.CustomShader({
+SHADERS.cluster_copies = new Cesium.CustomShader({
     uniforms: {
         u_cluster_copies: {
             type: Cesium.UniformType.FLOAT,
@@ -51,7 +53,7 @@ const COLOR_CLUSTER_COPIES = new Cesium.CustomShader({
     `
 });
 
-const COLOR_LAST_XFORMS = new Cesium.CustomShader({
+SHADERS.last_xform = new Cesium.CustomShader({
     uniforms: {
         u_xform_count: {
             type: Cesium.UniformType.FLOAT,
@@ -73,7 +75,7 @@ const COLOR_LAST_XFORMS = new Cesium.CustomShader({
     `
 });
 
-const HIGHLIGHT_FIRST = new Cesium.CustomShader({
+SHADERS.first = new Cesium.CustomShader({
     uniforms: {
         u_cluster_copies: {
             type: Cesium.UniformType.FLOAT,
@@ -96,7 +98,7 @@ const HIGHLIGHT_FIRST = new Cesium.CustomShader({
     `
 });
 
-const COLOR_BY_DISTANCE = new Cesium.CustomShader({
+SHADERS.distance = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -113,7 +115,7 @@ const COLOR_BY_DISTANCE = new Cesium.CustomShader({
     `
 });
 
-const COLOR_OCTANTS = new Cesium.CustomShader({
+SHADERS.octant = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -130,7 +132,7 @@ const COLOR_OCTANTS = new Cesium.CustomShader({
 });
 
 
-const VIEW_CLUSTER_COORDINATES = new Cesium.CustomShader({
+SHADERS.cluster_coordinates = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -144,7 +146,7 @@ const VIEW_CLUSTER_COORDINATES = new Cesium.CustomShader({
     `
 });
 
-const TRIANGLE_EDGES = new Cesium.CustomShader({
+SHADERS.triangle_edges = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -161,7 +163,7 @@ const TRIANGLE_EDGES = new Cesium.CustomShader({
     `
 });
 
-const GYROID = new Cesium.CustomShader({
+SHADERS.gyroid = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -193,7 +195,7 @@ const GYROID = new Cesium.CustomShader({
     `
 });
 
-const ANIMATE_CUMULATIVE = new Cesium.CustomShader({
+SHADERS.animate_cumulative = new Cesium.CustomShader({
     uniforms: {
         u_iterations: {
             type: Cesium.UniformType.FLOAT,
@@ -233,7 +235,7 @@ const ANIMATE_CUMULATIVE = new Cesium.CustomShader({
     `
 });
 
-const ANIMATE_PULSE = new Cesium.CustomShader({
+SHADERS.animate_pulse = new Cesium.CustomShader({
     uniforms: {
         u_iterations: {
             type: Cesium.UniformType.FLOAT,
@@ -281,7 +283,7 @@ const ANIMATE_PULSE = new Cesium.CustomShader({
     `
 });
 
-const ANIMATE_HIGHLIGHT = new Cesium.CustomShader({
+SHADERS.animate_highlight = new Cesium.CustomShader({
     uniforms: {
         u_iterations: {
             type: Cesium.UniformType.FLOAT,
@@ -305,21 +307,7 @@ const ANIMATE_HIGHLIGHT = new Cesium.CustomShader({
     `
 });
 
-const SHADERS = {
-    unlit: UNLIT,
-    iterations: COLOR_ITERATIONS,
-    cluster_copies: COLOR_CLUSTER_COPIES,
-    last_xform: COLOR_LAST_XFORMS,
-    first: HIGHLIGHT_FIRST,
-    distance: COLOR_BY_DISTANCE,
-    octant: COLOR_OCTANTS,
-    cluster_coordinates: VIEW_CLUSTER_COORDINATES,
-    triangle_edges: TRIANGLE_EDGES,
-    gyroid: GYROID,
-    animate_cumulative: ANIMATE_CUMULATIVE,
-    animate_pulse: ANIMATE_PULSE,
-    animate_highlight: ANIMATE_HIGHLIGHT
-};
+
 
 const OPTIONS = [
     {
@@ -403,22 +391,22 @@ class FractalShading {
     update_metadata(metadata) {
         const iterations = metadata.getProperty("iterations");
         COLOR_ITERATIONS.setUniform("u_iterations", iterations);
-        ANIMATE_CUMULATIVE.setUniform("u_iterations", iterations);
-        ANIMATE_PULSE.setUniform("u_iterations", iterations);
-        ANIMATE_HIGHLIGHT.setUniform("u_iterations", iterations);
+        SHADERS.animate_cumulative.setUniform("u_iterations", iterations);
+        SHADERS.animate_pulse.setUniform("u_iterations", iterations);
+        SHADERS.animate_highlight.setUniform("u_iterations", iterations);
 
         const ifs_xform_count = metadata.getProperty("ifs_xform_count");
-        COLOR_LAST_XFORMS.setUniform("u_xform_count", ifs_xform_count);
+        SHADERS.last_xform.setUniform("u_xform_count", ifs_xform_count);
 
         //"cluster_point_count":500,"cluster_copies":5,"ifs_xform_count":6,"color_ifs_xform_count":1,"algorithm":"chaos_sets","node_capacity":5000
         const cluster_copies = metadata.getProperty("cluster_copies");
-        COLOR_CLUSTERS.setUniform("u_cluster_copies", cluster_copies);
+        SHADERS.cluster_copies.setUniform("u_cluster_copies", cluster_copies);
     }
 
     update_time(time_sec) {
-        ANIMATE_CUMULATIVE.setUniform("u_time", time_sec);
-        ANIMATE_PULSE.setUniform("u_time", time_sec);
-        ANIMATE_HIGHLIGHT.setUniform("u_time", time_sec);
+        SHADERS.animate_cumulative.setUniform("u_time", time_sec);
+        SHADERS.animate_pulse.setUniform("u_time", time_sec);
+        SHADERS.animate_highlight.setUniform("u_time", time_sec);
     }
 
     populate_dropdown(dropdown_element) {
