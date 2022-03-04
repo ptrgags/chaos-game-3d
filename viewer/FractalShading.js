@@ -290,24 +290,43 @@ SHADERS.animate_highlight = new Cesium.CustomShader({
             value: 1
         },
         u_time: {
-            type: Cesium.UniformType.float,
+            type: Cesium.UniformType.FLOAT,
             value: 0
         }
     },
+    varyings: {
+        v_animation_curve: Cesium.VaryingType.FLOAT,
+    },
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
+    const float RADIUS = 0.05;
+    const float LOOP_TIME = 1.0;
+
+    // loop the animation
+    float loop(float x) {
+        return mod(x + RADIUS, LOOP_TIME + 2.0 * RADIUS) - RADIUS;
+    }
+
+    // Make a bell-curve shape though it uses smoothstep to exactly meet the
+    // x axis
+    float bell(float x) {
+        return smoothstep(1.0, 0.0, abs(x) / RADIUS);
+    }
+
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        vsOutput.pointSize = 4.0;
+        float x = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = 0.1 * u_time;
+
+        v_animation_curve = bell(loop(x - t));
+        vsOutput.pointSize = 4.0 + 2.0 * v_animation_curve;
     }
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        material.diffuse = fsInput.attributes.cluster_coordinates;
+        material.diffuse = mix(material.diffuse, vec3(1.0), v_animation_curve);
     }
     `
 });
-
-
 
 const OPTIONS = [
     {
