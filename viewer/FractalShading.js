@@ -99,6 +99,12 @@ SHADERS.first = new Cesium.CustomShader({
 });
 
 SHADERS.distance = new Cesium.CustomShader({
+    uniforms: {
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -108,8 +114,8 @@ SHADERS.distance = new Cesium.CustomShader({
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
         float dist_from_center = length(fsInput.attributes.positionMC);
-        float freq = 4.0;
-        float wave = 0.5 + 0.5 * cos(2.0 * czm_pi * freq * dist_from_center);
+        float freq = 2.0;
+        float wave = 0.5 + 0.5 * cos(2.0 * czm_pi * freq * dist_from_center - u_time);
         material.diffuse *= wave;
     }
     `
@@ -426,6 +432,7 @@ class FractalShading {
         SHADERS.animate_cumulative.setUniform("u_time", time_sec);
         SHADERS.animate_pulse.setUniform("u_time", time_sec);
         SHADERS.animate_highlight.setUniform("u_time", time_sec);
+        SHADERS.distance.setUniform("u_time", time_sec);
     }
 
     populate_dropdown(dropdown_element) {
