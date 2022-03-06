@@ -220,9 +220,9 @@ SHADERS.animate_cumulative = new Cesium.CustomShader({
 
         vsOutput.pointSize = 4.0;
 
-        // hide points by multiplying by NaN
+        // hide points by multiplying by 0, making them ideal points.
         if (iter_normalized > t) {
-            vsOutput.positionMC = vec3(0.0) / 0.0;
+            vsOutput.positionMC *= 0.0;
         }
     }
     `,
@@ -276,7 +276,7 @@ SHADERS.animate_pulse = new Cesium.CustomShader({
 
         // Discard points outside the bell curve
         if (animation_curve == 0.0) {
-            vsOutput.positionMC = vec3(0.0) / 0.0;
+            vsOutput.positionMC *= 0.0;
         }
 
         vsOutput.pointSize = 6.0 * animation_curve;
