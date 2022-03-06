@@ -25,7 +25,7 @@ pub trait Cluster {
     }
 }
 
-/// A set of specific points to start at
+/// A set of specific points to start with
 pub struct Points {
     // The points to use
     positions: Vec<Vec3>,
@@ -569,6 +569,8 @@ impl Cluster for GridQuad {
     }
 }
 
+/// Points in a disk arranged in a fibonacci lattice, similar to a sunflower's
+/// seed arangement
 pub struct FibonacciDisk {
     /// center point
     center: Vec3,
@@ -659,6 +661,7 @@ impl Cluster for FibonacciDisk {
     }
 }
 
+/// Similar to FibonacciDisk but arranged on a sphere
 struct FibonacciSphere {
     /// Center of the sphere
     center: Vec3,
@@ -1094,6 +1097,7 @@ impl Cluster for RandomBox {
     }
 }
 
+/// A cluster that represents the union of several sub-clusters
 pub struct ManyClusters {
     /// One or more interal clusters
     clusters: Vec<Box<dyn Cluster>>
