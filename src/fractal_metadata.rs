@@ -96,10 +96,13 @@ impl FractalMetadata {
                             "iterations" => object!{
                                 "componentType" => "UINT64"
                             },
+                            "cluster_copies" => object!{
+                                "componentType" => "UINT16"
+                            },
                             "cluster_point_count" => object!{
                                 "componentType" => "UINT16"
                             },
-                            "cluster_copies" => object!{
+                            "subcluster_max_point_count" => object!{
                                 "componentType" => "UINT16"
                             },
                             "ifs_xform_count" => object!{
@@ -125,8 +128,9 @@ impl FractalMetadata {
                     "name" => self.name.clone(),
                     "description" => self.description.clone(),
                     "iterations" => self.iterations,
-                    "cluster_point_count" => self.cluster_point_count,
                     "cluster_copies" => self.cluster_copies,
+                    "cluster_point_count" => self.cluster_point_count,
+                    "subcluster_max_point_count" => self.subcluster_max_point_count,
                     "ifs_xform_count" => self.ifs_xform_count,
                     "color_ifs_xform_count" => self.color_ifs_xform_count,
                     "algorithm" => self.algorithm.clone(),

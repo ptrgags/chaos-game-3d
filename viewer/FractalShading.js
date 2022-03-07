@@ -54,6 +54,50 @@ SHADERS.cluster_copies = new Cesium.CustomShader({
     `
 });
 
+SHADERS.cluster_ids = new Cesium.CustomShader({
+    uniforms: {
+        u_cluster_ids: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.featureId_2 / u_cluster_ids;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
+SHADERS.point_ids = new Cesium.CustomShader({
+    uniforms: {
+        u_point_ids: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.featureId_3 / u_point_ids;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
 SHADERS.last_xform = new Cesium.CustomShader({
     uniforms: {
         u_xform_count: {
@@ -349,6 +393,14 @@ const OPTIONS = [
         value: "cluster_copies"
     },
     {
+        name: "Color by cluster id",
+        value: "cluster_ids"
+    },
+    {
+        name: "Color by point id",
+        value: "point_ids"
+    },
+    {
         name: "Color by last xform",
         value: "last_xform"
     },
@@ -424,7 +476,12 @@ class FractalShading {
         const ifs_xform_count = metadata.getProperty("ifs_xform_count");
         SHADERS.last_xform.setUniform("u_xform_count", ifs_xform_count);
 
-        //"cluster_point_count":500,"cluster_copies":5,"ifs_xform_count":6,"color_ifs_xform_count":1,"algorithm":"chaos_sets","node_capacity":5000
+        // TODO: How to handle the two of these?
+        const cluster_point_count = metadata.getProperty("cluster_point_count");
+        const subcluster_max_point_count = metadata.getProperty("subcluster_max_point_count");
+        console.log(cluster_point_count, subcluster_max_point_count);
+        SHADERS.point_ids.setUniform("u_point_ids", cluster_point_count);
+
         const cluster_copies = metadata.getProperty("cluster_copies");
         SHADERS.cluster_copies.setUniform("u_cluster_copies", cluster_copies);
     }
