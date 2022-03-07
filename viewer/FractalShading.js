@@ -25,8 +25,9 @@ SHADERS.iterations = new Cesium.CustomShader({
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
         float iter_normalized = fsInput.attributes.featureId_0 / (u_iterations - 1.0);
-        //vec3 rgb = czm_HSBToRGB(vec3(iter_normalized, 0.8, 1.0));
-        material.diffuse = iter_normalized * vec3(1.0, 0.5, 0.01);
+        float wrapped = mod(2.0 * iter_normalized, 1.0);
+        vec3 rgb = czm_HSBToRGB(vec3(wrapped, 0.8, 1.0));
+        material.diffuse = rgb;
     }
     `
 })
