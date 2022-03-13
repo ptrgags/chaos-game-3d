@@ -546,3 +546,35 @@ be listed accordingly too. So far I've done this much.
 
 In another branch, the next step is to handle the `3DTILES_implicit_tiling`
 extension and subtree files.
+
+## 2022-02-18 Triangles and Tetrahedra
+
+Yesterday I added a `Triangle` chooser to make a grid of points arranged
+in a triangle. The UVs are barycentric coordinates. Today I added a
+`Tetrahedron`, very similar just with an extra dimension.
+
+I also came across the 2019 Bridges math art paper, "Discrete Gyroid Surface" by
+Ulrich Reitebuch, Martin Skrodzki and Konrad Polthier, which makes a simplified
+gyroid mesh that focuses on the symmetries of the structure. I figured this
+would be a cool test of my triangle chooser, so I implemented it. I had to get
+clever to show the "front" and "back" sides, both by adding extra triangles
+offset by a tiny bit, and updating the shader to fix the coloring scheme
+so it matches the paper. see `gyroid_sides.json` (I might rename this one to 
+`gyroid` and remove the other one later, this one turned out better.)
+
+I'm also realizing that some fractals would benefit from specialized shaders.
+Maybe one dropdown option selects a specialized shader when available?
+I suppose it would also be possible to include the shader text in the fractal,
+but in JSON form you'd have to escape all the newlines, it would be hard to
+read. I'll think about this... maybe not in the `clusters` branch though, it's
+already quite bloated.
+
+## 2022-03-13 Wrap up Clusters branch
+
+Yikes, I haven't updated the logbook on this branch in many weeks... I've been
+slowly chipping away at cleaning up the `clusters` branch. This branch grew
+rather large, so cleaning it up gets tedious. And tedious means motivation to
+start is low. But finally I got it wrapped up!
+
+I updated the paramter files and also added some new screenshots. The new
+shaders + better clusters really help to improve the visual quality.

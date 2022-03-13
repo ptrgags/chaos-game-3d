@@ -1,0 +1,93 @@
+{
+    "id": "gyroid",
+    "name": "Discrete Gyroid Surface",
+    "description": "A shape described in \"Discrete Gyroid Surface\" by Reitebuch, Skrodzki and Polthier https://archive.bridgesmathart.org/2019/bridges2019-461.html",
+    "algorithm": "chaos_sets",
+    "plotter": {
+        "radius": 9
+    },
+    "cluster": {
+        "type": "many",
+        "clusters": [
+            {
+                "type": "triangle",
+                "vertices": [
+                    [1, 1, -1],
+                    [-1, 1, 0],
+                    [0, -1, -1]
+                ],
+                "color": [0.5, 0.0, 1.0],
+                "side_points": 15
+            },
+            {
+                "type": "triangle",
+                "vertices": [
+                    [-1, -1, 1],
+                    [0, -1, -1],
+                    [-1, 1, 0]
+                ],
+                "color": [0.5, 0.0, 1.0],
+                "side_points": 15
+            },
+            {
+                "type": "triangle",
+                "vertices": [
+                    [1, 1, -0.9],
+                    [-1, 1, 0.1],
+                    [0.1, -1, -1]
+                ],
+                "color": [0.8, 0.8, 0.8],
+                "side_points": 15
+            },
+            {
+                "type": "triangle",
+                "vertices": [
+                    [-0.9, -1, 1],
+                    [0.1, -1, -1],
+                    [-1, 1, 0.1]
+                ],
+                "color": [0.8, 0.8, 0.8],
+                "side_points": 15
+            }
+        ]
+    },
+    "cluster_copies": 150,
+    "iters": 25,
+    "ifs": {
+        "chooser": {
+            "type": "markov",
+            "initial_weights": [0.5, 0.5, 0.5, 1],
+            "weights": [
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [1, 1, 0, 1],
+                [1, 1, 1, 10]
+            ]
+        },
+        "xforms": [
+            ["chain", [
+                ["translate", -1, 0, -1],
+                ["rotate", 0, 1, 0, 180],
+                ["translate", 1, 0, 1]
+            ]],
+            ["chain", [
+                ["translate", 1, -1, 0],
+                ["rotate", 0, 0, 1, 180],
+                ["translate", -1, 1, 0]
+            ]],
+            ["chain", [
+                ["translate", 0, 1, 1],
+                ["rotate", 1, 0, 0, 180],
+                ["translate", 0, -1, -1]
+            ]],
+            ["chain", [
+                ["translate", -2, 0, 0],
+                ["rotate", 1, -1, 1, 60],
+                ["translate", 2, 0, 0],
+                ["translate", -1, -1, 1],
+                ["reflect", 1, -1, 1],
+                ["translate", 1, 1, -1]
+            ]]
+        ]
+    }
+}

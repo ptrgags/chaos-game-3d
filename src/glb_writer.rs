@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+use chrono::{Datelike, Utc};
 use json::JsonValue;
 
 use crate::point::OutputPoint;
@@ -456,9 +457,15 @@ impl GlbWriter {
                 JsonValue::Number(accessor.accessor_id.into());
         }
 
+        let copyright = format!("© {} Peter Gagliardi", Utc::now().year());
+        let generator = 
+            "Chaos Game 3D fractal generator from https://github.com/ptrgags/chaos-game-3d";
+
         let json = object!{
             "asset" => object!{
-                "version" => "2.0"
+                "version" => "2.0",
+                "generator" => generator, 
+                "copyright" => copyright
             },
             "scene" => 0,
             "scenes" => array![

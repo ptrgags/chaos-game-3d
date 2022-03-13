@@ -1,0 +1,28 @@
+{
+    "id": "tetrahedra",
+    "name": "Tetrahedra",
+    "description": "Quick test of Tetrahedron. I'll make it look nice later",
+    "algorithm": "chaos_sets",
+    "plotter": {
+        "radius": 50
+    },
+    "cluster": {
+        "type": "tetrahedron",
+        "color": [1.0, 0.0, 0.0],
+        "side_points": 15
+    },
+    "cluster_copies": 4,
+    "iters": 100,
+    "ifs": {
+        "chooser": {
+            "type": "no_backtracking"
+        },
+        "xforms": [
+            ["chain", [
+                ["translate", 1, 0, 0],
+                ["rotate", 1, 0, 0, 45]
+            ]],
+            ["+inverse"]
+        ]
+    }
+}
