@@ -8,6 +8,7 @@ use crate::vector::Vec3;
 
 /// Octree node
 pub struct OctNode {
+    /// Implicit coordinates for this tile.
     implicit_coordinates: ImplicitCoordinates,
     /// 8 children. This is always either completely empty or completely full 
     children: Vec<OctNode>,
