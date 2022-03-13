@@ -114,8 +114,7 @@ impl Algorithm for ChaosGame {
     }
 
     fn save(&mut self) {
-        let fname = format!("./viewer/{}", self.metadata.id);
-        self.output.save(&fname, &self.metadata);
+        self.output.save(&self.metadata.id, &self.metadata);
     }
 
     /// The complexity of the basic chaos game is O(n) where n is the number
@@ -204,6 +203,7 @@ impl ChaosSets {
         metadata.cluster_point_count = cluster.point_count() as u16;
         metadata.subcluster_max_point_count = 
             cluster.subcluster_max_point_count() as u16;
+        metadata.subcluster_count = cluster.subcluster_count() as u8;
 
         Self {
             metadata,
@@ -246,8 +246,7 @@ impl Algorithm for ChaosSets {
     }
 
     fn save(&mut self) {
-        let fname = format!("./viewer/{}", self.metadata.id);
-        self.output.save(&fname, &self.metadata);
+        self.output.save(&self.metadata.id, &self.metadata);
     }
 
     /// Complexity in this case is O(m * n * p) where m is the points each 

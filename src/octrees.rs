@@ -1,12 +1,15 @@
 use json::JsonValue;
 
 use crate::bbox::BBox;
-use crate::vector::Vec3;
+use crate::implicit_coordinates::ImplicitCoordinates;
 use crate::point::OutputPoint;
+use crate::vector::Vec3;
 
 
 /// Octree node
 pub struct OctNode {
+    /// Implicit coordinates for this tile.
+    implicit_coordinates: ImplicitCoordinates,
     /// 8 children. This is always either completely empty or completely full 
     children: Vec<OctNode>,
     /// Bounding box for this node
@@ -27,8 +30,9 @@ impl OctNode {
     /// Create an empty root node surrounding the origin. The half-width "radius"
     /// of the box must be specified since all other node bounding boxes are
     /// derived from this node.
-    pub fn root_node(radius: f32, capacity: usize) -> Self {
+    pub fn root_node(radius: f32, capacity: usize, subtree_levels: usize) -> Self {
         Self {
+            implicit_coordinates: ImplicitCoordinates::root(subtree_levels),
             children: Vec::new(),
             bounds: BBox::new(
                 -radius, radius, 
@@ -42,8 +46,12 @@ impl OctNode {
     }
 
     /// Create an empty child node with given bounds
-    pub fn child_node(bounds: BBox, capacity: usize) -> Self {
+    pub fn child_node(&self, bounds: BBox, capacity: usize, child_index: usize) 
+            -> Self {
+        let child_coordinates =
+            self.implicit_coordinates.get_child_coordinates(child_index);
         Self {
+            implicit_coordinates: child_coordinates,
             children: Vec::new(),
             bounds,
             points: Vec::new(),
@@ -79,9 +87,8 @@ impl OctNode {
         self.bounds.to_json()
     }
 
-    /// Return pairs of (quadrant, child) for each child in an internal node
-    pub fn labeled_children(&self) -> Vec<(usize, &OctNode)> {
-        self.children.iter().enumerate().collect()
+    pub fn get_children(&self) -> &Vec<OctNode> {
+        &self.children
     }
 
     /// Borrow the points. This is used when writing data to disk
@@ -131,8 +138,8 @@ impl OctNode {
         } else if !is_leaf {
             // Recursive case: Find the octant which the point is in, and
             // insert into the child node
-            let quadrant = self.bounds.find_quadrant(&point.position);
-            let child = &mut self.children[quadrant];
+            let octant = self.bounds.find_octant(&point.position);
+            let child = &mut self.children[octant];
             let color = point.color;
             let result = child.add_point_recursive(
                 point, depth + 1, max_depth);
@@ -156,14 +163,14 @@ impl OctNode {
     fn subdivide(&mut self) {
         assert!(self.is_leaf(), "can only subdivide leaf nodes");
         let child_bounds = self.bounds.subdivide();
-        for bounds in child_bounds.into_iter() {
-            let child = Self::child_node(bounds, self.capacity);
+        for (child_index, bounds) in child_bounds.into_iter().enumerate() {
+            let child = self.child_node(bounds, self.capacity, child_index);
             self.children.push(child);
         }
 
         // Move all the points in the current buffer to the children
         for point in self.points.iter() {
-            let quadrant = self.bounds.find_quadrant(&point.position);
+            let quadrant = self.bounds.find_octant(&point.position);
             let child = &mut self.children[quadrant]; 
             child.points.push(point.clone());
         }
@@ -181,5 +188,26 @@ impl OctNode {
             .filter(|(i, _)| i % 4 == 0)
             .map(|(_, point)| point.clone())
             .collect()
+    }
+
+    /// point clouds will go in {tileset_dir}/{level}/{x}/{y}/ The z will be
+    /// part of the filename
+    pub fn get_directory_name(&self, tileset_dir: &str) -> String {
+        let coords = &self.implicit_coordinates;
+        format!("{}/{}/{}/{}", tileset_dir, coords.level, coords.x, coords.y)
+    }
+
+    /// point cloud files will go in
+    /// {tileset_dir}/{level}/{x}/{y}/{z}.{extension}
+    pub fn get_file_name(&self, dirname: &str, extension: &str) -> String {
+        let coords = &self.implicit_coordinates;
+        format!(
+            "{}/{}/{}/{}/{}.{}",
+            dirname,
+            coords.level,
+            coords.x,
+            coords.y,
+            coords.z,
+            extension)
     }
 }

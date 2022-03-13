@@ -4,19 +4,69 @@
     "description": "Similar to tangent_spheres, but this time it's 8 spheres at the corners of the unit cube",
     "algorithm": "chaos_sets",
     "plotter": {
-        "radius": 4
+        "radius": 4.1
     },
     "cluster": {
-        "type": "circle",
-        "center": [1, 0, 0],
-        "x_dir": [0, 1, 0],
-        "y_dir": [0, 0, 1],
-        "radius": 1,
-        "color": [0.5, 0.3, 0.1],
-        "num_points": 100
+        "type": "many",
+        "clusters": [
+            {
+                "type": "circle",
+                "center": [1, 0, 0],
+                "x_dir": [0, 1, 0],
+                "y_dir": [0, 0, 1],
+                "radius": 1,
+                "color": [0, 0.373, 0.451],
+                "num_points": 100
+            },
+            {
+                "type": "circle",
+                "center": [-1, 0, 0],
+                "x_dir": [0, 1, 0],
+                "y_dir": [0, 0, 1],
+                "radius": 1,
+                "color": [0.039, 0.576, 0.588],
+                "num_points": 100
+            },
+            {
+                "type": "circle",
+                "center": [0, 1, 0],
+                "x_dir": [1, 0, 0],
+                "y_dir": [0, 0, 1],
+                "radius": 1,
+                "color": [0.933, 0.608, 0],
+                "num_points": 100
+            },
+            {
+                "type": "circle",
+                "center": [0, -1, 0],
+                "x_dir": [1, 0, 0],
+                "y_dir": [0, 0, 1],
+                "radius": 1,
+                "color": [0.792, 0.404, 0.008],
+                "num_points": 100
+            },
+            {
+                "type": "circle",
+                "center": [0, 0, 1],
+                "x_dir": [1, 0, 0],
+                "y_dir": [0, 1, 0],
+                "radius": 1,
+                "color": [0.682, 0.125, 0.071],
+                "num_points": 100
+            },
+            {
+                "type": "circle",
+                "center": [0, 0, -1],
+                "x_dir": [1, 0, 0],
+                "y_dir": [0, 1, 0],
+                "radius": 1,
+                "color": [0.608, 0.133, 0.149],
+                "num_points": 100
+            }
+        ]
     },
-    "cluster_copies": 5,
-    "iters": 1000,
+    "cluster_copies": 1,
+    "iters": 800,
     "ifs": {
         "xforms": [
             ["chain", [

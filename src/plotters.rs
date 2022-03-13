@@ -36,24 +36,13 @@ pub struct ScatterPlot {
 }
 
 impl ScatterPlot {
-    pub fn new(
-            radius: f32,
-            node_capacity: usize,
-            max_depth: u8,
-            tile_type: ContentType) -> Self {
-        Self {
-            root: OctNode::root_node(radius, node_capacity),
-            max_depth,
-            tile_type
-        }
-    }
-
     /// Load a plotter from JSON of the form:
     /// {
     ///     "type": "scatter",
     ///     "format": "pnts" | "glb" (default "glb"),
     ///     "max_depth": d (default 10),
     ///     "node_capacity: n (default 5000),
+    ///     "subtree_levels": l (default 4)
     ///     "radius": r,
     /// }
     pub fn from_json(json: &JsonValue) -> Self {
@@ -71,8 +60,15 @@ impl ScatterPlot {
         let radius = json["radius"]
             .as_f32()
             .expect("radius must be a float");
+        let subtree_levels = json["subtree_levels"].as_usize().unwrap_or(5);
 
-        Self::new(radius, capacity, max_depth, tile_type)
+        let root = OctNode::root_node(radius, capacity, subtree_levels);
+
+        Self {
+            root,
+            max_depth,
+            tile_type
+        }
     }
 
     to_box!(Plotter);
@@ -85,12 +81,14 @@ impl Plotter for ScatterPlot {
 
     /// Save the tileset into a directory of the given name. This creates
     /// the directory if it does not already exist
-    fn save(&mut self, dirname: &str, metadata: &FractalMetadata) {
+    fn save(&mut self, tileset_id: &str, metadata: &FractalMetadata) {
         // Decimate the mesh recursively to generate LODs
         self.root.decimate();
         let writer = TilesetWriter::new(
-            self.tile_type.clone(), metadata.clone());
-        writer.save(dirname, &self.root);
+            tileset_id,
+            self.tile_type.clone(),
+            metadata.clone());
+        writer.save(&self.root);
     }
 }
 

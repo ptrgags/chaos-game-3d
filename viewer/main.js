@@ -48,6 +48,7 @@ function set_model(model_id) {
         url,
         debugShowBoundingVolume: show_bboxes,
         modelMatrix: scale,
+        showCreditsOnScreen: true
     });
     shading.apply_shader(tileset);
 

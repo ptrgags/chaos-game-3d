@@ -12,6 +12,7 @@ mod clusters;
 mod fractal_metadata;
 mod glb_writer;
 mod ifs;
+mod implicit_coordinates;
 mod half_multivector;
 mod octrees;
 mod plotters;

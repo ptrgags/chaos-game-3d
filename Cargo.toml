@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 rand = "0.7.2"
 json = "0.12.4"
+chrono = "0.4.0"
