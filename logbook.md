@@ -558,3 +558,13 @@ I suppose it would also be possible to include the shader text in the fractal,
 but in JSON form you'd have to escape all the newlines, it would be hard to
 read. I'll think about this... maybe not in the `clusters` branch though, it's
 already quite bloated.
+
+## 2022-03-13 Wrap up Clusters branch
+
+Yikes, I haven't updated the logbook on this branch in many weeks... I've been
+slowly chipping away at cleaning up the `clusters` branch. This branch grew
+rather large, so cleaning it up gets tedious. And tedious means motivation to
+start is low. But finally I got it wrapped up!
+
+I updated the paramter files and also added some new screenshots. The new
+shaders + better clusters really help to improve the visual quality.
