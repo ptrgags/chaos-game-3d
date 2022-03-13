@@ -6,55 +6,67 @@
     "plotter": {
         "radius": 4
     },
-    "initial_set": {
-        "type": "box",
-        "center": [0, 0, 0],
-        "dims": [0.2, 0.2, 0.2],
-        "color": [0.5, 0.3, 0.1],
-        "num_points": 10
+    "cluster": {
+        "type": "many",
+        "clusters": [
+            {
+                "type": "box",
+                "center": [0, 0, 0],
+                "dims": [0.2, 0.2, 0.2],
+                "color": [0.9, 0.2, 0.2],
+                "num_points": 300
+            },
+            {
+                "type": "box",
+                "center": [2, 0, 0],
+                "dims": [0.2, 0.2, 0.2],
+                "color": [0.3, 0.3, 0.9],
+                "num_points": 500
+            }
+        ]
     },
-    "initial_set_copies": 400,
+    "cluster_copies": 6,
     "iters": 100,
     "ifs": {
         "xforms": [
             ["chain", [
                 ["translate", -2, 0, 0],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", 2, 0, 0]
             ]],
             ["chain", [
                 ["translate", 2, 0, 0],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", -2, 0, 0]
             ]],
             ["chain", [
                 ["translate", 0, 0, -2],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", 0, 0, 2]
             ]],
             ["chain", [
                 ["translate", 0, 0, 2],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", 0, 0, -2]
             ]],
             ["chain", [
                 ["translate", 0, -2, 0],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", 0, 2, 0]
             ]],
             ["chain", [
                 ["translate", 0, 2, 0],
-                ["scale",0.57735],
+                ["scale", 0.57735],
                 ["invert"],
                 ["scale", 1.73205],
                 ["translate", 0, -2, 0]

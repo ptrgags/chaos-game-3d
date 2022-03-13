@@ -2,8 +2,8 @@
     "id": "seaweed",
     "name": "Seaweed",
     "algorithm": "chaos_sets",
-    "initial_set": {
-        "type": "box",
+    "cluster": {
+        "type": "rand_box",
         "dims": [0.3, 0.3, 1.0],
         "center": [1, 0.3, 0],
         "color": [0.3, 0.8, 0.4],
@@ -12,7 +12,7 @@
     "plotter": {
         "radius": 8
     },
-    "initial_set_copies": 5,
+    "cluster_copies": 5,
     "iters": 10000,
     "ifs": {
         "xforms": [

@@ -9,11 +9,16 @@ pub struct Point<T> {
     pub position: T,
     /// The color of the point in RGB space
     pub color: T,
-    /// The feature ID is which initial set the point came from
-    pub feature_id: u16,
+    /// The u, (maybe) v, and (maybe) w coordinates within the cluster shape.
+    /// The nature of this depends on the cluster type.
+    pub cluster_coordinates: Vec3,
     /// The iteration number when this point was plotted
     pub iteration: u64,
-    /// The ID of the point within the initial set
+    /// Which copy of the cluster
+    pub cluster_copy: u16,
+    /// Which sub-cluster (in the case of ManyCluster)
+    pub cluster_id: u16,
+    /// The ID of the point within the cluster
     pub point_id: u16,
     /// The index of the last transformation that was applied
     pub last_xform: u8,
@@ -35,8 +40,10 @@ impl From<InternalPoint> for OutputPoint {
         Self {
             position: point.position.to_vec3(),
             color: point.color.to_vec3(),
-            feature_id: point.feature_id,
+            cluster_coordinates: point.cluster_coordinates,
             iteration: point.iteration,
+            cluster_copy: point.cluster_copy,
+            cluster_id: point.cluster_id,
             point_id: point.point_id,
             last_xform: point.last_xform,
             last_color_xform: point.last_color_xform

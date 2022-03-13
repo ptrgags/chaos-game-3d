@@ -2,7 +2,7 @@
     "id": "orthogonal_loxodromics",
     "name": "Orthogonal Loxodromic Transformations",
     "algorithm": "chaos_sets",
-    "initial_set": {
+    "cluster": {
         "type": "box",
         "dims": [0.01, 0.01, 4],
         "center": [0, 0, 0],
@@ -12,7 +12,7 @@
     "plotter": {
         "radius": 4
     },
-    "initial_set_copies": 5,
+    "cluster_copies": 5,
     "iters": 1000,
     "ifs": {
         "xforms": [

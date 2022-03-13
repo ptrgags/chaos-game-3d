@@ -1,7 +1,7 @@
 use json::JsonValue;
 
 use crate::ifs::{self, IFS};
-use crate::initial_set::{self, InitialSet};
+use crate::clusters::{self, Cluster};
 use crate::plotters::{self, Plotter};
 use crate::vector::Vec3;
 use crate::half_multivector::HalfMultivector;
@@ -79,8 +79,7 @@ impl Algorithm for ChaosGame {
         let complexity = self.complexity() / UPDATE_FREQ;
 
         // For the basic chaos game, everything is the same feature
-        const FEATURE_ID: u16 = 0;
-        const POINT_ID: u16 = 0;
+        let cluster_coordinates: Vec3 = Vec3::zero();
 
         for i in 0..(STARTUP_ITERS + self.num_iters) {
             // Skip the first few iterations as they are often not on 
@@ -89,9 +88,11 @@ impl Algorithm for ChaosGame {
                 let point = OutputPoint {
                     position: pos.to_vec3(),
                     color: color_vec.to_vec3(),
-                    feature_id: FEATURE_ID,
+                    cluster_coordinates,
                     iteration: i as u64,
-                    point_id: POINT_ID,
+                    cluster_copy: 0,
+                    cluster_id: 0,
+                    point_id: 0,
                     last_xform: self.position_ifs.get_last_xform(),
                     last_color_xform: self.color_ifs.get_last_xform()
                 };
@@ -136,10 +137,10 @@ pub struct ChaosSets {
     /// IFS for transforming colors
     color_ifs: IFS,
     /// Pattern for the initial sets
-    initial_set: Box<dyn InitialSet>,
-    /// How many initial sets to create. Each one is transformed independently
+    cluster: Box<dyn Cluster>,
+    /// How many initial clusters to create. Each one is transformed independently
     /// from the others.
-    initial_copies: usize,
+    cluster_copies: usize,
     /// Octree-based plotter for storing the output
     output: Box<dyn Plotter>,
     /// Number of iterations to perform.
@@ -165,8 +166,10 @@ impl ChaosSets {
         points.iter().enumerate().map(|(i, point)| InternalPoint {
             position: new_positions[i].clone(),
             color: new_colors[i].clone(),
-            feature_id: point.feature_id,
+            cluster_coordinates: point.cluster_coordinates.clone(),
             iteration,
+            cluster_copy: point.cluster_copy,
+            cluster_id: point.cluster_id,
             point_id: point.point_id,
             last_xform,
             last_color_xform
@@ -178,8 +181,8 @@ impl ChaosSets {
     /// ```text
     /// {
     ///     "algorithm": "chaos_sets",
-    ///     "initial_set": <InitialSet JSON>,
-    ///     "initial_set_copies": N,
+    ///     "cluster": <Cluster JSON>,
+    ///     "cluster_copies": N,
     ///     "ifs": <IFS JSON>,
     ///     "color_ifs": <IFS JSON>,
     ///     "plotter": <Plotter JSON>,
@@ -187,24 +190,28 @@ impl ChaosSets {
     /// }
     /// ```
     pub fn from_json(json: &JsonValue) -> Self {
-        let metadata = FractalMetadata::from_json(json);
         let position_ifs = ifs::from_json(&json["ifs"]);
         let color_ifs = ifs::from_json(&json["color_ifs"]);
-        let arranger = initial_set::from_json(&json["initial_set"]);
+        let cluster = clusters::from_json(&json["cluster"]);
         let plotter = plotters::from_json(&json["plotter"]);
-        let initial_copies: usize = json["initial_set_copies"]
+        let cluster_copies: usize = json["cluster_copies"]
             .as_usize()
             .expect("initial_copies must be a positive integer");
         let num_iters = json["iters"]
             .as_usize()
             .expect("iters must be a positive integer");
+        let mut metadata = FractalMetadata::from_json(json);
+        metadata.cluster_point_count = cluster.point_count() as u16;
+        metadata.subcluster_max_point_count = 
+            cluster.subcluster_max_point_count() as u16;
+        metadata.subcluster_count = cluster.subcluster_count() as u8;
 
         Self {
             metadata,
             position_ifs,
             color_ifs,
-            initial_set: arranger,
-            initial_copies,
+            cluster,
+            cluster_copies,
             output: plotter,
             num_iters,
         }
@@ -213,7 +220,7 @@ impl ChaosSets {
     to_box!(Algorithm);
 
     /// Iterate a single cluster
-    fn iterate_cluster(&mut self, cluster_id: u16) {
+    fn iterate_cluster(&mut self, cluster_copy: u16) {
         // Some IFS choosers are stateful, so reset the state to ensure
         // each cluster gets a unique path
         // NOTE: for the future: this is not thread-safe. If I want to
@@ -221,7 +228,7 @@ impl ChaosSets {
         self.position_ifs.reset();
         self.color_ifs.reset();
 
-        let mut buffer = self.initial_set.generate(cluster_id);
+        let mut buffer = self.cluster.generate(cluster_copy, 0);
         self.output.plot_points(&buffer);
 
         for i in 0..self.num_iters {
@@ -234,7 +241,7 @@ impl ChaosSets {
 
 impl Algorithm for ChaosSets {
     fn iterate(&mut self) {
-        for i in 0..self.initial_copies {
+        for i in 0..self.cluster_copies {
             self.iterate_cluster(i as u16);
         }
     }
@@ -248,8 +255,8 @@ impl Algorithm for ChaosSets {
     /// initial set, n is the number of copies of the initial set, and p is
     /// the number of iterations.
     fn complexity(&self) -> usize {
-        let points_per_buf = self.initial_set.len();
-        let points_per_iter = points_per_buf * self.initial_copies;
+        let points_per_buf = self.cluster.point_count();
+        let points_per_iter = points_per_buf * self.cluster_copies;
        
         // Add in the size of a single buffer to account for the 0-th
         // iteration.

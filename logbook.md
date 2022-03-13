@@ -430,6 +430,37 @@ I'm not quite done with this project, there's a few more things I want to do:
 * Once CesiumJS's implementation of 3D Tiles Next is further along, there's
     plenty of cool styling opportunities
 
+## 2022-02-05 More Cluster Types
+
+The past couple of days I've been working on adding a few more cluster types:
+
+* evenly spaced lines, circles, quads, boxes
+* Fibonacci lattice disks and spheres. Formulas were found in [this article](http://extremelearning.com.au/how-to-evenly-distribute-points-on-a-sphere-more-effectively-than-the-canonical-fibonacci-lattice/)
+* A list of specific points.
+
+By being more precise in the initial clusters, the final results will look
+sharper.
+
+The next thing I want to do is add a cluster type of "many" that lets me
+list multiple starting shapes. Sometimes it helps to start with multiple
+shapes to get a better idea of the overall shape
+
+## 2022-02-07 Finishing Touches
+
+For this cluster branch, I added a couple of finishing touches:
+
+1. added the `ManyClusters` struct so I can list multiple cluster shapes in
+    a single fractal/tiling
+2. renaming `initial_set` to `cluster` in the JSON
+
+I did notice a couple things I'll need to investigate when I do a self-review:
+
+1. When a point gets mapped to infinity (when a point at (0, 0, 0) gets 
+inverted), I need to handle that carefully. I need to see if the multivector
+representation handles this cleanly or if it leads to divide by zero errors.
+2. For some reason `hopf_fibration` gives me an empty tileset. I'll have to
+    debug that one.
+
 ## 2022-02-08 No Backtracking Chooser
 
 When exploring tilings where the transforms come in pairs of inverses
@@ -487,3 +518,53 @@ you quickly get diminishing returns by this method.
 
 The conclusion here is no-backtracking is great for 1 pair, okay for 2-pairs,
 and not much better than uniformly random above this.
+
+## 2022-02-13 A Productive Weekend
+
+Yesterday and today I added quite a few things:
+
+1. I added cluster coordinates to each cluster. For 1D shapes like a line, this
+    is a single `u` coordinate. For 2D shapes like a grid or disk, this is a
+    `uv` coordinate pair. For 3D shapes like a box, this is a `uvw` triple.
+2. I refactored most of `glb_writer.rs` to A. refactor the accessor and buffer
+    view management since it was messy, B. to add the cluster coordinates and
+    other ids, and C. To switch from `EXT_mesh_features` to custom
+    glTF attributes. This last bit is temporary to prepare for future changes
+    to the spec, and it allows me to use the values in Custom Shaders
+3. Now that I have more variables available in the shader, I tried making some
+    new shaders, including one that's animated!
+    
+There's so much cool stuff to explore here, and more to add, but I think this
+is a good stopping point for one weekend.
+
+## 2022-02-18 Triangles and Tetrahedra
+
+Yesterday I added a `Triangle` chooser to make a grid of points arranged
+in a triangle. The UVs are barycentric coordinates. Today I added a
+`Tetrahedron`, very similar just with an extra dimension.
+
+I also came across the 2019 Bridges math art paper, "Discrete Gyroid Surface" by
+Ulrich Reitebuch, Martin Skrodzki and Konrad Polthier, which makes a simplified
+gyroid mesh that focuses on the symmetries of the structure. I figured this
+would be a cool test of my triangle chooser, so I implemented it. I had to get
+clever to show the "front" and "back" sides, both by adding extra triangles
+offset by a tiny bit, and updating the shader to fix the coloring scheme
+so it matches the paper. see `gyroid_sides.json` (I might rename this one to 
+`gyroid` and remove the other one later, this one turned out better.)
+
+I'm also realizing that some fractals would benefit from specialized shaders.
+Maybe one dropdown option selects a specialized shader when available?
+I suppose it would also be possible to include the shader text in the fractal,
+but in JSON form you'd have to escape all the newlines, it would be hard to
+read. I'll think about this... maybe not in the `clusters` branch though, it's
+already quite bloated.
+
+## 2022-03-13 Wrap up Clusters branch
+
+Yikes, I haven't updated the logbook on this branch in many weeks... I've been
+slowly chipping away at cleaning up the `clusters` branch. This branch grew
+rather large, so cleaning it up gets tedious. And tedious means motivation to
+start is low. But finally I got it wrapped up!
+
+I updated the paramter files and also added some new screenshots. The new
+shaders + better clusters really help to improve the visual quality.

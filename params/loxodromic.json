@@ -2,20 +2,22 @@
     "id": "loxodromic",
     "name": "3D Loxodromic Transformation",
     "algorithm": "chaos_sets",
-    "initial_set": {
-        "type": "box",
-        "dims": [0.01, 0.01, 4],
-        "center": [0, 0, 0],
+    "cluster": {
+        "type": "line",
+        "start": [0, 0, -2],
+        "end": [0, 0, 2],
         "color": [0.3, 0.8, 0.4],
         "num_points": 50
     },
     "plotter": {
         "radius": 4
     },
-    "initial_set_copies": 10,
+    "cluster_copies": 10,
     "iters": 1000,
     "ifs": {
-        "chooser": "no_backtracking",
+        "chooser": {
+            "type": "no_backtracking"
+        },
         "xforms": [
             ["chain", [
                 ["poloidal", 1, 0, 0, 90],

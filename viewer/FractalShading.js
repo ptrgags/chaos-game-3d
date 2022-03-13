@@ -1,16 +1,17 @@
-const UNLIT = new Cesium.CustomShader({
+const SHADERS = {};
+
+SHADERS.unlit = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        float id = vsInput.attributes.featureId_0;
         vsOutput.pointSize = 4.0;
     }
     `,  
 });
 
-const COLOR_CLUSTERS = new Cesium.CustomShader({
+SHADERS.iterations = new Cesium.CustomShader({
     uniforms: {
-        u_initial_set_copies: {
+        u_iterations: {
             type: Cesium.UniformType.FLOAT,
             value: 1
         }
@@ -18,22 +19,22 @@ const COLOR_CLUSTERS = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        float id = vsInput.attributes.featureId_0;
         vsOutput.pointSize = 4.0;
     }
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        float id_normalized = (fsInput.attributes.featureId_0 + 1.0) / u_initial_set_copies;
-        vec3 rgb = czm_HSBToRGB(vec3(id_normalized, 0.8, 1.0));
+        float iter_normalized = fsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float wrapped = mod(2.0 * iter_normalized, 1.0);
+        vec3 rgb = czm_HSBToRGB(vec3(wrapped, 0.8, 1.0));
         material.diffuse = rgb;
     }
     `
-});
+})
 
-const HIGHLIGHT_FIRST = new Cesium.CustomShader({
+SHADERS.cluster_copies = new Cesium.CustomShader({
     uniforms: {
-        u_initial_set_copies: {
+        u_cluster_copies: {
             type: Cesium.UniformType.FLOAT,
             value: 1
         }
@@ -41,20 +42,114 @@ const HIGHLIGHT_FIRST = new Cesium.CustomShader({
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
-        float id = vsInput.attributes.featureId_0;
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.featureId_1 / u_cluster_copies;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
+SHADERS.cluster_ids = new Cesium.CustomShader({
+    uniforms: {
+        u_cluster_ids: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.featureId_2 / u_cluster_ids;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
+SHADERS.point_ids = new Cesium.CustomShader({
+    uniforms: {
+        u_point_ids: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.featureId_3 / u_point_ids;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
+SHADERS.last_xform = new Cesium.CustomShader({
+    uniforms: {
+        u_xform_count: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float copy_normalized = fsInput.attributes.last_xform / u_xform_count;
+        vec3 rgb = czm_HSBToRGB(vec3(copy_normalized, 0.8, 1.0));
+        material.diffuse = rgb;
+    }
+    `
+});
+
+SHADERS.first = new Cesium.CustomShader({
+    uniforms: {
+        u_cluster_copies: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        float id = vsInput.attributes.featureId_1;
         vsOutput.pointSize = mix(4.0, 8.0, float(id == 0.0));
     }
     `,
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        float id = fsInput.attributes.featureId_0;
+        float id = fsInput.attributes.featureId_1;
         float is_first = float(id == 0.0);
         material.diffuse = mix(material.diffuse, vec3(1.0), is_first);
     }
     `
 });
 
-const COLOR_BY_DISTANCE = new Cesium.CustomShader({
+SHADERS.distance = new Cesium.CustomShader({
+    uniforms: {
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
     lightingModel: Cesium.LightingModel.UNLIT,
     vertexShaderText: `
     void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
@@ -64,19 +159,225 @@ const COLOR_BY_DISTANCE = new Cesium.CustomShader({
     fragmentShaderText: `
     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
         float dist_from_center = length(fsInput.attributes.positionMC);
-        float freq = 8.0;
-        float wave = 0.5 + 0.5 * cos(2.0 * czm_pi * freq * dist_from_center);
+        float freq = 2.0;
+        float wave = 0.5 + 0.5 * cos(2.0 * czm_pi * freq * dist_from_center - u_time);
         material.diffuse *= wave;
     }
     `
 });
 
-const SHADERS = {
-    unlit: UNLIT,
-    cluster: COLOR_CLUSTERS,
-    first: HIGHLIGHT_FIRST,
-    distance: COLOR_BY_DISTANCE
-};
+SHADERS.octant = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 position = fsInput.attributes.positionMC;
+        vec3 octants = step(0.0, position);
+        material.diffuse = octants;
+    }
+    `
+});
+
+
+SHADERS.cluster_coordinates = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = fsInput.attributes.cluster_coordinates;
+    }
+    `
+});
+
+SHADERS.triangle_edges = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 4.0;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 barycentric = fsInput.attributes.cluster_coordinates;
+        float min_coordinate = min(min(barycentric.x, barycentric.y), barycentric.z);
+        float edge = smoothstep(0.1, 0.0, min_coordinate);
+        material.diffuse = mix(material.diffuse, vec3(1.0), edge);
+    }
+    `
+});
+
+SHADERS.gyroid = new Cesium.CustomShader({
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        vsOutput.pointSize = 8.0;
+    }
+    `,
+    fragmentShaderText: `
+    float xnor(float a, float b) {
+        float a_and_b = min(a, b);
+        float not_a_and_not_b = min(1.0 - a, 1.0 - b);
+        return max(a_and_b, not_a_and_not_b);
+    }
+
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        vec3 pos = fsInput.attributes.positionMC;
+        vec3 cell_id = floor((pos + 1.0) / 2.0);
+        float diagonal = cell_id.x + cell_id.y + cell_id.z;
+        float parity = mod(diagonal, 2.0);
+        float is_back = float(fsInput.attributes.featureId_2 > 1.0);
+        vec3 color1 = vec3(0.5, 0.0, 1.0);
+        vec3 color2 = vec3(0.0, 1.0, 1.0);
+        material.diffuse = mix(color1, color2, xnor(parity, is_back));
+
+        vec3 barycentric = fsInput.attributes.cluster_coordinates;
+        float min_coordinate = min(min(barycentric.x, barycentric.y), barycentric.z);
+        float edge = smoothstep(0.1, 0.0, min_coordinate);
+        material.diffuse = mix(material.diffuse, vec3(1.0), edge);
+    }
+    `
+});
+
+SHADERS.animate_cumulative = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        float iter_normalized = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = mod(0.1 * u_time, 1.0);
+
+        vsOutput.pointSize = 4.0;
+
+        // hide points by multiplying by 0, making them ideal points.
+        if (iter_normalized > t) {
+            vsOutput.positionMC *= 0.0;
+        }
+    }
+    `,
+
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        float iter_normalized = fsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = mod(0.1 * u_time, 1.0);
+
+        float hotspot = smoothstep(0.2, 0.1, t - iter_normalized);
+        float brightness = smoothstep(0.5, 0.3, t - iter_normalized);
+        vec3 color = 0.8 * vec3(brightness) + 0.2;
+        color = mix(color, vec3(1.0, 0.5, 0.0), hotspot);
+        material.diffuse = color;
+    }
+    `
+});
+
+SHADERS.animate_pulse = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    const float RADIUS = 0.1;
+    const float LOOP_TIME = 1.0;
+
+    // loop the animation
+    float loop(float x) {
+        return mod(x + RADIUS, LOOP_TIME + 2.0 * RADIUS) - RADIUS;
+    }
+
+    // Make a bell-curve shape though it uses smoothstep to exactly meet the
+    // x axis
+    float bell(float x) {
+        return smoothstep(1.0, 0.0, abs(x) / RADIUS);
+    }
+
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        float x = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = 0.1 * u_time;
+
+        float animation_curve = bell(loop(x - t));
+
+        // Discard points outside the bell curve
+        if (animation_curve == 0.0) {
+            vsOutput.positionMC *= 0.0;
+        }
+
+        vsOutput.pointSize = 6.0 * animation_curve;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = fsInput.attributes.cluster_coordinates;
+    }
+    `
+});
+
+SHADERS.animate_highlight = new Cesium.CustomShader({
+    uniforms: {
+        u_iterations: {
+            type: Cesium.UniformType.FLOAT,
+            value: 1
+        },
+        u_time: {
+            type: Cesium.UniformType.FLOAT,
+            value: 0
+        }
+    },
+    varyings: {
+        v_animation_curve: Cesium.VaryingType.FLOAT,
+    },
+    lightingModel: Cesium.LightingModel.UNLIT,
+    vertexShaderText: `
+    const float RADIUS = 0.05;
+    const float LOOP_TIME = 1.0;
+
+    // loop the animation
+    float loop(float x) {
+        return mod(x + RADIUS, LOOP_TIME + 2.0 * RADIUS) - RADIUS;
+    }
+
+    // Make a bell-curve shape though it uses smoothstep to exactly meet the
+    // x axis
+    float bell(float x) {
+        return smoothstep(1.0, 0.0, abs(x) / RADIUS);
+    }
+
+    void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+        float x = vsInput.attributes.featureId_0 / (u_iterations - 1.0);
+        float t = 0.1 * u_time;
+
+        v_animation_curve = bell(loop(x - t));
+        vsOutput.pointSize = 4.0 + 2.0 * v_animation_curve;
+    }
+    `,
+    fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+        material.diffuse = mix(material.diffuse, vec3(1.0), v_animation_curve);
+    }
+    `
+});
 
 const OPTIONS = [
     {
@@ -84,16 +385,60 @@ const OPTIONS = [
         value: "unlit"
     },
     {
-        name: "Color by Cluster",
-        value: "cluster"
+        name: "Color by iteration",
+        value: "iterations"
     },
     {
-        name: "Highlight First Cluster",
+        name: "Color by cluster copy",
+        value: "cluster_copies"
+    },
+    {
+        name: "Color by cluster id",
+        value: "cluster_ids"
+    },
+    {
+        name: "Color by point id",
+        value: "point_ids"
+    },
+    {
+        name: "Color by last xform",
+        value: "last_xform"
+    },
+    {
+        name: "View cluster coordinates",
+        value: "cluster_coordinates"
+    },
+    {
+        name: "Emphasize Triangle Edges",
+        value: "triangle_edges"
+    },
+    {
+        name: "Discrete Gyroid Surface",
+        value: "gyroid"
+    },
+    {
+        name: "Highlight first cluster",
         value: "first"
     },
     {
         name: "Color by Distance from Origin",
         value: "distance"
+    },
+    {
+        name: "Color by Octant",
+        value: "octant"
+    },
+    {
+        name: "Animate iterations (cumulatively)",
+        value: "animate_cumulative"
+    },
+    {
+        name: "Animate iterations (pulse)",
+        value: "animate_pulse"
+    },
+    {
+        name: "Animate iterations (highlight)",
+        value: "animate_highlight"
     }
 ];
 
@@ -122,8 +467,34 @@ class FractalShading {
     }
 
     update_metadata(metadata) {
-        const initial_set_copies = metadata.getProperty("initial_set_copies");
-        COLOR_CLUSTERS.setUniform("u_initial_set_copies", initial_set_copies);
+        const iterations = metadata.getProperty("iterations");
+        SHADERS.iterations.setUniform("u_iterations", iterations);
+        SHADERS.animate_cumulative.setUniform("u_iterations", iterations);
+        SHADERS.animate_pulse.setUniform("u_iterations", iterations);
+        SHADERS.animate_highlight.setUniform("u_iterations", iterations);
+
+        const ifs_xform_count = metadata.getProperty("ifs_xform_count");
+        SHADERS.last_xform.setUniform("u_xform_count", ifs_xform_count);
+
+        // Usually these two are the same, but when using ManyClusters,
+        // it's the smaller subcluster_max_point_count that I want.
+        const cluster_point_count = metadata.getProperty("cluster_point_count");
+        const subcluster_max_point_count = metadata.getProperty("subcluster_max_point_count");
+        const point_id_count = Math.min(cluster_point_count, subcluster_max_point_count);
+        SHADERS.point_ids.setUniform("u_point_ids", point_id_count);
+
+        const cluster_ids = metadata.getProperty("subcluster_count");
+        SHADERS.cluster_ids.setUniform("u_cluster_ids", cluster_ids);
+
+        const cluster_copies = metadata.getProperty("cluster_copies");
+        SHADERS.cluster_copies.setUniform("u_cluster_copies", cluster_copies);
+    }
+
+    update_time(time_sec) {
+        SHADERS.animate_cumulative.setUniform("u_time", time_sec);
+        SHADERS.animate_pulse.setUniform("u_time", time_sec);
+        SHADERS.animate_highlight.setUniform("u_time", time_sec);
+        SHADERS.distance.setUniform("u_time", time_sec);
     }
 
     populate_dropdown(dropdown_element) {

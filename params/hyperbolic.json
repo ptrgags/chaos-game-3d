@@ -2,7 +2,7 @@
     "id": "hyperbolic",
     "name": "Hyperbolic transformation",
     "algorithm": "chaos_sets",
-    "initial_set": {
+    "cluster": {
         "type": "box",
         "dims": [0.01, 10, 10],
         "center": [0, 1, 0],
@@ -12,7 +12,7 @@
     "plotter": {
         "radius": 10
     },
-    "initial_set_copies": 2,
+    "cluster_copies": 2,
     "iters": 1000,
     "ifs": {
         "xforms": [

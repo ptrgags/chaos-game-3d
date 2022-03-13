@@ -12,10 +12,16 @@ pub struct FractalMetadata {
     pub description: String,
     /// The number of iterations
     pub iterations: u64,
-    /// How many points in the initial set
-    pub initial_set_point_count: u16,
     /// How many copies of the initial set
-    pub initial_set_copies: u16,
+    pub cluster_copies: u16,
+    /// How many subclusters. Usually 1, but for ManyClusters this is the
+    /// number of internal clusters.
+    pub subcluster_count: u8,
+    /// How many points in the initial set in total
+    pub cluster_point_count: u16,
+    /// For ManyClusters, what is the maximum number of points in any
+    /// sub cluster
+    pub subcluster_max_point_count: u16,
     /// How many transformations are in the IFS
     pub ifs_xform_count: u8,
     /// How many transformations are in the color IFS. Default is 1 (identity)
@@ -39,17 +45,8 @@ impl FractalMetadata {
             .as_str().expect("algorithm must be a string");
         let iterations = &json["iters"]
             .as_u64().expect("iters must be a number");
-        let initial_set_copies = &json["initial_set_copies"]
+        let cluster_copies = &json["cluster_copies"]
             .as_u16().unwrap_or(1);
-
-        let initial_set = &json["initial_set"];
-        let initial_set_point_count = match initial_set {
-            JsonValue::Null => 1,
-            JsonValue::Object(_) => 
-                initial_set["num_points"]
-                    .as_u16().expect("initial_set.num_points must be a number"),
-            _ => panic!("")
-        };
 
         let plotter = &json["plotter"];
         let node_capacity = &plotter["node_capacity"].as_u16().unwrap_or(5000);
@@ -69,8 +66,11 @@ impl FractalMetadata {
             name: name.to_string(),
             description: description.to_string(),
             iterations: *iterations,
-            initial_set_point_count: initial_set_point_count,
-            initial_set_copies: *initial_set_copies,
+            cluster_copies: *cluster_copies,
+            // these point counts will be determined later
+            subcluster_count: 1,
+            cluster_point_count: 0,
+            subcluster_max_point_count: 0,
             ifs_xform_count: *ifs_xform_count as u8,
             color_ifs_xform_count: color_ifs_xform_count as u8,
             algorithm: algorithm.to_string(),
@@ -100,10 +100,16 @@ impl FractalMetadata {
                             "iterations" => object!{
                                 "componentType" => "UINT64"
                             },
-                            "initial_set_point_count" => object!{
+                            "cluster_copies" => object!{
                                 "componentType" => "UINT16"
                             },
-                            "initial_set_copies" => object!{
+                            "subcluster_count" => object!{
+                                "componentType" => "UINT8"
+                            },
+                            "cluster_point_count" => object!{
+                                "componentType" => "UINT16"
+                            },
+                            "subcluster_max_point_count" => object!{
                                 "componentType" => "UINT16"
                             },
                             "ifs_xform_count" => object!{
@@ -129,8 +135,10 @@ impl FractalMetadata {
                     "name" => self.name.clone(),
                     "description" => self.description.clone(),
                     "iterations" => self.iterations,
-                    "initial_set_point_count" => self.initial_set_point_count,
-                    "initial_set_copies" => self.initial_set_copies,
+                    "cluster_copies" => self.cluster_copies,
+                    "subcluster_count" => self.subcluster_count,
+                    "cluster_point_count" => self.cluster_point_count,
+                    "subcluster_max_point_count" => self.subcluster_max_point_count,
                     "ifs_xform_count" => self.ifs_xform_count,
                     "color_ifs_xform_count" => self.color_ifs_xform_count,
                     "algorithm" => self.algorithm.clone(),

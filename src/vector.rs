@@ -231,6 +231,19 @@ impl Mul for Vec3 {
     }
 }
 
+impl Mul<f32> for Vec3 {
+    type Output = Self;
+    fn mul(self, scalar: f32) -> Self {
+        Self {
+            components: [
+                self.x() * scalar,
+                self.y() * scalar,
+                self.z() * scalar
+            ]
+        }
+    }
+}
+
 impl Color {
     /// Since colors are already u8s, we can pack them as `[x, y, z]` in
     /// 3 bytes
