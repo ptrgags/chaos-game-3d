@@ -1,6 +1,6 @@
 {
-    "id": "eight_sphere_squares",
-    "name": "Reflections in 8 tangent spheres",
+    "id": "fractal_loop",
+    "name": "Fractal Loop",
     "algorithm": "chaos_sets",
     "plotter": {
         "radius": 16,
