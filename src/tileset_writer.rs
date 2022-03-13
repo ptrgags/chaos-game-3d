@@ -34,38 +34,62 @@ pub struct TilesetWriter {
     content_type: ContentType,
     /// Metadata to include in the tileset when using 3D Tiles Next 
     /// (.glb content)
-    metadata: FractalMetadata
+    metadata: FractalMetadata,
+    /// The directory where the tileset will go
+    /// ./viewer/{tileset_id}
+    tileset_dir: String,
+    /// The directory where the point files will go, 
+    /// ./viewer/{tileset_id}/points
+    points_dir: String,
 }
 
 impl TilesetWriter {
-    pub fn new(content_type: ContentType, metadata: FractalMetadata) -> Self {
+    pub fn new(
+            tileset_id: &str,
+            content_type: ContentType,
+            metadata: FractalMetadata)
+            -> Self {
         Self {
             content_type,
-            metadata
+            metadata,
+            tileset_dir: format!("./viewer/{}", tileset_id),
+            points_dir: format!("./viewer/{}/points", tileset_id)
         }
     }
 
     /// Save the tileset to disk in the specified directory. The directory will
     /// be removed first if it exists, so use with care!
-    pub fn save(&self, dirname: &str, root: &OctNode) {
-        if Path::new(dirname).exists() {
-            remove_dir_all(dirname)
-                .expect("could not remove old tileset directory");
+    pub fn save(&self, root: &OctNode) {
+        self.init_directories();
+
+        println!("Generating tileset JSON in {}", &self.tileset_dir);
+        self.make_tileset_json(root);
+
+        println!("Generating point cloud files in {}", self.points_dir);
+        self.make_contents(root);
+    }
+
+    fn init_directories(&self) {
+        // Remove the old directory
+        if Path::new(&self.tileset_dir).exists() {
+            let message = format!(
+                "Could not remove old tileset in {}", self.tileset_dir);
+            remove_dir_all(&self.tileset_dir).expect(&message);
         }
-        create_dir_all(dirname).expect("could not create tileset directory");
-        println!("Generating tileset JSON...");
-        self.make_tileset_json(dirname, root);
-        println!("Generating point cloud files...");
-        self.make_contents(dirname, root);
+
+        create_dir_all(&self.tileset_dir)
+            .expect("Could not create tileset directory");
+        create_dir_all(&self.points_dir)
+            .expect("Could not create points directory");
     }
 
     /// Generate a tileset.json file by traversing the tree and collecting
     /// data
     ///
     /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tileset
-    fn make_tileset_json(&self, dirname: &str, root: &OctNode) {
-        let prefix = "0";
-        let root_tile = self.make_tileset_json_recursive(root, &prefix);
+    fn make_tileset_json(&self, root: &OctNode) {
+        let root_tile = 
+            self.make_tileset_json_recursive(root, "points");
         let mut tileset = object!{
             "asset" => object!{
                 "version" => "1.0",
@@ -88,23 +112,24 @@ impl TilesetWriter {
             };
         }
 
-        let fname = format!("{}/tileset.json", dirname);
-        let mut file = File::create(fname)
-            .expect("failed to open tileset.json");
-        file.write_all(json::stringify(tileset).as_bytes())
-            .expect("failed to write tileset.json");
+        let fname = format!("{}/tileset.json", self.tileset_dir);
+        let message = format!("Failed to create {}", fname);
+        let mut file = File::create(fname.clone()).expect(&message);
+
+        let message = format!("Failed to write {}", fname);
+        file.write_all(json::stringify(tileset).as_bytes()).expect(&message);
     }
 
     /// Generate the tree of tiles including URIs to each .pnts file
     ///
     /// See https://github.com/CesiumGS/3d-tiles/tree/master/specification#reference-tile
-    fn make_tileset_json_recursive(&self, tree: &OctNode, prefix: &str)
+    fn make_tileset_json_recursive(&self, tree: &OctNode, content_dirname: &str)
             -> JsonValue {
         if tree.is_leaf() && tree.is_empty() {
             JsonValue::Null
-        } else if tree.is_leaf() { 
-            let fname = format!(
-                "{}.{}", prefix, self.content_type.get_extension());
+        } else if tree.is_leaf() {
+            let fname = tree.get_file_name(
+                content_dirname, self.content_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => 0.0,
@@ -115,17 +140,16 @@ impl TilesetWriter {
             }
         } else {
             let mut children: Vec<JsonValue> = Vec::new();
-            for (quadrant, child) in tree.labeled_children().iter() {
-                let new_prefix = format!("{}/{}", prefix, quadrant);
+            for child in tree.get_children().iter() {
                 let child_json = 
-                    self.make_tileset_json_recursive(child, &new_prefix);
+                    self.make_tileset_json_recursive(child, content_dirname);
                 if child_json.is_object() {
                     children.push(child_json);
                 }
             }
 
-            let fname = format!(
-                "{}.{}",prefix, self.content_type.get_extension());
+            let fname = tree.get_file_name(
+                content_dirname, self.content_type.get_extension());
             object!{
                 "boundingVolume" => tree.bounding_volume_json(),
                 "geometricError" => tree.geometric_error(),
@@ -138,46 +162,39 @@ impl TilesetWriter {
         }
     }
 
-    /// Generate the contnet files, one per tile that contains data
-    fn make_contents(&self, dirname: &str, root: &OctNode) {
-        let prefix = format!("{}/0", dirname);
-        self.make_contents_recursive(root, &prefix);
-    }
-
     /// Traverse the tree, generating content files at leaves and directories
     /// at interior nodes.
-    fn make_contents_recursive(&self, tree: &OctNode, prefix: &str) {
+    fn make_contents(&self, tree: &OctNode) {
         if tree.is_leaf() {
-            self.make_content(tree, prefix);
+            self.make_content(tree);
         } else {
-            let error_msg = format!("could not create directory {}", prefix);
-            create_dir_all(prefix).expect(&error_msg);
-            for (quadrant, child) in tree.labeled_children().iter() {
-                let new_prefix = format!("{}/{}", prefix, quadrant);
-                self.make_contents_recursive(child, &new_prefix);
+            for child in tree.get_children().iter() {
+                self.make_contents(child);
             }
-
-            self.make_content(tree, prefix);
+            self.make_content(tree);
         }
     }
 
     // Generate a 3D model for a tile content.
-    fn make_content(&self, tree: &OctNode, prefix: &str) {
+    fn make_content(&self, tree: &OctNode) {
         // No need to create an empty point cloud
         if tree.is_empty() {
             return;
         }
 
         let points = tree.get_points();
+        let directory = tree.get_directory_name(&self.points_dir);
+        create_dir_all(&directory).expect("could not create directory");
+
         match self.content_type {
             ContentType::Pnts => {
                 let mut writer = PntsWriter::new();
-                let fname = format!("{}.pnts", prefix);
+                let fname = tree.get_file_name(&self.points_dir, "pnts");
                 writer.write(&fname, points);
             },
             ContentType::Glb => {
                 let mut writer = GlbWriter::new();
-                let fname = format!("{}.glb", prefix);
+                let fname = tree.get_file_name(&self.points_dir, "glb");
                 writer.write(&fname, points);
             }
         }

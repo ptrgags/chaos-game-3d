@@ -119,7 +119,7 @@ impl BBox {
     /// where Z = 1 if the z coordinate is greater than center z
     ///       Y = 1 if the y coordinate is greater than center y
     ///       X = 1 if the x coordinate is greater than center x
-    pub fn find_quadrant(&self, vec: &Vec3) -> usize {
+    pub fn find_octant(&self, vec: &Vec3) -> usize {
         let from_center = *vec - self.center();
 
         let x_positive = (*from_center.x() > 0.0) as usize;

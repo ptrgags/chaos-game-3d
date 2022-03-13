@@ -537,6 +537,16 @@ Yesterday and today I added quite a few things:
 There's so much cool stuff to explore here, and more to add, but I think this
 is a good stopping point for one weekend.
 
+## 2022-02-17 Steps towards implicit tiling
+
+Another feature of 3D Tiles Next that will be helpful is using implicit tiling
+for more compact tileset descriptions. In order to do this though, tiles
+need to be identified by `(tile, x, y, z)` coordinates. The filenames have to
+be listed accordingly too. So far I've done this much.
+
+In another branch, the next step is to handle the `3DTILES_implicit_tiling`
+extension and subtree files.
+
 ## 2022-02-18 Triangles and Tetrahedra
 
 Yesterday I added a `Triangle` chooser to make a grid of points arranged
