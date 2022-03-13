@@ -15,14 +15,20 @@ These images correspond to some of the parameter files found in `params/`
 
 |||
 |---|---|
-| `sierpinski` | `conjugated_sierpinski` |
-| ![Sierpinski Tetrahedron](figures/sierpinski.png) | ![Bent Sierpinski Tetrahedron](figures/conjugated_sierpinski.png) |
+| `sierpinski` | `bent_sierpinski` |
+| ![Sierpinski Tetrahedron](figures/sierpinski.png) | ![Bent Sierpinski Tetrahedron](figures/bent_sierpinski.png) |
 | `grid_3d` | `seaweed` |
 | ![3D Grid](figures/grid_3d.png) | ![Seaweed tiling](figures/seaweed.png) |
+| `spiky_ball` | `discrete_gyroid_surface` |
+| ![Spiky Ball](figures/spiky_ball.png) | ![Discrete Gyroid Surface](figures/discrete_gyroid.png) |
 | `loxodromic` | `pillows` |
 | ![Loxodromic transformation](figures/loxodromic.png) | ![Pillows](figures/pillows.png) |
-| `hopf_fibration` | `torus_knots` |
-| ![Hopf Fibration](figures/hopf_fibration.png) | ![Torus Knots](figures/torus_knots.png) |
+| `hopf_fibration` | Animated |
+| ![Hopf Fibration](figures/hopf_fibration.png) | ![Hopf Fibration Animated](figures/hopf_fibration_animated.gif)|
+| `torus_knots` | Animated |
+| ![Torus Knots](figures/torus_knots.png) | ![Torus Knots Animated](figures/torus_knots_animated.gif) |
+| `aa_loxodromic` | Animated |
+| ![Axis Aligned Loxodromic](figures/aa_loxodromic.png) | ![Axis Aligned Loxodromic Animated](figures/aa_loxodromic_animated.gif)
 
 ### Usage
 

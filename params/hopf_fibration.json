@@ -15,7 +15,7 @@
         "radius": 8
     },
     "cluster_copies": 1,
-    "iters": 100,
+    "iters": 144,
     "ifs": {
         "xforms": [
             ["chain", [
