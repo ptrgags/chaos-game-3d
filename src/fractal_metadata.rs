@@ -14,6 +14,9 @@ pub struct FractalMetadata {
     pub iterations: u64,
     /// How many copies of the initial set
     pub cluster_copies: u16,
+    /// How many subclusters. Usually 1, but for ManyClusters this is the
+    /// number of internal clusters.
+    pub subcluster_count: u8,
     /// How many points in the initial set in total
     pub cluster_point_count: u16,
     /// For ManyClusters, what is the maximum number of points in any
@@ -65,6 +68,7 @@ impl FractalMetadata {
             iterations: *iterations,
             cluster_copies: *cluster_copies,
             // these point counts will be determined later
+            subcluster_count: 1,
             cluster_point_count: 0,
             subcluster_max_point_count: 0,
             ifs_xform_count: *ifs_xform_count as u8,
@@ -99,6 +103,9 @@ impl FractalMetadata {
                             "cluster_copies" => object!{
                                 "componentType" => "UINT16"
                             },
+                            "subcluster_count" => object!{
+                                "componentType" => "UINT8"
+                            },
                             "cluster_point_count" => object!{
                                 "componentType" => "UINT16"
                             },
@@ -129,6 +136,7 @@ impl FractalMetadata {
                     "description" => self.description.clone(),
                     "iterations" => self.iterations,
                     "cluster_copies" => self.cluster_copies,
+                    "subcluster_count" => self.subcluster_count,
                     "cluster_point_count" => self.cluster_point_count,
                     "subcluster_max_point_count" => self.subcluster_max_point_count,
                     "ifs_xform_count" => self.ifs_xform_count,

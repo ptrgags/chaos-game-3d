@@ -204,6 +204,7 @@ impl ChaosSets {
         metadata.cluster_point_count = cluster.point_count() as u16;
         metadata.subcluster_max_point_count = 
             cluster.subcluster_max_point_count() as u16;
+        metadata.subcluster_count = cluster.subcluster_count() as u8;
 
         Self {
             metadata,

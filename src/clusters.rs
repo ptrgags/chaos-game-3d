@@ -16,6 +16,11 @@ pub trait Cluster {
     /// time it must produce a new set of points.
     fn generate(&mut self, cluster_copy: u16, cluster_id: u16) 
         -> Vec<InternalPoint>;
+    /// How many subclusters. normally 1, but for ManyClusters this is the
+    /// number of subclusters
+    fn subcluster_count(&self) -> usize {
+        1
+    }
     /// Get the number of points in the initial set for measuring complexity.
     fn point_count(&self) -> usize;
     /// For ManyClusters, of all the sub-clusters, what is the most points
@@ -1136,6 +1141,10 @@ impl Cluster for ManyClusters {
             points.append(&mut cluster_points);
         }
         points
+    }
+
+    fn subcluster_count(&self) -> usize {
+        self.clusters.len()
     }
 
     fn point_count(&self) -> usize {

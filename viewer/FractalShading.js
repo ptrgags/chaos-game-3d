@@ -476,11 +476,15 @@ class FractalShading {
         const ifs_xform_count = metadata.getProperty("ifs_xform_count");
         SHADERS.last_xform.setUniform("u_xform_count", ifs_xform_count);
 
-        // TODO: How to handle the two of these?
+        // Usually these two are the same, but when using ManyClusters,
+        // it's the smaller subcluster_max_point_count that I want.
         const cluster_point_count = metadata.getProperty("cluster_point_count");
         const subcluster_max_point_count = metadata.getProperty("subcluster_max_point_count");
-        console.log(cluster_point_count, subcluster_max_point_count);
-        SHADERS.point_ids.setUniform("u_point_ids", cluster_point_count);
+        const point_id_count = Math.min(cluster_point_count, subcluster_max_point_count);
+        SHADERS.point_ids.setUniform("u_point_ids", point_id_count);
+
+        const cluster_ids = metadata.getProperty("subcluster_count");
+        SHADERS.cluster_ids.setUniform("u_cluster_ids", cluster_ids);
 
         const cluster_copies = metadata.getProperty("cluster_copies");
         SHADERS.cluster_copies.setUniform("u_cluster_copies", cluster_copies);
