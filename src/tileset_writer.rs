@@ -97,9 +97,8 @@ impl TilesetWriter {
             "geometricError" => 1e7,
             "root" => root_tile,
             "extensionsUsed" => array!["3DTILES_metadata"],
-            "extensions" => object!{
-                "3DTILES_metadata" => self.metadata.make_extension_json()
-            }
+            "schema" => self.metadata.make_schema_json(),
+            "metadata" => self.metadata.make_metadata_json()
         };
 
         // If using GLB output, we also need to add the
@@ -108,7 +107,10 @@ impl TilesetWriter {
             tileset["extensionsRequired"] = array!["3DTILES_content_gltf"];
             tileset["extensionsUsed"].push("3DTILES_content_gltf").unwrap();
             tileset["extensions"]["3DTILES_content_gltf"] = object!{
-                "extensionsUsed" => array!["EXT_mesh_features"],
+                "extensionsUsed" => array![
+                    "EXT_mesh_features",
+                    "EXT_structural_metadata"
+                ],
             };
         }
 

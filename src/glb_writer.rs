@@ -605,24 +605,28 @@ impl GlbWriter {
             point_id.insert(point.point_id);
         }
 
-        object!{
-            "iterations" => object!{
+        array![
+            object!{
+                "label" => "iterations",
                 "featureCount" => iterations.len(),
                 "attribute" => 0
             },
-            "cluster_copy" => object!{
+            object!{
+                "label" => "cluster_copy",
                 "featureCount" => cluster_copies.len(),
                 "attribute" => 1
             },
-            "cluster_id" => object!{
+            object!{
+                "label" => "cluster_id",
                 "featureCount" => cluster_ids.len(),
                 "attribute" => 2
             },
-            "point_id" => object!{
+            object!{
+                "label" => "point_id",
                 "featureCount" => point_id.len(),
                 "attribute" => 3
             }
-        }
+        ]
     }
 
     /// Write the GLB header to the file
