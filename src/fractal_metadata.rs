@@ -85,42 +85,50 @@ impl FractalMetadata {
                 "tileset" => object!{
                     "properties" => object!{
                         "id" => object!{
-                            "componentType" => "STRING",
+                            "type" => "STRING",
                             "semantic" => "ID"
                         },
                         "name" => object!{
-                            "componentType" => "STRING",
+                            "type" => "STRING",
                             "semantic" => "NAME"
                         },
                         "description" => object!{
-                            "componentType" => "STRING",
+                            "type" => "STRING",
                             "semantic" => "DESCRIPTION"
                         },
                         "iterations" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT64"
                         },
                         "cluster_copies" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT16"
                         },
                         "subcluster_count" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT8"
                         },
                         "cluster_point_count" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT16"
                         },
                         "subcluster_max_point_count" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT16"
                         },
                         "ifs_xform_count" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT8"
                         },
                         "color_ifs_xform_count" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT8"
                         },
                         "algorithm" => object!{
-                            "componentType" => "STRING"
+                            "type" => "STRING"
                         },
                         "node_capacity" => object!{
+                            "type" => "SCALAR",
                             "componentType" => "UINT16"
                         }
                     }

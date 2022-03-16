@@ -607,7 +607,7 @@ impl GlbWriter {
 
         array![
             object!{
-                "label" => "iterations",
+                "label" => "iteration",
                 "featureCount" => iterations.len(),
                 "attribute" => 0
             },
