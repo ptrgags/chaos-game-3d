@@ -34,7 +34,7 @@ function set_model(model_id) {
 
     // Until I figure out better camera settings, scale up the tileset
     // to be larger than the radius earth, which is 6.37 million meters
-    // 
+    //
     // Scaling it here with a model matrix is a lot easier than baking the
     // scale into the tileset, though it causes some issues
     const BIGGER_THAN_EARTH = 10000000.0;
@@ -57,14 +57,9 @@ function set_model(model_id) {
     tileset.pointCloudShading.attenuation = attenuation;
 
     tileset.readyPromise.then(() => {
-        const metadata = tileset.metadata.tileset;
+        const metadata = tileset.metadata;
         shading.update_metadata(metadata);
     });
-
-    // Force all tiles to load. This is a bit dangerous for large tilesets,
-    // but until I fix some camera issues, this is the only way to render
-    // things properly
-    //tileset.maximumScreenSpaceError = 0;
 
     viewer.scene.primitives.add(tileset);
 }
