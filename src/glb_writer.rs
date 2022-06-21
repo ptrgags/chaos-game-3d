@@ -458,7 +458,7 @@ impl GlbWriter {
                 JsonValue::Number(accessor.accessor_id.into());
         }
         
-        let copyright = format!("© {} Peter Gagliardi", Utc::now().year());
+        let copyright = format!("© {} Cesium GS, Inc.", Utc::now().year());
         let generator = 
             "Chaos Game 3D fractal generator from https://github.com/ptrgags/chaos-game-3d";
 

@@ -588,3 +588,11 @@ start is low. But finally I got it wrapped up!
 
 I updated the paramter files and also added some new screenshots. The new
 shaders + better clusters really help to improve the visual quality.
+
+## 2022-06-21 3D Tiles 1.1 and Copyright Clarification
+
+Today I merged in the `3d-tiles-1.1` branch, which updates the schema to the
+latest 3D Tiles specification draft.
+
+I also added a `LICENSE` and noted that the copyright belongs to Cesium given
+a clause in my employment contract.
