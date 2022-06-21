@@ -9,6 +9,14 @@ This program can be used to generate fractals using the Chaos Game as a
 The `viewer/` subdirectory contains a small static page one can use to view
 the output.
 
+### Full Disclosure
+
+This project uses [3D Tiles](https://github.com/CesiumGS/3d-tiles) and
+[CesiumJS](https://github.com/CesiumGS/cesium) I am a Cesium employee, and
+a clause in my employment contract requires me to assign any related innovations
+to the company. Thus, this project is licensed under the Apache license, and
+the copyright belongs to Cesium GS, Inc.
+
 ### Gallery
 
 These images correspond to some of the parameter files found in `params/`
