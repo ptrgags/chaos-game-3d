@@ -78,72 +78,82 @@ impl FractalMetadata {
         }
     }
 
-    // Generate the metadata for 3DTILES_metadata
-    pub fn make_extension_json(&self) -> JsonValue {
+    /// Generate the metadata for 3D Tiles 1.1 metadata schema
+    pub fn make_schema_json(&self) -> JsonValue {
         object!{
-            "schema" => object!{
-                "classes" => object!{
-                    "tileset" => object!{
-                        "properties" => object!{
-                            "id" => object!{
-                                "componentType" => "STRING",
-                                "semantic" => "ID"
-                            },
-                            "name" => object!{
-                                "componentType" => "STRING",
-                                "semantic" => "NAME"
-                            },
-                            "description" => object!{
-                                "componentType" => "STRING",
-                                "semantic" => "DESCRIPTION"
-                            },
-                            "iterations" => object!{
-                                "componentType" => "UINT64"
-                            },
-                            "cluster_copies" => object!{
-                                "componentType" => "UINT16"
-                            },
-                            "subcluster_count" => object!{
-                                "componentType" => "UINT8"
-                            },
-                            "cluster_point_count" => object!{
-                                "componentType" => "UINT16"
-                            },
-                            "subcluster_max_point_count" => object!{
-                                "componentType" => "UINT16"
-                            },
-                            "ifs_xform_count" => object!{
-                                "componentType" => "UINT8"
-                            },
-                            "color_ifs_xform_count" => object!{
-                                "componentType" => "UINT8"
-                            },
-                            "algorithm" => object!{
-                                "componentType" => "STRING"
-                            },
-                            "node_capacity" => object!{
-                                "componentType" => "UINT16"
-                            }
+            "classes" => object!{
+                "tileset" => object!{
+                    "properties" => object!{
+                        "id" => object!{
+                            "type" => "STRING",
+                            "semantic" => "ID"
+                        },
+                        "name" => object!{
+                            "type" => "STRING",
+                            "semantic" => "NAME"
+                        },
+                        "description" => object!{
+                            "type" => "STRING",
+                            "semantic" => "DESCRIPTION"
+                        },
+                        "iterations" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT64"
+                        },
+                        "cluster_copies" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT16"
+                        },
+                        "subcluster_count" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT8"
+                        },
+                        "cluster_point_count" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT16"
+                        },
+                        "subcluster_max_point_count" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT16"
+                        },
+                        "ifs_xform_count" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT8"
+                        },
+                        "color_ifs_xform_count" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT8"
+                        },
+                        "algorithm" => object!{
+                            "type" => "STRING"
+                        },
+                        "node_capacity" => object!{
+                            "type" => "SCALAR",
+                            "componentType" => "UINT16"
                         }
                     }
                 }
-            },
-            "tileset" => object!{
-                "class" => "tileset",
-                "properties" => object!{
-                    "id" => self.id.clone(),
-                    "name" => self.name.clone(),
-                    "description" => self.description.clone(),
-                    "iterations" => self.iterations,
-                    "cluster_copies" => self.cluster_copies,
-                    "subcluster_count" => self.subcluster_count,
-                    "cluster_point_count" => self.cluster_point_count,
-                    "subcluster_max_point_count" => self.subcluster_max_point_count,
-                    "ifs_xform_count" => self.ifs_xform_count,
-                    "color_ifs_xform_count" => self.color_ifs_xform_count,
-                    "algorithm" => self.algorithm.clone(),
-                    "node_capacity" => self.node_capacity,
-                }
+            }
+        }
+    }
+
+    /// Generate tileset metadata using the 3D Tiles 1.1 schema
+    pub fn make_metadata_json(&self) -> JsonValue {
+        object!{
+            "class" => "tileset",
+            "properties" => object!{
+                "id" => self.id.clone(),
+                "name" => self.name.clone(),
+                "description" => self.description.clone(),
+                "iterations" => self.iterations,
+                "cluster_copies" => self.cluster_copies,
+                "subcluster_count" => self.subcluster_count,
+                "cluster_point_count" => self.cluster_point_count,
+                "subcluster_max_point_count" => self.subcluster_max_point_count,
+                "ifs_xform_count" => self.ifs_xform_count,
+                "color_ifs_xform_count" => self.color_ifs_xform_count,
+                "algorithm" => self.algorithm.clone(),
+                "node_capacity" => self.node_capacity,
             }
         }
     }

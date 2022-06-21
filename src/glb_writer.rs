@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::collections::HashSet;
 
 use chrono::{Datelike, Utc};
 use json::JsonValue;
@@ -174,7 +175,7 @@ impl GlbWriter {
     /// Write a list of points to disk in GLB format
     pub fn write(&mut self, fname: &str, buffer: &Vec<OutputPoint>) {
         self.compute_layout(&buffer);
-        self.make_json();
+        self.make_json(&buffer);
 
         // Now that we have both chunks, update the total length
         self.total_length = 
@@ -445,7 +446,7 @@ impl GlbWriter {
     }
 
     /// Create the glTF JSON for the JSON chunk
-    fn make_json(&mut self) {
+    fn make_json(&mut self, buffer: &Vec<OutputPoint>) {
         let accessors: Vec<JsonValue> = 
             self.accessors.iter().map(|x| x.json.clone()).collect();
         let buffer_views: Vec<JsonValue> =
@@ -456,16 +457,88 @@ impl GlbWriter {
             attributes[&accessor.semantic] = 
                 JsonValue::Number(accessor.accessor_id.into());
         }
-
+        
         let copyright = format!("© {} Peter Gagliardi", Utc::now().year());
         let generator = 
             "Chaos Game 3D fractal generator from https://github.com/ptrgags/chaos-game-3d";
+
+        let feature_id_json = self.compute_feature_id_json(&buffer);
 
         let json = object!{
             "asset" => object!{
                 "version" => "2.0",
                 "generator" => generator, 
                 "copyright" => copyright
+            },
+            "extensions" => object!{
+                "EXT_structural_metadata" => object!{
+                    "schema" => object!{
+                        "classes" => object!{
+                            "fractal" => object!{
+                                "name" => "Fractal",
+                                "description" => "Per-point fractal properties",
+                                "properties" => object!{
+                                    "cluster_coordinates" => object!{
+                                        "type" => "VEC3",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "iteration" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "cluster_copy" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "cluster_id" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "point_id" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "last_xform" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    },
+                                    "last_color_xform" => object!{
+                                        "type" => "SCALAR",
+                                        "componentType" => "FLOAT32"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "propertyMappings" => object!{
+                        "class" => "fractal",
+                        "properties" => object!{
+                            "cluster_coordinates" => object!{
+                                "attribute" => "_CLUSTER_COORDINATES"                                
+                            },
+                            "iteration" => object!{
+                                // There's nothing in the spec that says I 
+                                // can't do this ;)
+                                "attribute" => "_FEATURE_ID_0"
+                            },
+                            "cluster_copy" => object!{
+                                "attribute" => "_FEATURE_ID_1"
+                            },
+                            "cluster_id" => object!{
+                                "attribute" => "_FEATURE_ID_2"
+                            },
+                            "point_id" => object!{
+                                "attribute" => "_FEATURE_ID_3"
+                            },
+                            "last_xform" => object!{
+                                "attribute" => "_LAST_XFORM"
+                            },
+                            "last_color_xform" => object!{
+                                "attribute" => "_LAST_COLOR_XFORM"
+                            }
+                        }
+                    }
+                }
             },
             "scene" => 0,
             "scenes" => array![
@@ -490,6 +563,14 @@ impl GlbWriter {
                         object!{
                             "attributes" => attributes.clone(),
                             "mode" => GLTF_POINTS,
+                            "extensions" => object!{
+                                "EXT_mesh_features" => object!{
+                                    "featureIds" => feature_id_json.clone(),
+                                },
+                                "EXT_structural_metadata" => object!{
+                                    "propertyMappings" => array![0]
+                                }
+                            }
                         }
                     ]
                 }
@@ -508,6 +589,44 @@ impl GlbWriter {
         self.json = json_str;
         self.json_chunk.chunk_length = length;
         self.json_chunk.padding_length = compute_padding_length(length, ALIGNMENT);
+    }
+
+    fn compute_feature_id_json(&self, buffer: &Vec<OutputPoint>) -> JsonValue {
+        // Count the number of unique IDs for each of the feature Ids
+        // since featureCount is required.
+        let mut iterations: HashSet<u64> = HashSet::new();
+        let mut cluster_copies: HashSet<u16> = HashSet::new();
+        let mut cluster_ids: HashSet<u16> = HashSet::new();
+        let mut point_id: HashSet<u16> = HashSet::new();
+        for point in buffer.iter() {
+            iterations.insert(point.iteration);
+            cluster_copies.insert(point.cluster_copy);
+            cluster_ids.insert(point.cluster_id);
+            point_id.insert(point.point_id);
+        }
+
+        array![
+            object!{
+                "label" => "iteration",
+                "featureCount" => iterations.len(),
+                "attribute" => 0
+            },
+            object!{
+                "label" => "cluster_copy",
+                "featureCount" => cluster_copies.len(),
+                "attribute" => 1
+            },
+            object!{
+                "label" => "cluster_id",
+                "featureCount" => cluster_ids.len(),
+                "attribute" => 2
+            },
+            object!{
+                "label" => "point_id",
+                "featureCount" => point_id.len(),
+                "attribute" => 3
+            }
+        ]
     }
 
     /// Write the GLB header to the file

@@ -13,7 +13,10 @@ def get_tileset_paths():
 
 def extract_fractal_info(tileset_json):
     try:
-        tileset = tileset_json["extensions"]["3DTILES_metadata"]["tileset"]
+        if "metadata" in tileset_json:
+            tileset = tileset_json["metadata"]
+        else:
+            tileset = tileset_json["extensions"]["3DTILES_metadata"]["tileset"]
         properties = tileset["properties"]
 
         # We only need the id, name and description for populating the UI
@@ -33,6 +36,8 @@ def get_fractal_infos(tileset_paths):
             fractal_info = extract_fractal_info(tileset_json)
             if fractal_info is not None:
                 info.append(fractal_info)
+            else:
+                print("failed to load info for", tileset_path)
     return info
 
 
