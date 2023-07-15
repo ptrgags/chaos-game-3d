@@ -1,21 +1,15 @@
 ## Chaos Game 3D (2019-2020, 2021-2022)
 
-![Sierpinski Tetrahedron fractal](figures/sierpinski.png)
-
 This program can be used to generate fractals using the Chaos Game as a
 3D point cloud. The input are JSON parameter files, and the output is a
 3D Tiles point cloud tileset.
 
+⚠️ ARCHIVED - Due to a Assignment of Inventions Agreement I signed when I started working at Cesium, this copyright for this project was assigned to my employer Cesium GS, Inc. This project is still open-source under the Apache 2.0 license. However, I choose not to maintain this repo anymore, and have archived it.
+
 The `viewer/` subdirectory contains a small static page one can use to view
 the output.
 
-### Full Disclosure
-
-This project uses [3D Tiles](https://github.com/CesiumGS/3d-tiles) and
-[CesiumJS](https://github.com/CesiumGS/cesium) I am a Cesium employee, and
-a clause in my employment contract requires me to assign any related innovations
-to the company. Thus, this project is licensed under the Apache license, and
-the copyright belongs to Cesium GS, Inc.
+![Sierpinski Tetrahedron fractal](figures/sierpinski.png)
 
 ### Gallery
 
