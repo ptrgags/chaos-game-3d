@@ -595,4 +595,4 @@ Today I merged in the `3d-tiles-1.1` branch, which updates the schema to the
 latest 3D Tiles specification draft.
 
 I also added a `LICENSE` and noted that the copyright belongs to Cesium given
-a clause in my employment contract.
+an Assignment of Inventions Agreement I signed when I started at Cesium.
